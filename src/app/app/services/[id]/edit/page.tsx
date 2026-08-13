@@ -1,0 +1,33 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { requirePermission } from "@/lib/auth/context";
+import { createClient } from "@/lib/supabase/server";
+import { getPoolOptions, getMemberOptions } from "@/lib/db/queries";
+import { PageHeader } from "@/components/ui";
+import { ServiceEditForm } from "./ServiceEditForm";
+import type { Service } from "@/lib/db/types";
+
+export default async function EditServicePage({ params }: { params: { id: string } }) {
+  const ctx = await requirePermission("services.edit");
+  const supabase = createClient();
+  const { data: service } = await supabase
+    .from("services")
+    .select("*")
+    .eq("id", params.id)
+    .eq("workspace_id", ctx.workspace.id)
+    .maybeSingle();
+  if (!service) notFound();
+
+  const [pools, members] = await Promise.all([
+    getPoolOptions(supabase, ctx.workspace.id),
+    getMemberOptions(supabase, ctx.workspace.id),
+  ]);
+
+  return (
+    <div className="mx-auto max-w-3xl">
+      <Link href={`/app/services/${params.id}`} className="mb-4 inline-block text-sm text-graphite-500 hover:text-graphite-700">← Prestation</Link>
+      <PageHeader title="Modifier la prestation" />
+      <ServiceEditForm service={service as Service} members={members} pools={pools} />
+    </div>
+  );
+}
