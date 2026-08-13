@@ -1,0 +1,4 @@
+-- Le bootstrap de la démo et du super-admin nécessite l'API Auth (création d'utilisateurs).
+-- Il est réalisé par le script Node : `node scripts/bootstrap.mjs`
+-- (crée les utilisateurs Auth démo + super-admin, provisionne le workspace démo,
+--  puis appelle seed_demo_data()). Voir README.

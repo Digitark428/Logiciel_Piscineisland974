@@ -1,0 +1,9 @@
+# Configuration minimale Supabase CLI (dev local)
+project_id = "piscine-island"
+
+[db]
+port = 54322
+major_version = 15
+
+[auth]
+enable_signup = true
