@@ -94,15 +94,33 @@ export function ReportForm({ serviceId, report }: { serviceId: string; report: s
   );
 }
 
-export function GoThereButton({ address }: { address: string }) {
-  if (!address) return null;
-  const q = encodeURIComponent(address);
+export function GoThereButton({
+  address,
+  lat,
+  lng,
+}: {
+  address: string;
+  lat?: number | null;
+  lng?: number | null;
+}) {
+  const hasCoords = lat != null && lng != null;
+  if (!hasCoords && !address) return null;
+
+  // Les coordonnées GPS (renseignées via l'autocomplétion d'adresse) sont plus fiables
+  // qu'une recherche textuelle : on les privilégie pour Waze et Google Maps.
+  const wazeHref = hasCoords
+    ? `https://waze.com/ul?ll=${lat},${lng}&navigate=yes`
+    : `https://waze.com/ul?q=${encodeURIComponent(address)}&navigate=yes`;
+  const mapsHref = hasCoords
+    ? `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`
+    : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`;
+
   return (
     <div className="flex gap-2">
-      <a href={`https://waze.com/ul?q=${q}&navigate=yes`} target="_blank" rel="noopener noreferrer" className="btn-primary">
+      <a href={wazeHref} target="_blank" rel="noopener noreferrer" className="btn-primary">
         🚗 Y aller (Waze)
       </a>
-      <a href={`https://www.google.com/maps/dir/?api=1&destination=${q}`} target="_blank" rel="noopener noreferrer" className="btn-secondary">
+      <a href={mapsHref} target="_blank" rel="noopener noreferrer" className="btn-secondary">
         Maps
       </a>
     </div>

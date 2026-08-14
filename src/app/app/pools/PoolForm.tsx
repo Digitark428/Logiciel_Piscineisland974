@@ -2,6 +2,7 @@
 
 import { ActionForm } from "@/components/forms/ActionForm";
 import { SubmitButton } from "@/components/forms/SubmitButton";
+import { AddressAutocomplete } from "@/components/forms/AddressAutocomplete";
 import { upsertPool } from "@/lib/actions/pools";
 import type { Pool } from "@/lib/db/types";
 
@@ -73,23 +74,22 @@ export function PoolForm({
 
       <div className="card p-6">
         <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-graphite-400">Localisation & notes</h3>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="sm:col-span-2">
-            <label className="label" htmlFor="address_line1">Adresse (si différente du client)</label>
-            <input id="address_line1" name="address_line1" className="input" defaultValue={pool?.address_line1 ?? ""} />
-          </div>
-          <div>
-            <label className="label" htmlFor="postal_code">Code postal</label>
-            <input id="postal_code" name="postal_code" className="input" defaultValue={pool?.postal_code ?? ""} />
-          </div>
-          <div>
-            <label className="label" htmlFor="city">Ville</label>
-            <input id="city" name="city" className="input" defaultValue={pool?.city ?? ""} />
-          </div>
-          <div className="sm:col-span-2">
-            <label className="label" htmlFor="technical_notes">Notes techniques</label>
-            <textarea id="technical_notes" name="technical_notes" rows={3} className="input" defaultValue={pool?.technical_notes ?? ""} />
-          </div>
+        <p className="mb-3 text-xs text-graphite-400">Laissez vide pour utiliser l'adresse du client. Renseignez ici uniquement si la piscine est à une adresse différente.</p>
+        <AddressAutocomplete
+          showComplement={false}
+          defaults={{
+            address_line1: pool?.address_line1,
+            postal_code: pool?.postal_code,
+            city: pool?.city,
+            latitude: pool?.latitude,
+            longitude: pool?.longitude,
+            geo_label: pool?.geo_label,
+            geo_precision: pool?.geo_precision,
+          }}
+        />
+        <div className="mt-4">
+          <label className="label" htmlFor="technical_notes">Notes techniques</label>
+          <textarea id="technical_notes" name="technical_notes" rows={3} className="input" defaultValue={pool?.technical_notes ?? ""} />
         </div>
       </div>
 

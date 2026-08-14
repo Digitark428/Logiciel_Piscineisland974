@@ -11,6 +11,7 @@ export interface NavItem {
 export const NAV_ITEMS: NavItem[] = [
   { href: "/app", label: "Tableau de bord", icon: "home" },
   { href: "/app/planning", label: "Planning", icon: "calendar", perm: "planning.view" },
+  { href: "/app/map", label: "Carte", icon: "map", perm: "map.view" },
   { href: "/app/services", label: "Prestations", icon: "wrench", perm: "services.view" },
   { href: "/app/clients", label: "Clients", icon: "users", perm: "clients.view" },
   { href: "/app/pools", label: "Piscines", icon: "pool", perm: "pools.view" },

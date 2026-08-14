@@ -50,6 +50,10 @@ export async function upsertPool(_prev: ActionResult, formData: FormData): Promi
     address_line1: str(formData.get("address_line1")),
     postal_code: str(formData.get("postal_code")),
     city: str(formData.get("city")),
+    latitude: num(formData.get("latitude")),
+    longitude: num(formData.get("longitude")),
+    geo_label: str(formData.get("geo_label")),
+    geo_precision: str(formData.get("geo_precision")),
   };
 
   const supabase = createClient();

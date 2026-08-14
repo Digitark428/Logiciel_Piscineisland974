@@ -14,6 +14,7 @@ export const PERMISSION_KEYS = [
   "services.edit",
   "services.complete",
   "planning.view",
+  "map.view",
   "tasks.view",
   "tasks.manage",
   "documents.view",
@@ -56,6 +57,7 @@ export const PERMISSION_GROUPS: {
       { key: "services.edit", label: "Modifier des prestations" },
       { key: "services.complete", label: "Réaliser / terminer une prestation" },
       { key: "planning.view", label: "Consulter le planning" },
+      { key: "map.view", label: "Voir la carte des prestations" },
     ],
   },
   {
@@ -91,6 +93,7 @@ export const DEFAULT_MEMBER_PERMISSIONS: PermissionKey[] = [
   "services.view",
   "services.complete",
   "planning.view",
+  "map.view",
   "tasks.view",
   "documents.view",
 ];

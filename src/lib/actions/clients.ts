@@ -21,11 +21,21 @@ const schema = z.object({
   city: z.string().optional(),
   access_info: z.string().optional(),
   notes: z.string().optional(),
+  latitude: z.string().optional(),
+  longitude: z.string().optional(),
+  geo_label: z.string().optional(),
+  geo_precision: z.string().optional(),
 });
 
 function s(v: FormDataEntryValue | null): string | undefined {
   const t = (v as string | null)?.trim();
   return t ? t : undefined;
+}
+
+function coord(v: string | undefined): number | null {
+  if (!v) return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
 }
 
 export async function upsertClient(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
@@ -46,6 +56,10 @@ export async function upsertClient(_prev: ActionResult, formData: FormData): Pro
     city: s(formData.get("city")),
     access_info: s(formData.get("access_info")),
     notes: s(formData.get("notes")),
+    latitude: s(formData.get("latitude")),
+    longitude: s(formData.get("longitude")),
+    geo_label: s(formData.get("geo_label")),
+    geo_precision: s(formData.get("geo_precision")),
   });
   if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? "Formulaire invalide.");
   const v = parsed.data;
@@ -67,6 +81,10 @@ export async function upsertClient(_prev: ActionResult, formData: FormData): Pro
     city: v.city ?? null,
     access_info: v.access_info ?? null,
     notes: v.notes ?? null,
+    latitude: coord(v.latitude),
+    longitude: coord(v.longitude),
+    geo_label: v.geo_label ?? null,
+    geo_precision: v.geo_precision ?? null,
   };
 
   if (v.id) {

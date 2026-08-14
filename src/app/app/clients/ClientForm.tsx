@@ -2,6 +2,7 @@
 
 import { ActionForm } from "@/components/forms/ActionForm";
 import { SubmitButton } from "@/components/forms/SubmitButton";
+import { AddressAutocomplete } from "@/components/forms/AddressAutocomplete";
 import { upsertClient } from "@/lib/actions/clients";
 import type { Client } from "@/lib/db/types";
 
@@ -38,24 +39,18 @@ export function ClientForm({ client }: { client?: Client }) {
 
       <div className="card p-6">
         <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-graphite-400">Adresse</h3>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="sm:col-span-2">
-            <label className="label" htmlFor="address_line1">Adresse</label>
-            <input id="address_line1" name="address_line1" className="input" defaultValue={client?.address_line1 ?? ""} />
-          </div>
-          <div className="sm:col-span-2">
-            <label className="label" htmlFor="address_line2">Complément</label>
-            <input id="address_line2" name="address_line2" className="input" defaultValue={client?.address_line2 ?? ""} />
-          </div>
-          <div>
-            <label className="label" htmlFor="postal_code">Code postal</label>
-            <input id="postal_code" name="postal_code" className="input" defaultValue={client?.postal_code ?? ""} />
-          </div>
-          <div>
-            <label className="label" htmlFor="city">Ville</label>
-            <input id="city" name="city" className="input" defaultValue={client?.city ?? ""} />
-          </div>
-        </div>
+        <AddressAutocomplete
+          defaults={{
+            address_line1: client?.address_line1,
+            address_line2: client?.address_line2,
+            postal_code: client?.postal_code,
+            city: client?.city,
+            latitude: client?.latitude,
+            longitude: client?.longitude,
+            geo_label: client?.geo_label,
+            geo_precision: client?.geo_precision,
+          }}
+        />
       </div>
 
       <div className="card p-6">

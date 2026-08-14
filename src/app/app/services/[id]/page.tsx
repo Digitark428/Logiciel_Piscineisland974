@@ -38,6 +38,9 @@ export default async function ServiceDetailPage({ params }: { params: { id: stri
   const address =
     [pool?.address_line1, pool?.postal_code, pool?.city].filter(Boolean).join(", ") ||
     [client?.address_line1, client?.postal_code, client?.city].filter(Boolean).join(", ");
+  // Coordonnées GPS : piscine en priorité, sinon client (renseignées via l'autocomplétion).
+  const geoLat = pool?.latitude ?? client?.latitude ?? null;
+  const geoLng = pool?.longitude ?? client?.longitude ?? null;
 
   const canComplete = can(ctx, "services.complete") || can(ctx, "services.edit");
   const canEdit = can(ctx, "services.edit");
@@ -73,7 +76,7 @@ export default async function ServiceDetailPage({ params }: { params: { id: stri
                   <div className="text-sm text-graphite-500">{[client?.phone, pool?.name].filter(Boolean).join(" · ")}</div>
                 </div>
               </div>
-              <GoThereButton address={address} />
+              <GoThereButton address={address} lat={geoLat} lng={geoLng} />
             </div>
             {canSensitive && client?.access_info && (
               <div className="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">

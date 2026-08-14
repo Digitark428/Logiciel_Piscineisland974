@@ -74,6 +74,10 @@ export interface Client {
   country: string | null;
   access_info: string | null;
   notes: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  geo_label: string | null;
+  geo_precision: string | null;
   extra: Record<string, unknown>;
   private_code_hash: string | null;
   private_code_set_at: string | null;
@@ -101,6 +105,10 @@ export interface Pool {
   water_treatment: string | null;
   equipment: Record<string, unknown>;
   technical_notes: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  geo_label: string | null;
+  geo_precision: string | null;
   status: ClientStatus;
   created_at: string;
   updated_at: string;
