@@ -34,8 +34,33 @@ Next.js 14 (App Router) · TypeScript strict · Supabase (Postgres + Auth + Stor
 2. `npm install`, puis `npm run build` (doit passer) et `npm run test` avant de pousser.
 3. Commit clair + push → Vercel redéploie.
 
+### ⭐ RÈGLE PERMANENTE — « Prise en charge de bout en bout » (demandée par le propriétaire)
+> Le propriétaire ne veut **rien faire manuellement**. À **chaque** demande, Claude s'occupe
+> **lui-même** de Supabase **+** Vercel **+** GitHub, et ne considère une tâche terminée que
+> lorsque **tout est réellement en ligne en production et vérifié**. Ne jamais dire « c'est fait »
+> tant que les points ci-dessous ne sont pas cochés **et contrôlés** (pas supposés).
+
+**Définition de « terminé » (checklist à dérouler à chaque tâche) :**
+1. **Code** : build (`npm run build`) + tests (`npm run test`) + `npm run typecheck` passent.
+2. **Supabase** : toute modif de schéma = nouveau fichier de migration **appliqué via `apply_migration`**
+   (l'enregistre dans le ledger), puis **`get_advisors` (security + performance)** pour vérifier
+   qu'aucune nouvelle alerte n'est apparue — et corriger si oui (cf. régression `0011`→`0012`).
+   Vérifier concrètement les colonnes/fonctions créées (`execute_sql`) plutôt que supposer.
+3. **GitHub** : commit clair + push. Le fichier de migration est committé (repo et base synchro).
+4. **Vercel (PRODUCTION)** : la mise en ligne publique vient de la branche
+   `claude/piscine-island-saas-cvvhln` → l'URL `-eu7f`. Un push sur une **autre** branche ne fait
+   qu'un déploiement **preview** (privé), **pas** la prod. Donc : amener les changements sur la
+   branche de production, puis **vérifier que le déploiement passe `READY`** (`get_deployment`) et
+   que l'alias public pointe bien dessus. **Le propriétaire a autorisé durablement ce déploiement
+   en production à chaque tâche** — inutile de redemander, sauf changement risqué ci-dessous.
+5. **Rapport** : annoncer l'état réel (fait / vérifié), pas un « ça devrait marcher ».
+
+**Seules exceptions où demander AVANT d'agir** : opération destructrice ou irréversible
+(suppression/renommage de colonne ou table, migration avec perte de données potentielle,
+suppression d'un projet/déploiement, changement d'une cible d'infra). Là on prévient d'abord.
+
 ## 5. Migrations base de données — RÈGLE IMPORTANTE
-- Les migrations sont des fichiers **numérotés** dans `supabase/migrations/` (`0001` … actuellement `0010`).
+- Les migrations sont des fichiers **numérotés** dans `supabase/migrations/` (`0001` … actuellement `0012`).
 - **Toute** modif de schéma = **nouveau fichier** `00XX_description.sql` (jamais éditer un ancien).
 - Application : via l'outil MCP Supabase `apply_migration` (préféré, l'enregistre dans le ledger),
   sinon coller le SQL dans **Supabase → SQL Editor** (le lien direct :
