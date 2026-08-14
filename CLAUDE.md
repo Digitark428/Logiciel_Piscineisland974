@@ -34,11 +34,18 @@ Next.js 14 (App Router) · TypeScript strict · Supabase (Postgres + Auth + Stor
 2. `npm install`, puis `npm run build` (doit passer) et `npm run test` avant de pousser.
 3. Commit clair + push → Vercel redéploie.
 
-### ⭐ RÈGLE PERMANENTE — « Prise en charge de bout en bout » (demandée par le propriétaire)
-> Le propriétaire ne veut **rien faire manuellement**. À **chaque** demande, Claude s'occupe
-> **lui-même** de Supabase **+** Vercel **+** GitHub, et ne considère une tâche terminée que
-> lorsque **tout est réellement en ligne en production et vérifié**. Ne jamais dire « c'est fait »
-> tant que les points ci-dessous ne sont pas cochés **et contrôlés** (pas supposés).
+### ⭐ RÈGLE PERMANENTE — « Plan → validation → prise en charge de bout en bout » (demandée par le propriétaire)
+> **1. Toujours annoncer le plan d'abord et demander validation.** Avant d'agir sur une demande,
+> Claude explique clairement **ce qu'il va faire** (le plan) et attend le **« valide »** du
+> propriétaire. Tant que ce n'est pas validé, on ne modifie/déploie rien.
+> _(Exceptions : actions purement en lecture / sans effet — ex. sortir un zip, lire l'état,
+> répondre à une question — peuvent être faites directement.)_
+>
+> **2. Dès que le propriétaire dit « valide », Claude fait TOUT lui-même**, sans que le
+> propriétaire ait rien à faire manuellement : à **chaque** demande, Claude s'occupe **lui-même**
+> de Supabase **+** Vercel **+** GitHub, et ne considère une tâche terminée que lorsque **tout est
+> réellement en ligne en production et vérifié**. Ne jamais dire « c'est fait » tant que les points
+> ci-dessous ne sont pas cochés **et contrôlés** (pas supposés).
 
 **Définition de « terminé » (checklist à dérouler à chaque tâche) :**
 1. **Code** : build (`npm run build`) + tests (`npm run test`) + `npm run typecheck` passent.
