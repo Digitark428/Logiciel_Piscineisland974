@@ -21,6 +21,10 @@ export async function updateWorkspace(_prev: ActionResult, formData: FormData): 
   if (!name.success) return fail(name.error.issues[0].message);
 
   const supabase = createClient();
+  const settings = {
+    ...(ctx.workspace.settings ?? {}),
+    portal_share_assignee_phone: formData.get("portal_share_assignee_phone") === "on",
+  };
   const { error } = await supabase
     .from("workspaces")
     .update({
@@ -33,6 +37,7 @@ export async function updateWorkspace(_prev: ActionResult, formData: FormData): 
       siret: str(formData.get("siret")),
       vat_number: str(formData.get("vat_number")),
       legal_form: str(formData.get("legal_form")),
+      settings,
     })
     .eq("id", ctx.workspace.id);
   if (error) return fail("Enregistrement impossible.");

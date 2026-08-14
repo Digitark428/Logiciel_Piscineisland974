@@ -15,7 +15,7 @@ export default async function SuperAdminDashboard() {
   const supportAttention = await getSupportAttentionCount();
 
   const [{ data: workspaces }, wsCount, userCount, { data: recent }] = await Promise.all([
-    admin.from("workspaces").select("id, name, company_code, status, is_demo, city, created_at").order("created_at", { ascending: false }),
+    admin.from("workspaces").select("id, name, company_code, status, city, created_at").order("created_at", { ascending: false }),
     admin.from("workspaces").select("id", { count: "exact", head: true }),
     admin.from("memberships").select("id", { count: "exact", head: true }),
     admin.from("activity_logs").select("id, action, summary, actor_label, created_at, workspace_id").order("created_at", { ascending: false }).limit(15),
@@ -66,7 +66,7 @@ export default async function SuperAdminDashboard() {
                 <tr key={w.id} className="border-b border-graphite-800/60">
                   <td className="px-4 py-3">
                     <div className="font-medium text-graphite-100">{w.name}</div>
-                    <div className="text-xs text-graphite-500">{w.city ?? ""}{w.is_demo ? " · Démo" : ""}</div>
+                    <div className="text-xs text-graphite-500">{w.city ?? ""}</div>
                   </td>
                   <td className="px-4 py-3 font-mono text-xs text-graphite-400">{w.company_code}</td>
                   <td className="px-4 py-3 text-graphite-400">{formatDate(w.created_at)}</td>
@@ -74,7 +74,7 @@ export default async function SuperAdminDashboard() {
                     <Badge tone={w.status === "active" ? "active" : "disabled"}>{w.status === "active" ? "Actif" : "Désactivé"}</Badge>
                   </td>
                   <td className="px-4 py-3">
-                    <WorkspaceActions id={w.id} name={w.name} status={w.status} isDemo={w.is_demo} />
+                    <WorkspaceActions id={w.id} name={w.name} status={w.status} />
                   </td>
                 </tr>
               ))}

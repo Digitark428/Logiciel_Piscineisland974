@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { setWorkspaceStatus, deleteWorkspace } from "@/lib/actions/superadmin";
 
-export function WorkspaceActions({ id, name, status, isDemo }: { id: string; name: string; status: string; isDemo: boolean }) {
+export function WorkspaceActions({ id, name, status }: { id: string; name: string; status: string }) {
   const [pending, start] = useTransition();
   const [confirming, setConfirming] = useState(false);
   const [typed, setTyped] = useState("");
@@ -20,8 +20,7 @@ export function WorkspaceActions({ id, name, status, isDemo }: { id: string; nam
         {status === "active" ? "Désactiver" : "Réactiver"}
       </button>
 
-      {!isDemo && (
-        confirming ? (
+      {confirming ? (
           <span className="flex items-center gap-1">
             <input
               value={typed}
@@ -45,8 +44,7 @@ export function WorkspaceActions({ id, name, status, isDemo }: { id: string; nam
           </span>
         ) : (
           <button className="btn-ghost py-1.5 text-xs text-red-600" onClick={() => setConfirming(true)}>Supprimer</button>
-        )
-      )}
+        )}
     </div>
   );
 }

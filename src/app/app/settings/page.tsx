@@ -64,6 +64,24 @@ export default async function SettingsPage() {
             </div>
           </div>
         </div>
+
+        <div className="card mt-6 p-6">
+          <h3 className="mb-1 text-sm font-semibold uppercase tracking-wide text-graphite-400">Portail client</h3>
+          <p className="mb-4 text-xs text-graphite-400">Choisissez les informations rendues visibles à vos clients.</p>
+          <label className="flex items-start gap-3">
+            <input
+              type="checkbox"
+              name="portal_share_assignee_phone"
+              defaultChecked={Boolean((w.settings as Record<string, unknown>)?.portal_share_assignee_phone)}
+              className="mt-0.5 h-5 w-5 rounded border-graphite-300 text-pool-600"
+            />
+            <span className="text-sm text-graphite-700">
+              Afficher le téléphone de l'intervenant sur la fiche d'intervention du client.
+              <span className="block text-xs text-graphite-400">Sinon, seul le contact du gérant est proposé au client.</span>
+            </span>
+          </label>
+        </div>
+
         <div className="mt-4 flex justify-end"><SubmitButton>Enregistrer</SubmitButton></div>
       </ActionForm>
 

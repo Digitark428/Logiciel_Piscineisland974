@@ -67,7 +67,12 @@ Next.js 14 (App Router) · TypeScript strict · Supabase (Postgres + Auth + Stor
 suppression d'un projet/déploiement, changement d'une cible d'infra). Là on prévient d'abord.
 
 ## 5. Migrations base de données — RÈGLE IMPORTANTE
-- Les migrations sont des fichiers **numérotés** dans `supabase/migrations/` (`0001` … actuellement `0013`).
+- Les migrations sont des fichiers **numérotés** dans `supabase/migrations/` (`0001` … actuellement `0021`).
+  - `0014` (assistance app users) avait été appliquée en base sans être commitée : fichier restauré.
+  - `0015` documents.category + liens prestation↔contrat/facture ; `0016` champs d'accès client structurés ;
+    `0017` confidentialité des tâches + table `team_notes` ; `0018` `service_client_notes` (notes portail client) ;
+    `0019` **suppression complète du mode démo** (fonction `seed_demo_data`, données démo, colonne `is_demo`) ;
+    `0020` correctif contrainte `support_messages.author_type` (accepte `client`/`user`/`admin`) ; `0021` index FK.
 - **Toute** modif de schéma = **nouveau fichier** `00XX_description.sql` (jamais éditer un ancien).
 - Application : via l'outil MCP Supabase `apply_migration` (préféré, l'enregistre dans le ledger),
   sinon coller le SQL dans **Supabase → SQL Editor** (le lien direct :
@@ -88,6 +93,30 @@ suppression d'un projet/déploiement, changement d'une cible d'infra). Là on pr
 - Server Actions par domaine dans `src/lib/actions/`. Retour standard `ActionResult` + `ActionForm`.
 - Notifications = **in-app uniquement** (pas de Resend/email en V1).
 
+### ⭐ Évolutions majeures (série de modifications, migrations 0015→0021)
+- **Mode démo SUPPRIMÉ** : plus de route `/demo`, bouton, `seed_demo_data`, `is_demo`, ni `resetDemo`/`enterDemo`.
+  `bootstrap.mjs` ne crée plus que le Super Admin. Les espaces de test se créent via l'inscription normale.
+- **Factures & Contrats = STOCKAGE (pas de génération)** : ce sont des fichiers dans la table `documents`
+  (colonne `category` = `invoice`/`contract`/`photo`/`other`, `entity_type='client'`), importés depuis la fiche
+  client (`ClientFiles`), bucket privé + RLS `documents.manage`. Les générateurs `/app/invoices` et `/app/contracts`
+  et leurs actions ont été **supprimés** (tables `invoices`/`contracts` conservées mais non alimentées par l'UI).
+- **Liens prestation↔contrat/facture** : `services.contract_document_id` / `services.invoice_document_id`
+  (+ sur `service_series`, propagés) → « Contrat lié » / « Facture liée » (sinon « Aucun … associé »).
+- **Fiche client** : champs d'accès structurés (`access_portal_code`, `access_code`, `access_details` + `notes`),
+  et **suppression définitive** (`deleteClientPermanently`, permission `clients.delete`) qui nettoie documents +
+  fichiers du bucket + notifications/journal, puis cascade FK. Bouton « Supprimer totalement » (confirmation forte).
+- **Tâches — confidentialité (RLS 0017)** : visible si créateur OU destinataire OU (admin ET tâche professionnelle).
+  Un membre crée ses tâches perso ; l'attribution reste `tasks.manage`. Page `/app/tasks` = Mes tâches / Tâches
+  attribuées / Notes d'équipe. **`team_notes`** = communication d'équipe (suppression : auteur OU gérant).
+- **Portail client** : fiche d'intervention `/portal/[token]/service/[id]` (type, date, statut, tâches prévues,
+  intervenant photo+nom [+tél si `settings.portal_share_assignee_phone`], contact gérant, message d'accueil).
+  **`service_client_notes`** : le client ajoute une note / « information importante » (écriture service_role,
+  portée dérivée de la session portail), visible par l'équipe (fiche prestation) + notification.
+- **Carte** : marqueur SVG personnalisé (goutte/piscine, couleurs Piscine Island, teinté par statut, jamais rouge).
+- **Prestations** : nom du prestataire affiché dans la liste ; bouton « Démarrer » retiré (seulement « Terminer ») ;
+  « Durée estimée » ; aide « Chaque retour à la ligne crée une nouvelle tâche ☑️ » sous les tâches d'entretien.
+- **Navigation** : entrées « Piscines », « Factures », « Contrats » retirées du menu (données pools conservées).
+
 ### Module « Assistance » (support intégré) — migration `0013`
 - **But** : le client final contacte le support Piscine Island depuis le **portail client**.
   Flux `Client (portail) → Supabase → Super Admin → réponse → Client`. Aucun WhatsApp, aucun Resend.
@@ -105,8 +134,9 @@ suppression d'un projet/déploiement, changement d'une cible d'infra). Là on pr
   Lecture globale via `src/lib/assistance-admin.ts` ; actions `src/lib/actions/superadmin-assistance.ts`.
 - **Constantes partagées** : `src/lib/assistance.ts` (catégories/statuts/placeholders — extensible).
 - **Journal** : événements (`support_conversation_created`, `support_message_sent`, `support_reply_sent`,
-  `support_status_changed`) écrits dans `activity_logs`. **Démo** : `seed_demo_data` crée 3 conversations
-  réalistes (bug/aide/suggestion) et les réinitialise avec la démo.
+  `support_status_changed`) écrits dans `activity_logs`.
+- **Note (0014/0020)** : `support_messages.author_type` accepte `client`/`user`/`admin` (0014 appliquée en base
+  hors dépôt avait restreint à `user`/`admin`, cassant l'insert portail ; corrigé en `0020`).
 
 ## 7. Pièges déjà rencontrés (à connaître)
 - **RLS & fonctions** : migration `0009` a révoqué l'EXECUTE (anon/authenticated) sur les fonctions
@@ -117,20 +147,20 @@ suppression d'un projet/déploiement, changement d'une cible d'infra). Là on pr
 - **Vercel / Next.js** : le preset doit être Next.js — forcé via `vercel.json`
   (`framework/buildCommand/outputDirectory`). Sinon build « No Output Directory named public ».
 - **Middleware** : tolérant si `NEXT_PUBLIC_SUPABASE_URL/ANON_KEY` absents (évite un 500 global).
-- **Variables Vercel** : à cocher pour **Production + Preview + Development**. Le bouton « Démo »
-  a besoin des variables `DEMO_*` ; sinon utiliser la connexion classique avec le code entreprise démo.
+- **Variables Vercel** : à cocher pour **Production + Preview + Development**. Les variables `DEMO_*`
+  ne sont plus utilisées (mode démo supprimé) et peuvent être retirées de Vercel.
 - **Auth Supabase** : e-mail **unique au global** → en V1 un e-mail = un seul workspace.
-- Le workspace démo (`is_demo = true`) se réinitialise via la fonction `seed_demo_data()` /
-  bouton « Réinitialiser la démo » ; `seed_demo_data` refuse tout workspace non-démo.
+- **Mode démo supprimé** : ne plus référencer `seed_demo_data`, `is_demo`, ni de workspace de démonstration.
 
 ## 8. Commandes
 - `npm run dev` · `npm run build` · `npm run test` · `npm run typecheck`
 - `npm run bootstrap` : (re)crée Super Admin + workspace démo (nécessite les variables `.env`).
 
 ## 9. État actuel
-V1 complète, **déployée et fonctionnelle** en production. Base Supabase créée, migrée (0001→0010),
-sécurisée, avec Super Admin + démo peuplés. Reste (optionnel) : changer le mot de passe Super Admin,
-supprimer l'ancien projet Vercel `piscineisland-logiciel` + sa base, brancher un domaine perso.
+V1 complète, **déployée et fonctionnelle** en production. Base Supabase créée, migrée (0001→0021),
+sécurisée, avec Super Admin. **Mode démo entièrement retiré** (code + base). Reste (optionnel) :
+changer le mot de passe Super Admin, supprimer l'ancien projet Vercel `piscineisland-logiciel` + sa base,
+retirer les variables `DEMO_*` de Vercel, brancher un domaine perso.
 
 ## 10. Évolutions prévues (non codées — architecture prête)
 Forfaits/abonnements, essai 14 j, paiement, e-mails (Resend), assistant IA, monitoring.

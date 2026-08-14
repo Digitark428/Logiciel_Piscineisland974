@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requirePermission, can } from "@/lib/auth/context";
 import { createClient } from "@/lib/supabase/server";
+import { signedUrl } from "@/lib/storage";
 import { PageHeader, Card, EmptyState, Badge, Avatar } from "@/components/ui";
 import { clientName, memberName, formatDate, formatTime, SERVICE_STATUS_LABELS } from "@/lib/utils/format";
 
@@ -30,6 +31,18 @@ export default async function ServicesPage({ searchParams }: { searchParams: { f
   if (!ctx.isAdmin) query = query.eq("assigned_membership_id", ctx.membership.id);
 
   const { data: services } = await query;
+
+  // Signe (une fois par photo) les avatars des intervenants pour les afficher dans la liste.
+  const photoPaths = Array.from(
+    new Set(((services ?? []) as any[]).map((s) => s.assignee?.photo_path).filter(Boolean)),
+  ) as string[];
+  const avatarByPath = new Map<string, string>();
+  await Promise.all(
+    photoPaths.map(async (p) => {
+      const url = await signedUrl("avatars", p);
+      if (url) avatarByPath.set(p, url);
+    }),
+  );
 
   return (
     <div>
@@ -64,8 +77,15 @@ export default async function ServicesPage({ searchParams }: { searchParams: { f
                     <div className="truncate text-sm text-graphite-500">{s.service_type ?? "Prestation"} · {s.code}</div>
                   </div>
                   {s.assignee && (
-                    <div className="hidden sm:block" title={memberName(s.assignee)}>
-                      <Avatar name={memberName(s.assignee)} size={30} />
+                    <div className="hidden items-center gap-2 sm:flex" title={memberName(s.assignee)}>
+                      <Avatar
+                        name={memberName(s.assignee)}
+                        size={30}
+                        src={s.assignee.photo_path ? avatarByPath.get(s.assignee.photo_path) : undefined}
+                      />
+                      <span className="max-w-[9rem] truncate text-sm font-medium text-graphite-700">
+                        {memberName(s.assignee)}
+                      </span>
                     </div>
                   )}
                   <Badge tone={s.status}>{SERVICE_STATUS_LABELS[s.status]}</Badge>

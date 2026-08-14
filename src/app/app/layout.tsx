@@ -36,7 +36,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       userName={memberName(ctx.membership)}
       avatarUrl={avatarUrl}
       roleLabel={ctx.isAdmin ? "Gérant" : "Membre"}
-      isDemo={ctx.workspace.is_demo}
       notifCount={count ?? 0}
     >
       {children}

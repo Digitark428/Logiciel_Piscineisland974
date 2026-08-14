@@ -123,12 +123,17 @@ export default async function PortalPage({ params }: { params: { token: string }
           ) : (
             <ul className="divide-y divide-graphite-100">
               {upcoming.map((s) => (
-                <li key={s.id} className="flex items-center justify-between py-3">
-                  <div>
-                    <div className="font-medium text-graphite-900">{s.service_type ?? "Intervention"}</div>
-                    <div className="text-sm text-graphite-500">{formatDate(s.scheduled_date)}</div>
-                  </div>
-                  <span className="badge bg-pool-50 text-pool-700">{SERVICE_STATUS_LABELS[s.status]}</span>
+                <li key={s.id}>
+                  <a href={`/portal/${token}/service/${s.id}`} className="-mx-2 flex items-center justify-between rounded-lg px-2 py-3 hover:bg-graphite-50">
+                    <div>
+                      <div className="font-medium text-graphite-900">{s.service_type ?? "Intervention"}</div>
+                      <div className="text-sm text-graphite-500">{formatDate(s.scheduled_date)}</div>
+                    </div>
+                    <span className="flex items-center gap-2">
+                      <span className="badge bg-pool-50 text-pool-700">{SERVICE_STATUS_LABELS[s.status]}</span>
+                      <span className="text-graphite-300">›</span>
+                    </span>
+                  </a>
                 </li>
               ))}
             </ul>
@@ -154,9 +159,11 @@ export default async function PortalPage({ params }: { params: { token: string }
             <h2 className="mb-4 text-lg font-semibold text-graphite-900">Historique</h2>
             <ul className="divide-y divide-graphite-100">
               {past.slice(0, 10).map((s) => (
-                <li key={s.id} className="flex items-center justify-between py-2.5 text-sm">
-                  <span className="text-graphite-700">{formatDate(s.scheduled_date)} · {s.service_type ?? "Intervention"}</span>
-                  <span className="badge bg-emerald-50 text-emerald-700">{SERVICE_STATUS_LABELS[s.status]}</span>
+                <li key={s.id}>
+                  <a href={`/portal/${token}/service/${s.id}`} className="-mx-2 flex items-center justify-between rounded-lg px-2 py-2.5 text-sm hover:bg-graphite-50">
+                    <span className="text-graphite-700">{formatDate(s.scheduled_date)} · {s.service_type ?? "Intervention"}</span>
+                    <span className="badge bg-emerald-50 text-emerald-700">{SERVICE_STATUS_LABELS[s.status]}</span>
+                  </a>
                 </li>
               ))}
             </ul>

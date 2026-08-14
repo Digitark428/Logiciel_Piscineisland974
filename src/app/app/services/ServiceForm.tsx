@@ -9,17 +9,20 @@ import { cn } from "@/lib/utils/cn";
 
 interface Opt { id: string; label: string }
 interface PoolOpt { id: string; label: string; client_id: string }
+interface DocOpt { id: string; label: string; client_id: string; category: "contract" | "invoice" }
 
 export function ServiceForm({
   clients,
   pools,
   members,
+  documents = [],
   defaultClientId,
   defaultPoolId,
 }: {
   clients: Opt[];
   pools: PoolOpt[];
   members: Opt[];
+  documents?: DocOpt[];
   defaultClientId?: string;
   defaultPoolId?: string;
 }) {
@@ -31,6 +34,14 @@ export function ServiceForm({
   const clientPools = useMemo(
     () => pools.filter((p) => p.client_id === clientId),
     [pools, clientId],
+  );
+  const clientContracts = useMemo(
+    () => documents.filter((d) => d.client_id === clientId && d.category === "contract"),
+    [documents, clientId],
+  );
+  const clientInvoices = useMemo(
+    () => documents.filter((d) => d.client_id === clientId && d.category === "invoice"),
+    [documents, clientId],
   );
 
   const today = new Date().toISOString().slice(0, 10);
@@ -93,7 +104,26 @@ export function ServiceForm({
               {members.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
             </select>
           </div>
+          <div>
+            <label className="label" htmlFor="contract_document_id">Contrat lié</label>
+            <select id="contract_document_id" name="contract_document_id" className="input" disabled={!clientId}>
+              <option value="">Aucun contrat associé</option>
+              {clientContracts.map((d) => <option key={d.id} value={d.id}>{d.label}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="label" htmlFor="invoice_document_id">Facture liée</label>
+            <select id="invoice_document_id" name="invoice_document_id" className="input" disabled={!clientId}>
+              <option value="">Aucune facture associée</option>
+              {clientInvoices.map((d) => <option key={d.id} value={d.id}>{d.label}</option>)}
+            </select>
+          </div>
         </div>
+        {clientId && clientContracts.length === 0 && clientInvoices.length === 0 && (
+          <p className="mt-3 text-xs text-graphite-400">
+            Astuce : importez d'abord un contrat ou une facture dans la fiche du client pour pouvoir les lier ici.
+          </p>
+        )}
       </div>
 
       {/* Dates */}
@@ -109,8 +139,8 @@ export function ServiceForm({
               <input id="scheduled_time" name="scheduled_time" type="time" className="input" />
             </div>
             <div>
-              <label className="label" htmlFor="duration_min">Durée (min)</label>
-              <input id="duration_min" name="duration_min" inputMode="numeric" className="input" placeholder="60" />
+              <label className="label" htmlFor="duration_min">Durée estimée (min)</label>
+              <input id="duration_min" name="duration_min" inputMode="numeric" className="input" placeholder="90" />
             </div>
           </div>
         ) : (
@@ -161,8 +191,8 @@ export function ServiceForm({
                     <input id="scheduled_time_m" name="scheduled_time" type="time" className="input" />
                   </div>
                   <div>
-                    <label className="label" htmlFor="duration_min_m">Durée (min)</label>
-                    <input id="duration_min_m" name="duration_min" inputMode="numeric" className="input" placeholder="60" />
+                    <label className="label" htmlFor="duration_min_m">Durée estimée (min)</label>
+                    <input id="duration_min_m" name="duration_min" inputMode="numeric" className="input" placeholder="90" />
                   </div>
                 </div>
               </div>
@@ -175,9 +205,9 @@ export function ServiceForm({
       <div className="card p-6">
         <div className="grid gap-4">
           <div>
-            <label className="label" htmlFor="tasks">Tâches d'entretien (une par ligne)</label>
-            <textarea id="tasks" name="tasks" rows={4} className="input" placeholder={"Analyse de l'eau\nNettoyage filtre\nContrôle pH / chlore"} />
-            <p className="mt-1 text-xs text-graphite-400">Appliquées à chaque prestation générée.</p>
+            <label className="label" htmlFor="tasks">Tâches d'entretien</label>
+            <textarea id="tasks" name="tasks" rows={4} className="input" placeholder={"Analyse de l'eau\nNettoyage du bassin\nVérification du filtre\nContrôle du niveau d'eau"} />
+            <p className="mt-1 text-[0.8rem] italic text-graphite-400">Chaque retour à la ligne crée une nouvelle tâche ☑️</p>
           </div>
           <div>
             <label className="label" htmlFor="notes">Commentaires</label>

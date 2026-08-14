@@ -2,9 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requirePermission, can } from "@/lib/auth/context";
 import { createClient } from "@/lib/supabase/server";
+import { signedUrl } from "@/lib/storage";
 import { Card, Badge, Avatar } from "@/components/ui";
 import { StatusActions, TasksChecklist, ReportForm, GoThereButton } from "./ServiceControls";
-import { clientName, memberName, formatDate, formatTime, SERVICE_STATUS_LABELS } from "@/lib/utils/format";
+import { clientName, memberName, formatDate, formatTime, formatDuration, SERVICE_STATUS_LABELS } from "@/lib/utils/format";
 import type { ServiceTask } from "@/lib/db/types";
 
 export default async function ServiceDetailPage({ params }: { params: { id: string } }) {
@@ -31,9 +32,33 @@ export default async function ServiceDetailPage({ params }: { params: { id: stri
     .eq("workspace_id", ctx.workspace.id)
     .order("position");
 
+  const { data: clientNotes } = await supabase
+    .from("service_client_notes")
+    .select("id, content, is_important, created_at")
+    .eq("service_id", service.id)
+    .eq("workspace_id", ctx.workspace.id)
+    .order("created_at", { ascending: false });
+
   const client = (service as any).client;
   const pool = (service as any).pool;
   const assignee = (service as any).assignee;
+
+  // Documents liés (contrat / facture) — noms + URL signée de consultation.
+  const linkedIds = [service.contract_document_id, service.invoice_document_id].filter(Boolean) as string[];
+  let contractDoc: { name: string; url: string | null } | null = null;
+  let invoiceDoc: { name: string; url: string | null } | null = null;
+  if (linkedIds.length > 0) {
+    const { data: linkedDocs } = await supabase
+      .from("documents")
+      .select("id, name, storage_path")
+      .in("id", linkedIds)
+      .eq("workspace_id", ctx.workspace.id);
+    const byId = new Map((linkedDocs ?? []).map((d: any) => [d.id, d]));
+    const cd = service.contract_document_id ? byId.get(service.contract_document_id) : null;
+    const idoc = service.invoice_document_id ? byId.get(service.invoice_document_id) : null;
+    if (cd) contractDoc = { name: cd.name, url: await signedUrl("documents", cd.storage_path) };
+    if (idoc) invoiceDoc = { name: idoc.name, url: await signedUrl("documents", idoc.storage_path) };
+  }
 
   const address =
     [pool?.address_line1, pool?.postal_code, pool?.city].filter(Boolean).join(", ") ||
@@ -90,6 +115,23 @@ export default async function ServiceDetailPage({ params }: { params: { id: stri
             <TasksChecklist serviceId={service.id} tasks={(tasks ?? []) as ServiceTask[]} editable={canComplete} />
           </Card>
 
+          {(clientNotes ?? []).length > 0 && (
+            <Card>
+              <h2 className="mb-4 text-lg font-semibold text-graphite-900">Notes du client</h2>
+              <ul className="space-y-3">
+                {(clientNotes ?? []).map((n: any) => (
+                  <li key={n.id} className={`rounded-lg p-3 ${n.is_important ? "bg-amber-50 ring-1 ring-amber-200" : "bg-graphite-50"}`}>
+                    <div className="flex items-center gap-2 text-xs text-graphite-400">
+                      <span>Note du client — {formatDate(n.created_at)}</span>
+                      {n.is_important && <span className="badge bg-amber-100 text-amber-800">Information importante</span>}
+                    </div>
+                    <p className="mt-1 whitespace-pre-wrap text-sm text-graphite-800">{n.content}</p>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          )}
+
           <Card>
             <h2 className="mb-4 text-lg font-semibold text-graphite-900">Compte-rendu</h2>
             {canComplete ? (
@@ -110,6 +152,36 @@ export default async function ServiceDetailPage({ params }: { params: { id: stri
           </Card>
 
           <Card>
+            <h2 className="mb-3 text-base font-semibold text-graphite-900">Suivi</h2>
+            <dl className="space-y-3 text-sm">
+              <div>
+                <dt className="text-xs uppercase tracking-wide text-graphite-400">Contrat lié</dt>
+                <dd className="mt-0.5 text-graphite-800">
+                  {contractDoc ? (
+                    contractDoc.url ? (
+                      <a href={contractDoc.url} target="_blank" rel="noopener noreferrer" className="text-pool-700 hover:underline">{contractDoc.name}</a>
+                    ) : contractDoc.name
+                  ) : (
+                    <span className="text-graphite-400">Aucun contrat associé</span>
+                  )}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs uppercase tracking-wide text-graphite-400">Facture liée</dt>
+                <dd className="mt-0.5 text-graphite-800">
+                  {invoiceDoc ? (
+                    invoiceDoc.url ? (
+                      <a href={invoiceDoc.url} target="_blank" rel="noopener noreferrer" className="text-pool-700 hover:underline">{invoiceDoc.name}</a>
+                    ) : invoiceDoc.name
+                  ) : (
+                    <span className="text-graphite-400">Aucune facture associée</span>
+                  )}
+                </dd>
+              </div>
+            </dl>
+          </Card>
+
+          <Card>
             <h2 className="mb-3 text-base font-semibold text-graphite-900">Détails</h2>
             <dl className="space-y-3 text-sm">
               <div>
@@ -124,8 +196,8 @@ export default async function ServiceDetailPage({ params }: { params: { id: stri
               </div>
               {service.duration_min && (
                 <div>
-                  <dt className="text-xs uppercase tracking-wide text-graphite-400">Durée</dt>
-                  <dd className="mt-0.5 text-graphite-800">{service.duration_min} min</dd>
+                  <dt className="text-xs uppercase tracking-wide text-graphite-400">Durée estimée</dt>
+                  <dd className="mt-0.5 text-graphite-800">{formatDuration(service.duration_min)}</dd>
                 </div>
               )}
               {service.notes && (

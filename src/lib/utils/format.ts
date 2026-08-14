@@ -42,9 +42,36 @@ export function formatDateTime(iso: string | null | undefined): string {
   return `${formatDate(iso)} à ${time}`;
 }
 
+/** Temps relatif court en français : « à l'instant », « il y a 2 h », « il y a 3 j ». */
+export function formatRelative(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return "";
+  const diff = Date.now() - then;
+  const min = Math.floor(diff / 60000);
+  if (min < 1) return "à l'instant";
+  if (min < 60) return `il y a ${min} min`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `il y a ${h} h`;
+  const d = Math.floor(h / 24);
+  if (d < 7) return `il y a ${d} j`;
+  return formatDate(iso);
+}
+
 export function formatTime(t: string | null | undefined): string {
   if (!t) return "";
   return t.slice(0, 5);
+}
+
+/** Formate une durée en minutes de façon lisible : 90 → « 1h30 », 60 → « 1h », 45 → « 45 min ». */
+export function formatDuration(minutes: number | null | undefined): string {
+  const m = minutes ?? 0;
+  if (m <= 0) return "—";
+  const h = Math.floor(m / 60);
+  const rest = m % 60;
+  if (h === 0) return `${rest} min`;
+  if (rest === 0) return `${h}h`;
+  return `${h}h${String(rest).padStart(2, "0")}`;
 }
 
 export function formatMoney(amount: number | null | undefined, currency = "EUR"): string {

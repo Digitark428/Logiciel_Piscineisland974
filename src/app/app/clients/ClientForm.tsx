@@ -54,17 +54,27 @@ export function ClientForm({ client }: { client?: Client }) {
       </div>
 
       <div className="card p-6">
-        <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-graphite-400">Informations complémentaires</h3>
-        <div className="space-y-4">
+        <h3 className="mb-1 text-sm font-semibold uppercase tracking-wide text-graphite-400">Informations d'accès</h3>
+        <p className="mb-4 text-xs text-graphite-400">Informations sensibles — visibles selon les permissions de l'équipe.</p>
+        <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="label" htmlFor="access_info">Informations d'accès (portail, code, chien…)</label>
-            <textarea id="access_info" name="access_info" rows={2} className="input" defaultValue={client?.access_info ?? ""} />
+            <label className="label" htmlFor="access_portal_code">Code portail</label>
+            <input id="access_portal_code" name="access_portal_code" className="input" defaultValue={client?.access_portal_code ?? ""} placeholder="Ex : 1234A" />
           </div>
           <div>
-            <label className="label" htmlFor="notes">Notes</label>
-            <textarea id="notes" name="notes" rows={3} className="input" defaultValue={client?.notes ?? ""} />
+            <label className="label" htmlFor="access_code">Code d'accès</label>
+            <input id="access_code" name="access_code" className="input" defaultValue={client?.access_code ?? ""} placeholder="Ex : B27" />
+          </div>
+          <div className="sm:col-span-2">
+            <label className="label" htmlFor="access_details">Autres informations</label>
+            <textarea id="access_details" name="access_details" rows={3} className="input" defaultValue={client?.access_details ?? ""} placeholder="Chien, emplacement du local technique, particularités d'accès…" />
           </div>
         </div>
+      </div>
+
+      <div className="card p-6">
+        <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-graphite-400">Note importante</h3>
+        <textarea id="notes" name="notes" rows={3} className="input" defaultValue={client?.notes ?? ""} placeholder="Information importante à retenir sur ce client…" />
       </div>
 
       <div className="flex justify-end">

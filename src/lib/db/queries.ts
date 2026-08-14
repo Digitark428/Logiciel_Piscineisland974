@@ -24,6 +24,23 @@ export async function getPoolOptions(supabase: SupabaseClient, workspaceId: stri
   return (data ?? []).map((p: any) => ({ id: p.id as string, label: p.name as string, client_id: p.client_id as string }));
 }
 
+/** Documents (contrats / factures) d'un workspace pour les sélecteurs de liaison prestation. */
+export async function getClientDocumentOptions(supabase: SupabaseClient, workspaceId: string) {
+  const { data } = await supabase
+    .from("documents")
+    .select("id, name, entity_id, category")
+    .eq("workspace_id", workspaceId)
+    .eq("entity_type", "client")
+    .in("category", ["contract", "invoice"])
+    .order("created_at", { ascending: false });
+  return (data ?? []).map((d: any) => ({
+    id: d.id as string,
+    label: d.name as string,
+    client_id: (d.entity_id ?? "") as string,
+    category: d.category as "contract" | "invoice",
+  }));
+}
+
 /** Options membre (id + libellé) pour l'assignation. */
 export async function getMemberOptions(supabase: SupabaseClient, workspaceId: string) {
   const { data } = await supabase

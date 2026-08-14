@@ -1,10 +1,9 @@
-// Bootstrap Piscine Island : crée le Super Admin + le workspace de démonstration.
+// Bootstrap Piscine Island : crée / met à jour le compte Super Admin.
 // Prérequis : migrations SQL déjà appliquées (voir README).
 // Usage : node scripts/bootstrap.mjs
 // Variables d'environnement requises (voir .env.example) :
 //   NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
-//   DEMO_MANAGER_EMAIL, DEMO_MANAGER_PASSWORD, DEMO_MEMBER_EMAIL, DEMO_MEMBER_PASSWORD
-//   SUPERADMIN_EMAIL, SUPERADMIN_PASSWORD (optionnel)
+//   SUPERADMIN_EMAIL, SUPERADMIN_PASSWORD
 
 import { createClient } from "@supabase/supabase-js";
 import { readFileSync } from "node:fs";
@@ -61,73 +60,6 @@ async function main() {
     console.log("ℹ️  SUPERADMIN_EMAIL/PASSWORD non fournis — Super Admin non créé.");
   }
 
-  // ---- Démo ----
-  const demoManagerEmail = process.env.DEMO_MANAGER_EMAIL;
-  const demoManagerPwd = process.env.DEMO_MANAGER_PASSWORD;
-  const demoMemberEmail = process.env.DEMO_MEMBER_EMAIL;
-  const demoMemberPwd = process.env.DEMO_MEMBER_PASSWORD;
-
-  if (!demoManagerEmail || !demoManagerPwd || !demoMemberEmail || !demoMemberPwd) {
-    console.log("ℹ️  Variables DEMO_* incomplètes — démo non créée.");
-    return;
-  }
-
-  const managerId = await ensureUser(demoManagerEmail, demoManagerPwd, { first_name: "Démo", last_name: "Gérant" });
-  const memberId = await ensureUser(demoMemberEmail, demoMemberPwd, { first_name: "Démo", last_name: "Membre" });
-
-  // Le workspace démo existe-t-il déjà (via son membership admin) ?
-  const { data: existingMembership } = await admin
-    .from("memberships")
-    .select("workspace_id, workspaces!inner(is_demo)")
-    .eq("user_id", managerId)
-    .maybeSingle();
-
-  let workspaceId = existingMembership?.workspace_id ?? null;
-
-  if (!workspaceId) {
-    const { data: prov, error } = await admin.rpc("provision_workspace", {
-      p_user_id: managerId,
-      p_company_name: "Piscine Island — Démo",
-      p_admin_first: "Démo",
-      p_admin_last: "Gérant",
-      p_admin_email: demoManagerEmail,
-      p_company: { city: "Saint-Denis", postal_code: "97400", phone: "0262 00 00 00" },
-      p_is_demo: true,
-      p_code_prefix: "DEMO",
-    });
-    if (error) throw new Error("provision_workspace: " + error.message);
-    workspaceId = (Array.isArray(prov) ? prov[0] : prov).workspace_id;
-    console.log("✅ Workspace démo créé :", workspaceId);
-  } else {
-    console.log("ℹ️  Workspace démo déjà présent :", workspaceId);
-  }
-
-  // Membre démo (idempotent)
-  const { data: memberMembership } = await admin
-    .from("memberships")
-    .select("id")
-    .eq("user_id", memberId)
-    .eq("workspace_id", workspaceId)
-    .maybeSingle();
-  if (!memberMembership) {
-    const { error } = await admin.rpc("provision_member", {
-      p_workspace_id: workspaceId,
-      p_user_id: memberId,
-      p_first: "Démo",
-      p_last: "Membre",
-      p_email: demoMemberEmail,
-      p_member_type: "employe",
-      p_role: "member",
-      p_permission_keys: ["clients.view", "pools.view", "services.view", "services.complete", "planning.view", "tasks.view", "documents.view"],
-    });
-    if (error) throw new Error("provision_member: " + error.message);
-    console.log("✅ Membre démo créé.");
-  }
-
-  // Données de démonstration
-  const { error: seedErr } = await admin.rpc("seed_demo_data", { p_workspace_id: workspaceId });
-  if (seedErr) throw new Error("seed_demo_data: " + seedErr.message);
-  console.log("✅ Données de démonstration générées.");
   console.log("\n🎉 Bootstrap terminé.");
 }
 

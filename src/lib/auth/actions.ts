@@ -156,7 +156,6 @@ export async function signUp(_prev: ActionResult, formData: FormData): Promise<A
       email: v.companyEmail || null,
       siret: v.siret,
     },
-    p_is_demo: false,
     p_code_prefix: v.companyName.slice(0, 3),
   });
 

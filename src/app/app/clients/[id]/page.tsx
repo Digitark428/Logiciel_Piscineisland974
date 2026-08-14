@@ -2,15 +2,15 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requirePermission, can } from "@/lib/auth/context";
 import { createClient } from "@/lib/supabase/server";
+import { signedUrl, signedDownloadUrl } from "@/lib/storage";
 import { Card, Badge, Avatar } from "@/components/ui";
 import { ClientPortalCard } from "./ClientPortalCard";
-import { ArchiveButton } from "./ClientActions";
+import { ArchiveButton, DeleteClientButton } from "./ClientActions";
+import { ClientFiles, type FileEntry } from "./ClientFiles";
 import {
   clientName,
   formatDate,
-  formatMoney,
   SERVICE_STATUS_LABELS,
-  INVOICE_STATUS_LABELS,
 } from "@/lib/utils/format";
 
 export default async function ClientDetailPage({ params }: { params: { id: string } }) {
@@ -25,25 +25,39 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
     .maybeSingle();
   if (!client) notFound();
 
-  const [poolsRes, servicesRes, contractsRes, invoicesRes] = await Promise.all([
+  const canViewDocs = can(ctx, "documents.view");
+  const [poolsRes, servicesRes, docsRes] = await Promise.all([
     supabase.from("pools").select("id, name, pool_type, city, water_treatment").eq("client_id", client.id).eq("workspace_id", ctx.workspace.id),
     supabase.from("services").select("id, code, scheduled_date, status, service_type").eq("client_id", client.id).eq("workspace_id", ctx.workspace.id).order("scheduled_date", { ascending: false }).limit(10),
-    can(ctx, "contracts.manage")
-      ? supabase.from("contracts").select("id, title, status, amount, end_date").eq("client_id", client.id).eq("workspace_id", ctx.workspace.id)
-      : Promise.resolve({ data: [] as any[] }),
-    can(ctx, "invoices.manage")
-      ? supabase.from("invoices").select("id, number, status, total, issue_date").eq("client_id", client.id).eq("workspace_id", ctx.workspace.id).order("issue_date", { ascending: false })
+    canViewDocs
+      ? supabase.from("documents").select("id, name, size_bytes, created_at, storage_path, category").eq("workspace_id", ctx.workspace.id).eq("entity_type", "client").eq("entity_id", client.id).order("created_at", { ascending: false })
       : Promise.resolve({ data: [] as any[] }),
   ]);
 
   const pools = poolsRes.data ?? [];
   const services = servicesRes.data ?? [];
-  const contracts = contractsRes.data ?? [];
-  const invoices = invoicesRes.data ?? [];
   const name = clientName(client);
   const canSensitive = can(ctx, "sensitive.view");
+  const canManageDocs = can(ctx, "documents.manage");
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
   const portalUrl = client.portal_token ? `${appUrl}/portal/${client.portal_token}` : null;
+
+  // Documents du client (factures / contrats / autres), avec URLs signées consultation + téléchargement.
+  const docRows = (docsRes.data ?? []) as any[];
+  const signedDocs: (FileEntry & { category: string })[] = await Promise.all(
+    docRows.map(async (d) => ({
+      id: d.id,
+      name: d.name,
+      size_bytes: d.size_bytes,
+      created_at: d.created_at,
+      category: d.category ?? "other",
+      viewUrl: await signedUrl("documents", d.storage_path),
+      downloadUrl: await signedDownloadUrl("documents", d.storage_path, d.name),
+    })),
+  );
+  const invoiceDocs = signedDocs.filter((d) => d.category === "invoice");
+  const contractDocs = signedDocs.filter((d) => d.category === "contract");
+  const otherDocs = signedDocs.filter((d) => d.category !== "invoice" && d.category !== "contract");
 
   return (
     <div>
@@ -61,9 +75,10 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
           </div>
         </div>
         {can(ctx, "clients.edit") && (
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Link href={`/app/clients/${client.id}/edit`} className="btn-secondary">Modifier</Link>
             {can(ctx, "clients.delete") && <ArchiveButton clientId={client.id} archived={client.status === "archived"} />}
+            {can(ctx, "clients.delete") && <DeleteClientButton clientId={client.id} />}
           </div>
         )}
       </div>
@@ -78,8 +93,10 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
               <Info label="E-mail" value={client.email} />
               <Info label="Adresse" value={[client.address_line1, client.address_line2].filter(Boolean).join(", ")} />
               <Info label="Ville" value={[client.postal_code, client.city].filter(Boolean).join(" ")} />
-              {canSensitive && <Info label="Informations d'accès" value={client.access_info} full />}
-              <Info label="Notes" value={client.notes} full />
+              {canSensitive && <Info label="Code portail" value={client.access_portal_code} />}
+              {canSensitive && <Info label="Code d'accès" value={client.access_code} />}
+              {canSensitive && <Info label="Autres informations d'accès" value={client.access_details} full />}
+              <Info label="Note importante" value={client.notes} full />
             </dl>
           </Card>
 
@@ -135,39 +152,39 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
             )}
           </Card>
 
-          {(can(ctx, "invoices.manage") || can(ctx, "contracts.manage")) && (
+          {canViewDocs && (
             <div className="grid gap-6 sm:grid-cols-2">
-              {can(ctx, "contracts.manage") && (
-                <Card>
-                  <h2 className="mb-3 text-base font-semibold text-graphite-900">Contrats</h2>
-                  {contracts.length === 0 ? <p className="text-sm text-graphite-400">Aucun.</p> : (
-                    <ul className="space-y-2 text-sm">
-                      {contracts.map((c) => (
-                        <li key={c.id} className="flex items-center justify-between">
-                          <span className="truncate text-graphite-800">{c.title}</span>
-                          <Badge tone={c.status}>{c.status}</Badge>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </Card>
-              )}
-              {can(ctx, "invoices.manage") && (
-                <Card>
-                  <h2 className="mb-3 text-base font-semibold text-graphite-900">Factures</h2>
-                  {invoices.length === 0 ? <p className="text-sm text-graphite-400">Aucune.</p> : (
-                    <ul className="space-y-2 text-sm">
-                      {invoices.map((i) => (
-                        <li key={i.id}>
-                          <Link href={`/app/invoices/${i.id}`} className="flex items-center justify-between hover:text-pool-700">
-                            <span className="text-graphite-800">{i.number} · {formatMoney(i.total)}</span>
-                            <Badge tone={i.status}>{INVOICE_STATUS_LABELS[i.status]}</Badge>
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </Card>
+              <ClientFiles
+                title="Contrats"
+                category="contract"
+                clientId={client.id}
+                entries={contractDocs}
+                canManage={canManageDocs}
+                nameLabel="Nom du contrat"
+                namePlaceholder="Ex : Contrat entretien annuel 2026"
+                emptyLabel="Aucun contrat. Importez un document existant."
+              />
+              <ClientFiles
+                title="Factures"
+                category="invoice"
+                clientId={client.id}
+                entries={invoiceDocs}
+                canManage={canManageDocs}
+                nameLabel="Nom de la facture"
+                namePlaceholder="Ex : Facture août 2026"
+                emptyLabel="Aucune facture. Importez un document existant."
+              />
+              {(otherDocs.length > 0 || canManageDocs) && (
+                <div className="sm:col-span-2">
+                  <ClientFiles
+                    title="Autres documents"
+                    category="other"
+                    clientId={client.id}
+                    entries={otherDocs}
+                    canManage={canManageDocs}
+                    emptyLabel="Aucun autre document."
+                  />
+                </div>
               )}
             </div>
           )}

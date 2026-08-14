@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import "leaflet/dist/leaflet.css";
-import type { Map as LeafletMap, CircleMarker, LayerGroup } from "leaflet";
+import type { Map as LeafletMap, Marker, LayerGroup, DivIcon } from "leaflet";
 
 export interface MapPoint {
   id: string;
@@ -40,6 +40,24 @@ const STATUS_LABELS: Record<MapPoint["status"], string> = {
   completed: "Terminée",
   cancelled: "Annulée",
 };
+
+// Marqueur personnalisé « goutte d'eau / piscine » aux couleurs de Piscine Island,
+// teinté selon le statut (jamais rouge). Épingle SVG + petite vague à l'intérieur.
+function markerHtml(status: MapPoint["status"]): string {
+  const color = STATUS_COLORS[status];
+  return `
+    <div style="position:relative;width:34px;height:44px;filter:drop-shadow(0 2px 3px rgba(15,23,42,.35))">
+      <svg width="34" height="44" viewBox="0 0 34 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M17 1C8.7 1 2 7.6 2 15.7 2 26 17 43 17 43s15-17 15-27.3C32 7.6 25.3 1 17 1z"
+              fill="${color}" stroke="#ffffff" stroke-width="2"/>
+        <circle cx="17" cy="15.5" r="8.5" fill="#ffffff"/>
+        <path d="M9.5 16.2c1 0 1-.9 2.1-.9s1.1.9 2.1.9 1-.9 2.1-.9 1.1.9 2.1.9 1-.9 2.1-.9 1.1.9 2.1.9"
+              stroke="${color}" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+        <path d="M9.5 19.4c1 0 1-.9 2.1-.9s1.1.9 2.1.9 1-.9 2.1-.9 1.1.9 2.1.9 1-.9 2.1-.9 1.1.9 2.1.9"
+              stroke="${color}" stroke-width="1.6" stroke-linecap="round" fill="none" opacity=".55"/>
+      </svg>
+    </div>`;
+}
 
 function popupHtml(p: MapPoint): string {
   const wazeUrl = `https://waze.com/ul?ll=${p.lat},${p.lng}&navigate=yes`;
@@ -125,15 +143,24 @@ export function ServiceMap({
     const layer = layerRef.current;
     if (!map || !layer) return;
     layer.clearLayers();
-    const markers: CircleMarker[] = [];
+    const iconCache = new Map<string, DivIcon>();
+    const icon = (status: MapPoint["status"]) => {
+      let ic = iconCache.get(status);
+      if (!ic) {
+        ic = L.divIcon({
+          html: markerHtml(status),
+          className: "piscine-marker",
+          iconSize: [34, 44],
+          iconAnchor: [17, 43],
+          popupAnchor: [0, -38],
+        });
+        iconCache.set(status, ic);
+      }
+      return ic;
+    };
+    const markers: Marker[] = [];
     for (const p of filtered) {
-      const marker = L.circleMarker([p.lat, p.lng], {
-        radius: 9,
-        color: "#ffffff",
-        weight: 2,
-        fillColor: STATUS_COLORS[p.status],
-        fillOpacity: 0.95,
-      });
+      const marker = L.marker([p.lat, p.lng], { icon: icon(p.status) });
       marker.bindPopup(popupHtml(p));
       marker.addTo(layer);
       markers.push(marker);

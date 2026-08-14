@@ -9,19 +9,24 @@ import type { Service } from "@/lib/db/types";
 
 interface Opt { id: string; label: string }
 interface PoolOpt { id: string; label: string; client_id: string }
+interface DocOpt { id: string; label: string; client_id: string; category: "contract" | "invoice" }
 
 export function ServiceEditForm({
   service,
   members,
   pools,
+  documents = [],
 }: {
   service: Service;
   members: Opt[];
   pools: PoolOpt[];
+  documents?: DocOpt[];
 }) {
   const [pending, start] = useTransition();
   const router = useRouter();
   const clientPools = pools.filter((p) => p.client_id === service.client_id);
+  const clientContracts = documents.filter((d) => d.category === "contract");
+  const clientInvoices = documents.filter((d) => d.category === "invoice");
 
   return (
     <>
@@ -49,7 +54,7 @@ export function ServiceEditForm({
               <input id="scheduled_time" name="scheduled_time" type="time" className="input" defaultValue={service.scheduled_time ?? ""} />
             </div>
             <div>
-              <label className="label" htmlFor="duration_min">Durée (min)</label>
+              <label className="label" htmlFor="duration_min">Durée estimée (min)</label>
               <input id="duration_min" name="duration_min" inputMode="numeric" className="input" defaultValue={service.duration_min ?? ""} />
             </div>
             <div>
@@ -57,6 +62,20 @@ export function ServiceEditForm({
               <select id="assigned_membership_id" name="assigned_membership_id" className="input" defaultValue={service.assigned_membership_id ?? ""}>
                 <option value="">—</option>
                 {members.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="label" htmlFor="contract_document_id">Contrat lié</label>
+              <select id="contract_document_id" name="contract_document_id" className="input" defaultValue={service.contract_document_id ?? ""}>
+                <option value="">Aucun contrat associé</option>
+                {clientContracts.map((d) => <option key={d.id} value={d.id}>{d.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="label" htmlFor="invoice_document_id">Facture liée</label>
+              <select id="invoice_document_id" name="invoice_document_id" className="input" defaultValue={service.invoice_document_id ?? ""}>
+                <option value="">Aucune facture associée</option>
+                {clientInvoices.map((d) => <option key={d.id} value={d.id}>{d.label}</option>)}
               </select>
             </div>
             <div className="sm:col-span-2">

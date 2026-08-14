@@ -56,9 +56,8 @@ export async function setWorkspaceStatus(workspaceId: string, status: "active" |
 export async function deleteWorkspace(workspaceId: string, confirmName: string): Promise<ActionResult> {
   if (!(await assertSuperAdmin())) return fail("Non autorisé.");
   const admin = createAdminClient();
-  const { data: ws } = await admin.from("workspaces").select("name, is_demo").eq("id", workspaceId).maybeSingle();
+  const { data: ws } = await admin.from("workspaces").select("name").eq("id", workspaceId).maybeSingle();
   if (!ws) return fail("Espace introuvable.");
-  if (ws.is_demo) return fail("Le workspace de démonstration ne peut pas être supprimé ici (utilisez la réinitialisation).");
   if (confirmName.trim() !== ws.name) return fail("Le nom saisi ne correspond pas.");
 
   // Récupère les utilisateurs Auth du workspace pour les supprimer.

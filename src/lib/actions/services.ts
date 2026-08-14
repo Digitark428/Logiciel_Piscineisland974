@@ -73,6 +73,8 @@ export async function createService(_prev: ActionResult, formData: FormData): Pr
   const durationRaw = str(formData.get("duration_min"));
   const duration_min = durationRaw ? Number(durationRaw) : null;
   const assigned = str(formData.get("assigned_membership_id"));
+  const contract_document_id = str(formData.get("contract_document_id"));
+  const invoice_document_id = str(formData.get("invoice_document_id"));
   const notes = str(formData.get("notes"));
   const taskLines = String(formData.get("tasks") ?? "")
     .split("\n")
@@ -107,6 +109,8 @@ export async function createService(_prev: ActionResult, formData: FormData): Pr
           default_time: scheduled_time,
           default_duration_min: duration_min,
           assigned_membership_id: assigned,
+          contract_document_id,
+          invoice_document_id,
           notes,
         })
         .select("id")
@@ -127,6 +131,8 @@ export async function createService(_prev: ActionResult, formData: FormData): Pr
           default_time: scheduled_time,
           default_duration_min: duration_min,
           assigned_membership_id: assigned,
+          contract_document_id,
+          invoice_document_id,
           notes,
         })
         .select("id")
@@ -147,6 +153,8 @@ export async function createService(_prev: ActionResult, formData: FormData): Pr
     scheduled_time,
     duration_min,
     assigned_membership_id: assigned,
+    contract_document_id,
+    invoice_document_id,
     notes,
   }));
 
@@ -209,6 +217,8 @@ export async function updateService(_prev: ActionResult, formData: FormData): Pr
     duration_min: durationRaw ? Number(durationRaw) : null,
     assigned_membership_id: str(formData.get("assigned_membership_id")),
     pool_id: str(formData.get("pool_id")),
+    contract_document_id: str(formData.get("contract_document_id")),
+    invoice_document_id: str(formData.get("invoice_document_id")),
     notes: str(formData.get("notes")),
   };
   if (!payload.scheduled_date) return fail("La date est requise.");

@@ -34,7 +34,6 @@ export interface Workspace {
   legal_info: Record<string, unknown>;
   settings: Record<string, unknown>;
   status: WorkspaceStatus;
-  is_demo: boolean;
   plan: string;
   trial_ends_at: string | null;
   created_at: string;
@@ -73,6 +72,9 @@ export interface Client {
   city: string | null;
   country: string | null;
   access_info: string | null;
+  access_portal_code: string | null;
+  access_code: string | null;
+  access_details: string | null;
   notes: string | null;
   latitude: number | null;
   longitude: number | null;
@@ -127,6 +129,8 @@ export interface ServiceSeries {
   default_time: string | null;
   default_duration_min: number | null;
   assigned_membership_id: string | null;
+  contract_document_id: string | null;
+  invoice_document_id: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
@@ -145,6 +149,8 @@ export interface Service {
   scheduled_time: string | null;
   duration_min: number | null;
   assigned_membership_id: string | null;
+  contract_document_id: string | null;
+  invoice_document_id: string | null;
   status: ServiceStatus;
   notes: string | null;
   report: string | null;
@@ -224,6 +230,8 @@ export interface InvoiceLine {
   position: number;
 }
 
+export type DocumentCategory = "invoice" | "contract" | "photo" | "other";
+
 export interface DocumentRow {
   id: string;
   workspace_id: string;
@@ -233,7 +241,26 @@ export interface DocumentRow {
   size_bytes: number | null;
   entity_type: string;
   entity_id: string | null;
+  category: DocumentCategory;
   uploaded_by: string | null;
+  created_at: string;
+}
+
+export interface TeamNote {
+  id: string;
+  workspace_id: string;
+  author_membership_id: string | null;
+  content: string;
+  created_at: string;
+}
+
+export interface ServiceClientNote {
+  id: string;
+  workspace_id: string;
+  service_id: string;
+  client_id: string;
+  content: string;
+  is_important: boolean;
   created_at: string;
 }
 

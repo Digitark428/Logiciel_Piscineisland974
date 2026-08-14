@@ -7,7 +7,6 @@ import { Logo } from "@/components/Logo";
 import { Avatar } from "@/components/ui";
 import { Icon } from "./icons";
 import { signOut } from "@/lib/auth/actions";
-import { DemoReset } from "./DemoReset";
 import type { NavItem } from "./nav";
 import { cn } from "@/lib/utils/cn";
 
@@ -18,7 +17,6 @@ export function AppShell({
   userName,
   avatarUrl,
   roleLabel,
-  isDemo,
   notifCount,
   children,
 }: {
@@ -28,7 +26,6 @@ export function AppShell({
   userName: string;
   avatarUrl?: string | null;
   roleLabel: string;
-  isDemo: boolean;
   notifCount: number;
   children: React.ReactNode;
 }) {
@@ -103,12 +100,6 @@ export function AppShell({
           <button onClick={() => setOpen(true)} className="btn-ghost p-2 lg:hidden" aria-label="Menu">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
           </button>
-          {isDemo && (
-            <div className="flex items-center gap-2">
-              <span className="badge bg-amber-100 text-amber-800">Mode démo</span>
-              <DemoReset />
-            </div>
-          )}
           <div className="ml-auto flex items-center gap-2">
             <Link href="/app/notifications" className="relative btn-ghost p-2" aria-label="Notifications">
               <Icon name="bell" size={21} />

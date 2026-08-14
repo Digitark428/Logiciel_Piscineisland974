@@ -36,7 +36,6 @@ export default function HomePage() {
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link href="/signup" className="btn-primary px-6 py-3 text-base">Créer mon espace</Link>
             <Link href="/login" className="btn-secondary px-6 py-3 text-base">J'ai déjà un espace</Link>
-            <Link href="/demo" className="btn-ghost px-6 py-3 text-base">Essayer la démo →</Link>
           </div>
         </section>
 

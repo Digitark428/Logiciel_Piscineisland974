@@ -20,7 +20,7 @@ export function StatusActions({
   const router = useRouter();
   if (!canComplete) return null;
 
-  const run = (s: "in_progress" | "completed" | "planned") =>
+  const run = (s: "completed" | "planned") =>
     start(async () => {
       await setServiceStatus(serviceId, s);
       router.refresh();
@@ -28,9 +28,6 @@ export function StatusActions({
 
   return (
     <div className="flex flex-wrap gap-2">
-      {status === "planned" && (
-        <button disabled={pending} onClick={() => run("in_progress")} className="btn-primary">Démarrer la prestation</button>
-      )}
       {(status === "planned" || status === "in_progress") && (
         <button disabled={pending} onClick={() => run("completed")} className="btn-primary bg-emerald-600 hover:bg-emerald-700">
           ✓ Terminer la prestation

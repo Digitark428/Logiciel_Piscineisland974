@@ -4,6 +4,8 @@ import { z } from "zod";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { can } from "@/lib/auth/context";
 import { actionContext, logActivity } from "@/lib/actions/helpers";
 import { generatePortalToken, hashPrivateCode } from "@/lib/utils/codes";
 import { fail, ok, type ActionResult } from "@/lib/actions/result";
@@ -19,7 +21,9 @@ const schema = z.object({
   address_line2: z.string().optional(),
   postal_code: z.string().optional(),
   city: z.string().optional(),
-  access_info: z.string().optional(),
+  access_portal_code: z.string().optional(),
+  access_code: z.string().optional(),
+  access_details: z.string().optional(),
   notes: z.string().optional(),
   latitude: z.string().optional(),
   longitude: z.string().optional(),
@@ -54,7 +58,9 @@ export async function upsertClient(_prev: ActionResult, formData: FormData): Pro
     address_line2: s(formData.get("address_line2")),
     postal_code: s(formData.get("postal_code")),
     city: s(formData.get("city")),
-    access_info: s(formData.get("access_info")),
+    access_portal_code: s(formData.get("access_portal_code")),
+    access_code: s(formData.get("access_code")),
+    access_details: s(formData.get("access_details")),
     notes: s(formData.get("notes")),
     latitude: s(formData.get("latitude")),
     longitude: s(formData.get("longitude")),
@@ -79,7 +85,9 @@ export async function upsertClient(_prev: ActionResult, formData: FormData): Pro
     address_line2: v.address_line2 ?? null,
     postal_code: v.postal_code ?? null,
     city: v.city ?? null,
-    access_info: v.access_info ?? null,
+    access_portal_code: v.access_portal_code ?? null,
+    access_code: v.access_code ?? null,
+    access_details: v.access_details ?? null,
     notes: v.notes ?? null,
     latitude: coord(v.latitude),
     longitude: coord(v.longitude),
@@ -121,6 +129,74 @@ export async function archiveClient(id: string, archived: boolean): Promise<Acti
   revalidatePath("/app/clients");
   revalidatePath(`/app/clients/${id}`);
   return ok(archived ? "Client archivé." : "Client réactivé.");
+}
+
+/**
+ * Suppression DÉFINITIVE d'un client et de toutes ses données métier.
+ * Permission clients.delete requise. Nettoie ce que les cascades FK ne couvrent pas
+ * (documents polymorphes + fichiers du stockage, notifications/journal référençant le
+ * client ou ses prestations), puis supprime le client (cascade : piscines, prestations,
+ * tâches d'entretien, séries, contrats, factures, lignes, assistance, notes client).
+ * Aucune donnée ni fichier orphelin ne subsiste.
+ */
+export async function deleteClientPermanently(id: string): Promise<ActionResult> {
+  const res = await actionContext();
+  if ("error" in res) return res.error;
+  const { ctx } = res;
+  if (!can(ctx, "clients.delete")) return fail("Vous n'avez pas la permission de supprimer un client.");
+
+  const admin = createAdminClient();
+  const wsId = ctx.workspace.id;
+
+  const { data: client } = await admin
+    .from("clients")
+    .select("id")
+    .eq("id", id)
+    .eq("workspace_id", wsId)
+    .maybeSingle();
+  if (!client) return fail("Client introuvable.");
+
+  // Entités liées (pour retrouver leurs documents et références).
+  const [poolsRes, servicesRes, contractsRes, invoicesRes] = await Promise.all([
+    admin.from("pools").select("id").eq("client_id", id).eq("workspace_id", wsId),
+    admin.from("services").select("id").eq("client_id", id).eq("workspace_id", wsId),
+    admin.from("contracts").select("id").eq("client_id", id).eq("workspace_id", wsId),
+    admin.from("invoices").select("id").eq("client_id", id).eq("workspace_id", wsId),
+  ]);
+
+  const entityIds = Array.from(
+    new Set<string>([
+      id,
+      ...(poolsRes.data ?? []).map((r) => r.id),
+      ...(servicesRes.data ?? []).map((r) => r.id),
+      ...(contractsRes.data ?? []).map((r) => r.id),
+      ...(invoicesRes.data ?? []).map((r) => r.id),
+    ]),
+  );
+
+  // Documents rattachés (polymorphe, sans FK) → supprime fichiers du bucket + lignes.
+  const { data: docs } = await admin
+    .from("documents")
+    .select("id, storage_path")
+    .eq("workspace_id", wsId)
+    .in("entity_id", entityIds);
+  const paths = (docs ?? []).map((d) => d.storage_path).filter(Boolean) as string[];
+  if (paths.length > 0) await admin.storage.from("documents").remove(paths);
+  if (docs && docs.length > 0) {
+    await admin.from("documents").delete().in("id", docs.map((d) => d.id));
+  }
+
+  // Notifications & journal référençant le client ou ses prestations (pas de cascade).
+  await admin.from("notifications").delete().eq("workspace_id", wsId).in("entity_id", entityIds);
+  await admin.from("activity_logs").delete().eq("workspace_id", wsId).in("entity_id", entityIds);
+
+  // Suppression du client → cascade sur toutes les tables métier liées.
+  const { error } = await admin.from("clients").delete().eq("id", id).eq("workspace_id", wsId);
+  if (error) return fail("Suppression impossible.");
+
+  await logActivity(ctx, { action: "delete", entity_type: "client", summary: "Client supprimé définitivement" });
+  revalidatePath("/app/clients");
+  redirect("/app/clients");
 }
 
 /** Définit / réinitialise le code privé et le lien portail du client. */
