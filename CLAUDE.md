@@ -13,13 +13,21 @@ Détails de conception : voir [`ARCHITECTURE.md`](./ARCHITECTURE.md). Mise en ro
 Next.js 14 (App Router) · TypeScript strict · Supabase (Postgres + Auth + Storage + RLS) · Tailwind · Vitest.
 
 ## 3. Infrastructure en production (identifiants, PAS de secrets)
-- **Prod (Vercel)** : https://logiciel-piscineisland974-eu7f.vercel.app
-- **Projet Vercel** : `logiciel-piscineisland974-eu7f` (équipe `digitark428's projects`, `team_TpnBJ601cRvSklF9aTLzCa3R`)
-- **Dépôt GitHub** : `Digitark428/Logiciel_Piscineisland974`
-- **Branche de dev/prod** : `claude/piscine-island-saas-cvvhln` (⚠️ développer et pousser ICI)
-- **Projet Supabase** : `Piscine Island` — ref `umrjrpbritekqcfqkhxz` — https://umrjrpbritekqcfqkhxz.supabase.co
-- Chaque `git push` sur la branche → redéploiement Vercel automatique.
+
+### ⭐ CIBLES À UTILISER (toujours celles-ci, ne jamais en changer sans que le propriétaire le demande)
+- **Supabase** : projet `Piscine Island` — ref **`umrjrpbritekqcfqkhxz`** — https://umrjrpbritekqcfqkhxz.supabase.co
+- **Vercel** : projet **`logiciel-piscineisland974-eu7f`** — équipe `digitark428's projects` (`team_TpnBJ601cRvSklF9aTLzCa3R`)
+- **GitHub** : dépôt **`Digitark428/Logiciel_Piscineisland974`**, branche **`claude/piscine-island-saas-cvvhln`** (développer et pousser ICI)
+- **Prod (URL publique)** : https://logiciel-piscineisland974-eu7f.vercel.app
+
+### ⛔ NE PAS UTILISER
+- L'ancien projet Vercel **`piscineisland-logiciel`** et son éventuelle base Supabase : c'est une **autre version obsolète**, à supprimer. Ne jamais y déployer ni y appliquer de migration.
+
+### Notes
+- Chaque `git push` sur la branche ci-dessus → redéploiement Vercel automatique du projet `-eu7f`.
 - Les **mots de passe / clés** sont dans le doc privé du propriétaire (hors dépôt) + Vercel + Supabase.
+- Connaître ces cibles ≠ y avoir accès : dans une **nouvelle session**, il faut que le propriétaire
+  ait **connecté les connecteurs Supabase / Vercel** pour que les outils puissent agir dessus.
 
 ## 4. Workflow de développement
 1. Travailler sur la branche `claude/piscine-island-saas-cvvhln`.
