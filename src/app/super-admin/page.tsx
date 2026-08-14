@@ -1,13 +1,18 @@
+import Link from "next/link";
 import { requireSuperAdmin } from "@/lib/auth/superadmin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { signOutSuperAdmin } from "@/lib/actions/superadmin";
+import { getSupportAttentionCount } from "@/lib/assistance-admin";
 import { Badge } from "@/components/ui";
 import { formatDate } from "@/lib/utils/format";
 import { WorkspaceActions } from "./WorkspaceActions";
 
+export const dynamic = "force-dynamic";
+
 export default async function SuperAdminDashboard() {
   const sa = await requireSuperAdmin();
   const admin = createAdminClient();
+  const supportAttention = await getSupportAttentionCount();
 
   const [{ data: workspaces }, wsCount, userCount, { data: recent }] = await Promise.all([
     admin.from("workspaces").select("id, name, company_code, status, is_demo, city, created_at").order("created_at", { ascending: false }),
@@ -25,7 +30,13 @@ export default async function SuperAdminDashboard() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
           <div className="flex items-center gap-2 text-sm font-semibold">🛡️ Super Admin</div>
           <div className="flex items-center gap-3 text-sm text-graphite-400">
-            <span>{sa.email}</span>
+            <Link href="/super-admin/assistance" className="flex items-center gap-1.5 rounded-lg bg-graphite-800 px-3 py-1.5 text-graphite-100 hover:bg-graphite-700">
+              💬 Assistance
+              {supportAttention > 0 && (
+                <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-bold text-white">{supportAttention}</span>
+              )}
+            </Link>
+            <span className="hidden sm:inline">{sa.email}</span>
             <form action={signOutSuperAdmin}><button className="rounded-lg bg-graphite-800 px-3 py-1.5 text-graphite-100 hover:bg-graphite-700">Déconnexion</button></form>
           </div>
         </div>

@@ -273,3 +273,34 @@ export interface Backup {
   status: "running" | "completed" | "failed";
   created_at: string;
 }
+
+// ---- Assistance (module de support intégré) ----
+export type SupportCategory = "bug" | "help" | "suggestion";
+export type SupportStatus = "new" | "in_progress" | "resolved" | "closed";
+export type SupportAuthorType = "client" | "admin";
+
+export interface SupportConversation {
+  id: string;
+  workspace_id: string;
+  client_id: string;
+  category: SupportCategory;
+  status: SupportStatus;
+  context: Record<string, unknown>;
+  last_message_at: string;
+  client_last_seen_at: string | null;
+  admin_last_seen_at: string | null;
+  resolved_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SupportMessage {
+  id: string;
+  conversation_id: string;
+  workspace_id: string;
+  author_type: SupportAuthorType;
+  author_label: string | null;
+  content: string;
+  metadata: Record<string, unknown>;
+  created_at: string;
+}
