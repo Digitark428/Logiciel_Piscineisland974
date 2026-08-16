@@ -1,0 +1,65 @@
+# AGENTS.md — Piscine Island
+
+## Mission
+Piscine Island est un SaaS multi-tenant de gestion pour piscinistes (TPE de 2 à 10 personnes). Les priorités sont la simplicité, la fiabilité, la sécurité et une interface sobre (blanc, graphite, bleu piscine).
+
+Pour les détails de conception et l’historique, consulter `ARCHITECTURE.md`, `README.md` et `CLAUDE.md` seulement si la tâche le nécessite. Ne jamais inscrire de secret dans ce fichier ni dans le dépôt.
+
+## Cibles autorisées
+Utiliser exclusivement ces ressources, sauf instruction explicite du propriétaire :
+
+- GitHub : `Digitark428/Logiciel_Piscineisland974`
+- Branche de production : `claude/piscine-island-saas-cvvhln`
+- Vercel : `logiciel-piscineisland974-eu7f` (équipe `digitark428's projects`, `team_TpnBJ601cRvSklF9aTLzCa3R`)
+- Production : https://logiciel-piscineisland974-eu7f.vercel.app
+- Supabase : `Piscine Island`, ref `umrjrpbritekqcfqkhxz`, région `eu-west-3`
+
+Ne jamais utiliser l’ancien projet Vercel `piscineisland-logiciel` ni une éventuelle base Supabase associée : ils sont obsolètes.
+
+## Processus de travail
+- Les actions en lecture peuvent être faites directement.
+- Avant toute modification, migration, commit, push ou déploiement : présenter un plan concis et attendre la validation explicite du propriétaire (« valide »).
+- Une fois validé, prendre en charge la tâche de bout en bout : code, base de données si nécessaire, commit/push, déploiement Vercel et vérification réelle.
+- Les opérations destructrices ou irréversibles (suppression de données, table, colonne, projet, déploiement, ou changement de cible d’infrastructure) exigent une confirmation explicite supplémentaire.
+- Rapporter uniquement l’état vérifié, jamais un résultat supposé.
+
+## Vérifications avant livraison
+Exécuter lorsque pertinent :
+
+```bash
+npm run build
+npm run test
+npm run typecheck
+```
+
+Un push sur la branche de production déclenche le déploiement Vercel. Vérifier que le déploiement de production est `READY` et que l’URL publique pointe vers lui.
+
+## Stack et architecture
+- Next.js 14 (App Router), TypeScript strict, Tailwind, Vitest.
+- Supabase : Postgres, Auth, Storage et RLS.
+- Architecture multi-tenant : chaque table métier porte `workspace_id` ; RLS deny-by-default.
+- Clients Supabase : `src/lib/supabase/{client,server,admin}.ts`. `admin.ts` utilise le service role et ne doit jamais atteindre le navigateur.
+- Auth/permissions : `src/lib/auth/context.ts` (`requireContext`, `can`, `requirePermission`) et `src/lib/permissions.ts`.
+- Actions serveur par domaine : `src/lib/actions/`, avec le format `ActionResult` et `ActionForm`.
+- Super Admin : `platform_admins`, `src/lib/auth/superadmin.ts`, route `/super-admin`.
+- Notifications : in-app uniquement en V1 (pas d’e-mail/Resend).
+
+## Base de données et migrations
+- Les migrations sont dans `supabase/migrations/` ; l’état connu va de `0001` à `0021`.
+- Toute évolution de schéma doit créer une nouvelle migration numérotée : ne jamais modifier une migration existante.
+- Appliquer les migrations à la bonne base Supabase, vérifier concrètement le résultat (tables, colonnes, fonctions) et lancer les contrôles de sécurité/performance.
+- Après application, committer la migration afin de maintenir le dépôt et la base synchronisés.
+- Ne jamais exposer de clé service role ni de donnée sensible côté client.
+
+## Repères fonctionnels importants
+- Le mode démo a été entièrement supprimé : ne pas réintroduire `/demo`, `seed_demo_data` ni `is_demo`.
+- Factures et contrats sont des fichiers stockés dans `documents`, importés depuis la fiche client, pas des documents générés par l’application.
+- Le portail client utilise `/portal/[token]` ; l’assistance intégrée passe par `support_conversations` et `support_messages`.
+- Les fonctions d’autorisation SQL (`auth_is_member`, `auth_is_admin`, `auth_has_permission`, `auth_workspace_ids`, `auth_is_platform_admin`) sont essentielles aux policies RLS : ne pas modifier leurs permissions sans analyse complète.
+- Si un trigger est lancé par un utilisateur authentifié, vérifier soigneusement les droits de la fonction SQL appelée.
+
+## Pièges connus
+- Le projet Vercel doit conserver le preset Next.js (`vercel.json`) pour éviter l’erreur de répertoire `public`.
+- Les variables Vercel requises doivent exister en Production, Preview et Development.
+- Les e-mails Supabase sont uniques globalement : en V1, une adresse e-mail ne peut appartenir qu’à un seul workspace.
+- `npm run bootstrap` crée le Super Admin et exige les variables locales appropriées.
