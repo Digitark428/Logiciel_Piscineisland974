@@ -24,3 +24,12 @@
 - **Fichier :** `src/app/globals.css`.
 - **Migrations :** aucune.
 - **Vérification :** build et typecheck validés ; deux tests Planning restent en échec sur le décalage de fuseau horaire déjà connu, sans lien avec ce changement CSS.
+
+## 2026-08-17 — Claude Code — Intégration au workflow de mémoire commune
+
+- **Tâche :** vérification de la mémoire commune préparée par Codex et confirmation de l'intégration de Claude Code au workflow partagé.
+- **Fichiers :** lecture de `AGENTS.md`, `CLAUDE.md`, `PROJECT_CONTEXT.md`, `AI_CHANGELOG.md`, `DECISIONS.md` ; ajout de cette entrée.
+- **Constat :** les cinq fichiers existent et sont cohérents. `CLAUDE.md` contient déjà la section « Workflow collaboratif Codex ↔ Claude Code » (règles permanentes côté Claude) ; `AGENTS.md` fournit la section miroir côté Codex. Mêmes cibles infra, même état migrations (0001→0021), même périmètre fonctionnel. Aucune correction nécessaire.
+- **Migrations :** aucune.
+- **À surveiller :** rien de bloquant. `ARCHITECTURE.md`/`README.md` gardent des références historiques au mode démo (déjà signalé par Codex) ; la mémoire commune reste la source de vérité de l'état actuel.
+- **Reste à faire :** aucune action fonctionnelle ; workflow partagé opérationnel dans les deux sens.
