@@ -23,22 +23,111 @@ body {
   .card {
     @apply rounded-2xl bg-white shadow-card border border-graphite-100;
   }
+
+  /*
+   * Boutons — finition "verre" : un reflet doux, une bordure lumineuse et
+   * une profondeur discrète. La base cible aussi les quelques boutons locaux
+   * de l'application qui ne passent pas encore par les classes .btn-*.
+   */
+  :where(button, a.btn) {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    -webkit-tap-highlight-color: transparent;
+    transition-property: background-color, background-image, border-color, box-shadow, color, opacity, transform;
+    transition-duration: 180ms;
+    transition-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  :where(button, a.btn)::before {
+    content: "";
+    position: absolute;
+    inset: 1px 1px auto;
+    height: 52%;
+    border-radius: inherit;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0));
+    pointer-events: none;
+    opacity: 0.78;
+    transition: opacity 180ms ease;
+  }
+
+  :where(button, a.btn):is(:hover, :focus-visible)::before {
+    opacity: 1;
+  }
+
   .btn {
     @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition
            focus:outline-none focus-visible:ring-2 focus-visible:ring-pool-400 focus-visible:ring-offset-2
            disabled:opacity-50 disabled:cursor-not-allowed;
+    border: 1px solid transparent;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), inset 0 -1px 0 rgba(16, 24, 40, 0.1), 0 5px 12px rgba(16, 24, 40, 0.08);
+    text-shadow: 0 1px 0 rgba(16, 24, 40, 0.12);
+  }
+  .btn:not(:disabled):is(:hover, :focus-visible) {
+    transform: translateY(-1px);
+  }
+  .btn:not(:disabled):active {
+    transform: translateY(0);
   }
   .btn-primary {
-    @apply btn bg-pool-600 text-white hover:bg-pool-700 active:bg-pool-800;
+    @apply btn text-white;
+    border-color: rgba(114, 222, 241, 0.62);
+    background-color: #197ea1;
+    background-image: linear-gradient(135deg, #3bc4df 0%, #197ea1 52%, #1e586f 100%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.42), inset 0 -1px 0 rgba(7, 55, 72, 0.36), 0 8px 18px rgba(25, 126, 161, 0.24);
+  }
+  .btn-primary:not(:disabled):is(:hover, :focus-visible) {
+    border-color: rgba(168, 239, 249, 0.84);
+    background-image: linear-gradient(135deg, #58cde4 0%, #1b7899 54%, #194e63 100%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), inset 0 -1px 0 rgba(7, 55, 72, 0.4), 0 12px 24px rgba(25, 126, 161, 0.3);
+  }
+  .btn-primary:not(:disabled):active {
+    background-image: linear-gradient(135deg, #259fbd 0%, #1b6683 58%, #1e485c 100%);
   }
   .btn-secondary {
-    @apply btn bg-white text-graphite-800 border border-graphite-200 hover:bg-graphite-50;
+    @apply btn text-graphite-800;
+    border-color: rgba(174, 181, 190, 0.74);
+    background-color: rgba(255, 255, 255, 0.78);
+    background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(236, 238, 240, 0.84));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85), inset 0 -1px 0 rgba(78, 87, 100, 0.08), 0 5px 12px rgba(16, 24, 40, 0.07);
+    text-shadow: none;
+    -webkit-backdrop-filter: blur(10px) saturate(1.15);
+    backdrop-filter: blur(10px) saturate(1.15);
+  }
+  .btn-secondary:not(:disabled):is(:hover, :focus-visible) {
+    border-color: rgba(55, 186, 217, 0.55);
+    background-image: linear-gradient(135deg, rgba(255, 255, 255, 1), rgba(212, 244, 249, 0.86));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95), inset 0 -1px 0 rgba(78, 87, 100, 0.08), 0 10px 20px rgba(25, 126, 161, 0.12);
   }
   .btn-danger {
-    @apply btn bg-red-600 text-white hover:bg-red-700;
+    @apply btn text-white;
+    border-color: rgba(254, 202, 202, 0.62);
+    background-color: #dc2626;
+    background-image: linear-gradient(135deg, #f87171 0%, #dc2626 52%, #991b1b 100%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.38), inset 0 -1px 0 rgba(69, 10, 10, 0.3), 0 8px 18px rgba(220, 38, 38, 0.2);
+  }
+  .btn-danger:not(:disabled):is(:hover, :focus-visible) {
+    border-color: rgba(254, 226, 226, 0.84);
+    background-image: linear-gradient(135deg, #fb8181 0%, #c92323 54%, #7f1d1d 100%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.46), inset 0 -1px 0 rgba(69, 10, 10, 0.34), 0 12px 24px rgba(220, 38, 38, 0.26);
   }
   .btn-ghost {
-    @apply btn text-graphite-600 hover:bg-graphite-100;
+    @apply btn text-graphite-600;
+    border-color: transparent;
+    background-color: transparent;
+    box-shadow: none;
+    text-shadow: none;
+  }
+  .btn-ghost::before {
+    opacity: 0;
+  }
+  .btn-ghost:not(:disabled):is(:hover, :focus-visible) {
+    border-color: rgba(174, 181, 190, 0.44);
+    background-color: rgba(236, 238, 240, 0.76);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.66), 0 5px 12px rgba(16, 24, 40, 0.06);
+  }
+  .btn-ghost:not(:disabled):is(:hover, :focus-visible)::before {
+    opacity: 0.7;
   }
   .input {
     @apply w-full rounded-xl border border-graphite-200 bg-white px-3.5 py-2.5 text-sm text-graphite-900
@@ -50,6 +139,16 @@ body {
   }
   .badge {
     @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where(button, a.btn) {
+    transition-duration: 0ms;
+  }
+
+  .btn:not(:disabled):is(:hover, :focus-visible, :active) {
+    transform: none;
   }
 }
 
