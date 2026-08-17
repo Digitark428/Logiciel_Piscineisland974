@@ -34,6 +34,14 @@ Next.js 14 (App Router) · TypeScript strict · Supabase (Postgres + Auth + Stor
 2. `npm install`, puis `npm run build` (doit passer) et `npm run test` avant de pousser.
 3. Commit clair + push → Vercel redéploie.
 
+### Workflow collaboratif Codex ↔ Claude Code
+
+- Avant toute intervention importante, lire `CLAUDE.md`, `PROJECT_CONTEXT.md` et les dernières entrées de `AI_CHANGELOG.md`.
+- Consulter `DECISIONS.md` lorsqu'une tâche peut toucher une décision existante, et `AGENTS.md` lorsque les instructions Codex peuvent éclairer le contexte.
+- Après une intervention significative, ajouter une entrée concise à `AI_CHANGELOG.md`.
+- Mettre à jour `PROJECT_CONTEXT.md` uniquement pour un changement durable et `DECISIONS.md` uniquement pour une décision importante.
+- `PROJECT_CONTEXT.md`, `AI_CHANGELOG.md` et `DECISIONS.md` constituent la mémoire commune officielle ; n'y inscrire ni secrets, ni suppositions, ni détails inutiles.
+
 ### ⭐ RÈGLE PERMANENTE — « Plan → validation → prise en charge de bout en bout » (demandée par le propriétaire)
 > **1. Toujours annoncer le plan d'abord et demander validation.** Avant d'agir sur une demande,
 > Claude explique clairement **ce qu'il va faire** (le plan) et attend le **« valide »** du
