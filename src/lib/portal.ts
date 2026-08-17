@@ -3,8 +3,10 @@ import "server-only";
 import crypto from "node:crypto";
 
 function secret(): string {
-  // Secret serveur pour signer les cookies de portail (jamais exposé au client).
-  return process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.CRON_SECRET ?? "insecure-dev-secret";
+  const value = process.env.PORTAL_SESSION_SECRET;
+  if (value) return value;
+  if (process.env.NODE_ENV === "production") throw new Error("PORTAL_SESSION_SECRET manquant.");
+  return "development-only-portal-secret";
 }
 
 export function portalCookieName(token: string): string {

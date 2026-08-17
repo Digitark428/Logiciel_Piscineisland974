@@ -44,4 +44,14 @@ describe("Session de portail signée", () => {
     expect(portalCookieName("tok")).toBe(portalCookieName("tok"));
     expect(portalCookieName("tok")).not.toContain("tok");
   });
+
+  it("refuse un secret de portail absent en production", () => {
+    const previousEnv = process.env.NODE_ENV;
+    const previousSecret = process.env.PORTAL_SESSION_SECRET;
+    Reflect.set(process.env, "NODE_ENV", "production");
+    delete process.env.PORTAL_SESSION_SECRET;
+    expect(() => signPortalSession("tok", "11111111-1111-1111-1111-111111111111")).toThrow("PORTAL_SESSION_SECRET manquant");
+    Reflect.set(process.env, "NODE_ENV", previousEnv);
+    if (previousSecret) process.env.PORTAL_SESSION_SECRET = previousSecret;
+  });
 });

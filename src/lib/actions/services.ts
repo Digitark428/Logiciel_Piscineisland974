@@ -53,6 +53,20 @@ const baseSchema = z.object({
   service_type: z.string().optional(),
 });
 
+async function validateServiceReferences(
+  supabase: ReturnType<typeof createClient>, workspaceId: string,
+  refs: { clientId: string; poolId: string | null; assignedId: string | null; contractDocumentId: string | null; invoiceDocumentId: string | null },
+): Promise<boolean> {
+  const checks = [
+    supabase.from("clients").select("id").eq("id", refs.clientId).eq("workspace_id", workspaceId).maybeSingle(),
+    refs.poolId ? supabase.from("pools").select("id").eq("id", refs.poolId).eq("workspace_id", workspaceId).maybeSingle() : Promise.resolve({ data: { id: "none" } }),
+    refs.assignedId ? supabase.from("memberships").select("id").eq("id", refs.assignedId).eq("workspace_id", workspaceId).eq("status", "active").maybeSingle() : Promise.resolve({ data: { id: "none" } }),
+    refs.contractDocumentId ? supabase.from("documents").select("id").eq("id", refs.contractDocumentId).eq("workspace_id", workspaceId).maybeSingle() : Promise.resolve({ data: { id: "none" } }),
+    refs.invoiceDocumentId ? supabase.from("documents").select("id").eq("id", refs.invoiceDocumentId).eq("workspace_id", workspaceId).maybeSingle() : Promise.resolve({ data: { id: "none" } }),
+  ];
+  return (await Promise.all(checks)).every((result) => Boolean(result.data));
+}
+
 export async function createService(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
   const res = await actionContext();
   if ("error" in res) return res.error;
@@ -80,6 +94,10 @@ export async function createService(_prev: ActionResult, formData: FormData): Pr
     .split("\n")
     .map((t) => t.trim())
     .filter(Boolean);
+
+  if (!(await validateServiceReferences(supabase, ctx.workspace.id, { clientId: client_id, poolId: pool_id, assignedId: assigned, contractDocumentId: contract_document_id, invoiceDocumentId: invoice_document_id }))) {
+    return fail("Un élément lié est introuvable dans cet espace.");
+  }
 
   // ---- Détermine les dates à créer ----
   let dates: string[] = [];
@@ -224,6 +242,10 @@ export async function updateService(_prev: ActionResult, formData: FormData): Pr
   if (!payload.scheduled_date) return fail("La date est requise.");
 
   const supabase = createClient();
+  const { data: existing } = await supabase.from("services").select("client_id").eq("id", id).eq("workspace_id", ctx.workspace.id).maybeSingle();
+  if (!existing || !(await validateServiceReferences(supabase, ctx.workspace.id, { clientId: existing.client_id, poolId: payload.pool_id, assignedId: payload.assigned_membership_id, contractDocumentId: payload.contract_document_id, invoiceDocumentId: payload.invoice_document_id }))) {
+    return fail("Un élément lié est introuvable dans cet espace.");
+  }
   const { error } = await supabase.from("services").update(payload).eq("id", id).eq("workspace_id", ctx.workspace.id);
   if (error) return fail("Enregistrement impossible.");
   await logActivity(ctx, { action: "update", entity_type: "service", entity_id: id, summary: "Prestation modifiée" });
@@ -283,7 +305,7 @@ export async function toggleServiceTask(taskId: string, serviceId: string, done:
   if ("error" in res) return res.error;
   const { ctx } = res;
   const supabase = createClient();
-  const { error } = await supabase.from("service_tasks").update({ done }).eq("id", taskId).eq("workspace_id", ctx.workspace.id);
+  const { error } = await supabase.from("service_tasks").update({ done }).eq("id", taskId).eq("service_id", serviceId).eq("workspace_id", ctx.workspace.id);
   if (error) return fail("Action impossible.");
   revalidatePath(`/app/services/${serviceId}`);
   return ok();

@@ -43,6 +43,7 @@ export async function addPortalServiceNote(
     .select("id, service_type, scheduled_date")
     .eq("id", serviceId)
     .eq("client_id", client.id)
+    .eq("workspace_id", client.workspace_id)
     .maybeSingle();
   if (!service) return fail("Prestation introuvable.");
 

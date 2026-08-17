@@ -13,6 +13,12 @@ const str = (v: FormDataEntryValue | null) => {
   return t ? t : null;
 };
 
+function validAvatarBuffer(type: string, buffer: Buffer): boolean {
+  if (type === "image/png") return buffer.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+  if (type === "image/jpeg") return buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
+  return type === "image/webp" && buffer.subarray(0, 4).toString("ascii") === "RIFF" && buffer.subarray(8, 12).toString("ascii") === "WEBP";
+}
+
 /** Charge un membre du workspace courant (via admin) en validant l'appartenance. */
 async function loadMember(workspaceId: string, membershipId: string) {
   const admin = createAdminClient();
@@ -237,6 +243,7 @@ export async function uploadMemberPhoto(formData: FormData): Promise<ActionResul
   const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "");
   const path = `${ctx.workspace.id}/members/${id}/photo-${Date.now()}.${ext}`;
   const buffer = Buffer.from(await file.arrayBuffer());
+  if (!validAvatarBuffer(file.type, buffer)) return fail("Image non autorisée ou invalide.");
   const { error: upErr } = await admin.storage.from("avatars").upload(path, buffer, { contentType: file.type || "image/jpeg", upsert: true });
   if (upErr) return fail("Téléversement impossible.");
 

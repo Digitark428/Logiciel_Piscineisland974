@@ -1,6 +1,7 @@
 "use server";
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
+import crypto from "node:crypto";
 import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { verifyPrivateCode } from "@/lib/utils/codes";
@@ -11,7 +12,15 @@ import { fail, type ActionResult } from "@/lib/actions/result";
 export async function openPortal(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
   const token = String(formData.get("token") ?? "");
   const code = String(formData.get("code") ?? "").trim();
-  if (!token || !code) return fail("Code requis.");
+  if (!token || !code) return fail("Accès impossible.");
+
+  const requestHeaders = headers();
+  const ip = requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const userAgent = requestHeaders.get("user-agent") ?? "unknown";
+  const hash = (value: string) => crypto.createHash("sha256").update(value).digest("hex");
+  const tokenHash = hash(token);
+  const ipHash = hash(ip);
+  const userAgentHash = hash(userAgent);
 
   const admin = createAdminClient();
   const { data: client } = await admin
@@ -20,12 +29,13 @@ export async function openPortal(_prev: ActionResult, formData: FormData): Promi
     .eq("portal_token", token)
     .maybeSingle();
 
-  if (!client || !client.portal_enabled || client.status !== "active") {
-    return fail("Lien invalide ou accès désactivé.");
+  const { data: locked } = await admin.rpc("portal_auth_is_locked", { p_token_hash: tokenHash, p_ip_hash: ipHash, p_user_agent_hash: userAgentHash });
+  if (locked) return fail("Accès impossible. Réessayez plus tard.");
+  if (!client || !client.portal_enabled || client.status !== "active" || !verifyPrivateCode(code, client.private_code_hash)) {
+    await admin.rpc("record_portal_auth_attempt", { p_token_hash: tokenHash, p_ip_hash: ipHash, p_user_agent_hash: userAgentHash, p_success: false });
+    return fail("Accès impossible.");
   }
-  if (!verifyPrivateCode(code, client.private_code_hash)) {
-    return fail("Code incorrect.");
-  }
+  await admin.rpc("record_portal_auth_attempt", { p_token_hash: tokenHash, p_ip_hash: ipHash, p_user_agent_hash: userAgentHash, p_success: true });
 
   cookies().set(portalCookieName(token), signPortalSession(token, client.id), {
     httpOnly: true,

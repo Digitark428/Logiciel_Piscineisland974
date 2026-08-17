@@ -222,7 +222,7 @@ export async function setClientPortal(_prev: ActionResult, formData: FormData): 
       .single();
     if (!existing?.portal_token) update.portal_token = generatePortalToken();
     if (code) {
-      if (code.length < 4) return fail("Le code privé doit contenir au moins 4 caractères.");
+      if (code.length < 8) return fail("Le code privé doit contenir au moins 8 caractères.");
       update.private_code_hash = hashPrivateCode(code);
       update.private_code_set_at = new Date().toISOString();
     }

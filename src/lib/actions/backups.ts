@@ -10,7 +10,7 @@ export async function createManualBackup(): Promise<ActionResult> {
   const res = await actionContext();
   if ("error" in res) return res.error;
   const { ctx } = res;
-  if (!ctx.isAdmin && !ctx.permissions.has("backups.manage")) return fail("Non autorisé.");
+  if (!ctx.isAdmin && (!ctx.permissions.has("backups.manage") || !ctx.permissions.has("sensitive.view"))) return fail("Non autorisé.");
 
   const admin = createAdminClient();
   const result = await runWorkspaceBackup(admin, ctx.workspace.id, "manual");
@@ -25,7 +25,7 @@ export async function getBackupDownloadUrl(backupId: string): Promise<ActionResu
   const res = await actionContext();
   if ("error" in res) return res.error;
   const { ctx } = res;
-  if (!ctx.isAdmin && !ctx.permissions.has("backups.manage")) return fail("Non autorisé.");
+  if (!ctx.isAdmin && (!ctx.permissions.has("backups.manage") || !ctx.permissions.has("sensitive.view"))) return fail("Non autorisé.");
 
   const admin = createAdminClient();
   const { data: backup } = await admin

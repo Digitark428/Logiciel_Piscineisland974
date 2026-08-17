@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import crypto from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { runWorkspaceBackup } from "@/lib/backup";
 
@@ -11,9 +12,10 @@ export const maxDuration = 60;
  */
 export async function POST(request: NextRequest) {
   const secret = process.env.CRON_SECRET;
-  const auth = request.headers.get("authorization");
-  const provided = auth?.replace(/^Bearer\s+/i, "") ?? request.nextUrl.searchParams.get("secret");
-  if (!secret || provided !== secret) {
+  const provided = request.headers.get("authorization")?.match(/^Bearer\s+(.+)$/i)?.[1];
+  const valid = Boolean(secret && provided && Buffer.byteLength(secret) === Buffer.byteLength(provided)
+    && crypto.timingSafeEqual(Buffer.from(secret), Buffer.from(provided)));
+  if (!valid) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
@@ -30,5 +32,3 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({ ok, failed, total: (workspaces ?? []).length });
 }
-
-export const GET = POST;

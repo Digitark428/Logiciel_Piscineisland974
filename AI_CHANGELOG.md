@@ -33,3 +33,10 @@
 - **Migrations :** aucune.
 - **À surveiller :** rien de bloquant. `ARCHITECTURE.md`/`README.md` gardent des références historiques au mode démo (déjà signalé par Codex) ; la mémoire commune reste la source de vérité de l'état actuel.
 - **Reste à faire :** aucune action fonctionnelle ; workflow partagé opérationnel dans les deux sens.
+
+## 2026-08-17 — Codex — Durcissement sécurité multi-tenant
+
+- **Tâche :** protections tenant au niveau base, permissions RLS métier, portail client, backups, uploads et correctif Next.js.
+- **Migrations :** `0022_tenant_security_hardening` et `0023_portal_attempts_deny_policy`, appliquées au projet Supabase de production.
+- **Vérification :** diagnostic préalable sans relation cross-workspace incohérente ; triggers et fonctions non exécutables directement par anon/authenticated ; typecheck, lint et build validés.
+- **À surveiller :** les tests intégration Supabase sont conditionnels aux variables locales ; deux tests Planning restent dépendants du fuseau horaire local (antérieurs à cette intervention).

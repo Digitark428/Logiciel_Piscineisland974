@@ -17,8 +17,8 @@ const READY = Boolean(URL && ANON && SERVICE);
 const admin = READY ? createClient(URL!, SERVICE!, { auth: { persistSession: false } }) : null;
 
 const rnd = Math.random().toString(36).slice(2, 8);
-const A = { email: `iso-a-${rnd}@example.test`, password: "Password123!", userId: "", workspaceId: "", clientId: "" };
-const B = { email: `iso-b-${rnd}@example.test`, password: "Password123!", userId: "", workspaceId: "", clientId: "" };
+const A = { email: `iso-a-${rnd}@example.test`, password: "Password123!", userId: "", workspaceId: "", clientId: "", membershipId: "", poolId: "", serviceId: "" };
+const B = { email: `iso-b-${rnd}@example.test`, password: "Password123!", userId: "", workspaceId: "", clientId: "", membershipId: "", poolId: "", serviceId: "" };
 
 async function setupTenant(t: typeof A, name: string) {
   const { data: created } = await admin!.auth.admin.createUser({ email: t.email, password: t.password, email_confirm: true });
@@ -27,8 +27,14 @@ async function setupTenant(t: typeof A, name: string) {
     p_user_id: t.userId, p_company_name: name, p_admin_first: "T", p_admin_last: name, p_admin_email: t.email,
   });
   t.workspaceId = (Array.isArray(prov) ? prov[0] : prov).workspace_id;
+  const { data: membership } = await admin!.from("memberships").select("id").eq("workspace_id", t.workspaceId).eq("user_id", t.userId).single();
+  t.membershipId = membership!.id;
   const { data: client } = await admin!.from("clients").insert({ workspace_id: t.workspaceId, first_name: "Secret", last_name: name }).select("id").single();
   t.clientId = client!.id;
+  const { data: pool } = await admin!.from("pools").insert({ workspace_id: t.workspaceId, client_id: t.clientId, name: "Pool" }).select("id").single();
+  t.poolId = pool!.id;
+  const { data: service } = await admin!.from("services").insert({ workspace_id: t.workspaceId, client_id: t.clientId, pool_id: t.poolId, assigned_membership_id: t.membershipId, scheduled_date: "2026-08-17" }).select("id").single();
+  t.serviceId = service!.id;
 }
 
 describe.skipIf(!READY)("Isolation multi-tenant (RLS)", () => {
@@ -70,5 +76,22 @@ describe.skipIf(!READY)("Isolation multi-tenant (RLS)", () => {
     const { data, error } = await asA.from("clients").insert({ workspace_id: B.workspaceId, first_name: "Intrus" }).select("id");
     // RLS doit refuser l'insertion dans le workspace de B.
     expect(!data || data.length === 0 || !!error).toBe(true);
+  });
+
+  it("les garde-fous DB refusent les relations inter-workspace même avec service_role", async () => {
+    const badPool = await admin!.from("pools").insert({ workspace_id: A.workspaceId, client_id: B.clientId, name: "Intrus" });
+    expect(badPool.error).toBeTruthy();
+
+    const badServiceClient = await admin!.from("services").insert({ workspace_id: A.workspaceId, client_id: B.clientId, scheduled_date: "2026-08-18" });
+    expect(badServiceClient.error).toBeTruthy();
+
+    const badServicePool = await admin!.from("services").insert({ workspace_id: A.workspaceId, client_id: A.clientId, pool_id: B.poolId, scheduled_date: "2026-08-18" });
+    expect(badServicePool.error).toBeTruthy();
+
+    const badAssignee = await admin!.from("services").insert({ workspace_id: A.workspaceId, client_id: A.clientId, assigned_membership_id: B.membershipId, scheduled_date: "2026-08-18" });
+    expect(badAssignee.error).toBeTruthy();
+
+    const badTask = await admin!.from("service_tasks").insert({ workspace_id: A.workspaceId, service_id: B.serviceId, label: "Intrus" });
+    expect(badTask.error).toBeTruthy();
   });
 });

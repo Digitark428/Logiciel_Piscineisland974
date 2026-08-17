@@ -8,6 +8,16 @@ import { fail, ok, type ActionResult } from "@/lib/actions/result";
 
 const ALLOWED_ENTITIES = ["client", "pool", "service", "contract", "invoice", "member", "workspace"];
 const ALLOWED_CATEGORIES = ["invoice", "contract", "photo", "other"];
+const DOCUMENT_TYPES = {
+  "application/pdf": (b: Buffer) => b.subarray(0, 5).toString("ascii") === "%PDF-",
+  "image/png": (b: Buffer) => b.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])),
+  "image/jpeg": (b: Buffer) => b.length >= 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff,
+  "image/webp": (b: Buffer) => b.subarray(0, 4).toString("ascii") === "RIFF" && b.subarray(8, 12).toString("ascii") === "WEBP",
+} as const;
+
+function validDocumentBuffer(type: string, buffer: Buffer): type is keyof typeof DOCUMENT_TYPES {
+  return type in DOCUMENT_TYPES && DOCUMENT_TYPES[type as keyof typeof DOCUMENT_TYPES](buffer);
+}
 
 export async function uploadDocument(formData: FormData): Promise<ActionResult> {
   const res = await actionContext();
@@ -30,12 +40,28 @@ export async function uploadDocument(formData: FormData): Promise<ActionResult> 
   const displayName = (customName || file.name).slice(0, 200);
 
   const supabase = createClient();
+  if (!entity_id) return fail("Rattachement requis.");
+  const { data: entity } = entity_type === "client"
+    ? await supabase.from("clients").select("id").eq("id", entity_id).eq("workspace_id", ctx.workspace.id).maybeSingle()
+    : entity_type === "pool"
+      ? await supabase.from("pools").select("id").eq("id", entity_id).eq("workspace_id", ctx.workspace.id).maybeSingle()
+      : entity_type === "service"
+        ? await supabase.from("services").select("id").eq("id", entity_id).eq("workspace_id", ctx.workspace.id).maybeSingle()
+        : entity_type === "contract"
+          ? await supabase.from("contracts").select("id").eq("id", entity_id).eq("workspace_id", ctx.workspace.id).maybeSingle()
+          : entity_type === "invoice"
+            ? await supabase.from("invoices").select("id").eq("id", entity_id).eq("workspace_id", ctx.workspace.id).maybeSingle()
+            : entity_type === "member"
+              ? await supabase.from("memberships").select("id").eq("id", entity_id).eq("workspace_id", ctx.workspace.id).maybeSingle()
+              : await supabase.from("workspaces").select("id").eq("id", entity_id).eq("id", ctx.workspace.id).maybeSingle();
+  if (!entity) return fail("Rattachement introuvable dans cet espace.");
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-80);
   const path = `${ctx.workspace.id}/${entity_type}/${crypto.randomUUID()}-${safeName}`;
   const buffer = Buffer.from(await file.arrayBuffer());
+  if (!validDocumentBuffer(file.type, buffer)) return fail("Type de fichier non autorisé ou fichier invalide.");
 
   const { error: upErr } = await supabase.storage.from("documents").upload(path, buffer, {
-    contentType: file.type || "application/octet-stream",
+    contentType: file.type,
     upsert: false,
   });
   if (upErr) return fail("Téléversement impossible (droits insuffisants ?).");

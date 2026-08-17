@@ -57,6 +57,8 @@ export async function upsertPool(_prev: ActionResult, formData: FormData): Promi
   };
 
   const supabase = createClient();
+  const { data: client } = await supabase.from("clients").select("id").eq("id", client_id).eq("workspace_id", ctx.workspace.id).maybeSingle();
+  if (!client) return fail("Client introuvable dans cet espace.");
   if (id) {
     const { error } = await supabase.from("pools").update(payload).eq("id", id).eq("workspace_id", ctx.workspace.id);
     if (error) return fail("Enregistrement impossible.");
