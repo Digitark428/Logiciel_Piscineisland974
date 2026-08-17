@@ -16,6 +16,13 @@ Utiliser exclusivement ces ressources, sauf instruction explicite du propriétai
 
 Ne jamais utiliser l’ancien projet Vercel `piscineisland-logiciel` ni une éventuelle base Supabase associée : ils sont obsolètes.
 
+## Workflow collaboratif Codex ↔ Claude Code
+- Avant toute intervention importante, lire `AGENTS.md`, puis `PROJECT_CONTEXT.md` et les dernières entrées de `AI_CHANGELOG.md`.
+- Consulter `DECISIONS.md` si la tâche peut toucher une décision existante, et `CLAUDE.md` si des informations laissées par Claude Code peuvent être pertinentes.
+- Après une intervention significative, ajouter une entrée concise dans `AI_CHANGELOG.md`.
+- Mettre à jour `PROJECT_CONTEXT.md` seulement si l'état durable du projet a changé ; mettre à jour `DECISIONS.md` seulement lorsqu'une véritable décision importante a été prise.
+- Ces trois fichiers constituent la mémoire commune officielle. Ne jamais y inscrire de secrets, d'hypothèses ou de détails inutiles.
+
 ## Processus de travail
 - Les actions en lecture peuvent être faites directement.
 - Avant toute modification, migration, commit, push ou déploiement : présenter un plan concis et attendre la validation explicite du propriétaire (« valide »).
