@@ -18,8 +18,8 @@ const READY = Boolean(URL && ANON && SERVICE);
 const admin = READY ? createClient(URL!, SERVICE!, { auth: { persistSession: false } }) : null;
 
 const rnd = Math.random().toString(36).slice(2, 8);
-const A = { email: `sup-a-${rnd}@example.test`, password: "Password123!", userId: "", workspaceId: "", clientId: "", convId: "" };
-const B = { email: `sup-b-${rnd}@example.test`, password: "Password123!", userId: "", workspaceId: "", clientId: "", convId: "" };
+const A = { email: `sup-a-${rnd}@example.test`, password: "Password123!", userId: "", membershipId: "", workspaceId: "", clientId: "", convId: "", appConvId: "" };
+const B = { email: `sup-b-${rnd}@example.test`, password: "Password123!", userId: "", membershipId: "", workspaceId: "", clientId: "", convId: "", appConvId: "" };
 
 async function setupTenant(t: typeof A, name: string) {
   const { data: created } = await admin!.auth.admin.createUser({ email: t.email, password: t.password, email_confirm: true });
@@ -28,6 +28,8 @@ async function setupTenant(t: typeof A, name: string) {
     p_user_id: t.userId, p_company_name: name, p_admin_first: "T", p_admin_last: name, p_admin_email: t.email,
   });
   t.workspaceId = (Array.isArray(prov) ? prov[0] : prov).workspace_id;
+  const { data: membership } = await admin!.from("memberships").select("id").eq("user_id", t.userId).single();
+  t.membershipId = membership!.id;
   const { data: client } = await admin!.from("clients").insert({ workspace_id: t.workspaceId, first_name: "Client", last_name: name }).select("id").single();
   t.clientId = client!.id;
   const { data: conv } = await admin!
@@ -37,6 +39,14 @@ async function setupTenant(t: typeof A, name: string) {
   t.convId = conv!.id;
   await admin!.from("support_messages").insert({
     conversation_id: t.convId, workspace_id: t.workspaceId, author_type: "client", author_label: name, content: `Message secret de ${name}`,
+  });
+  const { data: appConv } = await admin!
+    .from("support_conversations")
+    .insert({ workspace_id: t.workspaceId, membership_id: t.membershipId, client_id: null, category: "suggestion", status: "new" })
+    .select("id").single();
+  t.appConvId = appConv!.id;
+  await admin!.from("support_messages").insert({
+    conversation_id: t.appConvId, workspace_id: t.workspaceId, author_type: "user", author_label: name, content: `Retour application de ${name}`,
   });
 }
 
@@ -61,6 +71,17 @@ describe.skipIf(!READY)("Isolation Assistance (RLS)", () => {
     expect(data).toBeTruthy();
     for (const c of data!) expect(c.workspace_id).toBe(A.workspaceId);
     expect(data!.some((c) => c.id === B.convId)).toBe(false);
+  });
+
+  it("un membre retrouve sa demande créée depuis l'application", async () => {
+    const asA = createClient(URL!, ANON!, { auth: { persistSession: false } });
+    await asA.auth.signInWithPassword({ email: A.email, password: A.password });
+    const { data } = await asA
+      .from("support_conversations")
+      .select("id, membership_id, client_id")
+      .eq("id", A.appConvId)
+      .maybeSingle();
+    expect(data).toMatchObject({ id: A.appConvId, membership_id: A.membershipId, client_id: null });
   });
 
   it("l'accès direct par ID à la conversation d'un autre workspace est bloqué", async () => {

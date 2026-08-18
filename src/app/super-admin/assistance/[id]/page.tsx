@@ -15,7 +15,7 @@ export default async function SuperAdminConversationPage({ params }: { params: {
 
   const { data: conv } = await admin
     .from("support_conversations")
-    .select("id, workspace_id, client_id, category, status, context, created_at, resolved_at, clients(first_name,last_name,company_name,email,phone), workspaces(name)")
+    .select("id, workspace_id, client_id, membership_id, category, status, context, created_at, resolved_at, clients(first_name,last_name,company_name,email,phone), memberships(first_name,last_name,email), workspaces(name)")
     .eq("id", params.id)
     .maybeSingle();
 
@@ -33,7 +33,15 @@ export default async function SuperAdminConversationPage({ params }: { params: {
   const cat = CATEGORY_BY_KEY[conv.category as SupportCategory];
   const st = STATUS_BY_KEY[conv.status as SupportStatus];
   const clientRel = conv.clients as unknown as { first_name: string | null; last_name: string | null; company_name: string | null; email: string | null; phone: string | null } | null;
+  const membershipRel = conv.memberships as unknown as { first_name: string | null; last_name: string | null; email: string | null } | null;
   const wsRel = conv.workspaces as unknown as { name: string | null } | null;
+  // client_id reste renseigné pour le portail ; membership_id peut être nul après
+  // la suppression d'un compte sans changer l'origine de la conversation.
+  const requesterType = conv.client_id ? "client" : "user";
+  const requester = requesterType === "user"
+    ? [membershipRel?.first_name, membershipRel?.last_name].filter(Boolean).join(" ") || membershipRel?.email || "Utilisateur inconnu"
+    : clientRel ? clientName(clientRel) : "Client inconnu";
+  const requesterEmail = requesterType === "user" ? membershipRel?.email : clientRel?.email;
   const context = (conv.context ?? {}) as Record<string, unknown>;
   const serviceCode = typeof context.service_code === "string" ? context.service_code : null;
   const route = typeof context.route === "string" ? context.route : null;
@@ -69,7 +77,7 @@ export default async function SuperAdminConversationPage({ params }: { params: {
                   m.author_type === "admin" ? "rounded-br-sm bg-pool-600 text-white" : "rounded-bl-sm bg-graphite-800 text-graphite-100"
                 }`}>
                   <div className={`mb-0.5 text-[11px] font-semibold ${m.author_type === "admin" ? "text-pool-100" : "text-pool-300"}`}>
-                    {m.author_type === "admin" ? "Vous (Assistance)" : (m.author_label ?? "Client")}
+                    {m.author_type === "admin" ? "Vous (Assistance)" : (m.author_label ?? (requesterType === "user" ? "Utilisateur" : "Client"))}
                   </div>
                   <div className="whitespace-pre-wrap break-words">{m.content}</div>
                   <div className={`mt-1 text-[10px] ${m.author_type === "admin" ? "text-pool-200" : "text-graphite-500"}`}>{formatDateTime(m.created_at)}</div>
@@ -90,9 +98,10 @@ export default async function SuperAdminConversationPage({ params }: { params: {
             <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-graphite-400">Informations</h2>
             <dl className="space-y-2 text-sm">
               <Info label="Entreprise" value={wsRel?.name ?? "—"} />
-              <Info label="Client" value={clientRel ? clientName(clientRel) : "—"} />
-              {clientRel?.email && <Info label="E-mail" value={clientRel.email} />}
-              {clientRel?.phone && <Info label="Téléphone" value={clientRel.phone} />}
+              <Info label={requesterType === "user" ? "Utilisateur" : "Client"} value={requester} />
+              <Info label="Origine" value={requesterType === "user" ? "Application Piscine Island" : "Portail client"} />
+              {requesterEmail && <Info label="E-mail" value={requesterEmail} />}
+              {requesterType === "client" && clientRel?.phone && <Info label="Téléphone" value={clientRel.phone} />}
               <Info label="Catégorie" value={`${cat.emoji} ${cat.label}`} />
               <Info label="Statut" value={`${st.emoji} ${st.label}`} />
               <Info label="Créée le" value={formatDateTime(conv.created_at)} />

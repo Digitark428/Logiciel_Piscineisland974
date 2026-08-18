@@ -28,7 +28,7 @@ Piscine Island est un SaaS de gestion destiné aux piscinistes, principalement a
 
 - Gestion des clients, piscines, prestations ponctuelles ou récurrentes, planning, équipe, tâches, documents, sauvegardes, notifications internes et journal d'activité.
 - Les notes d'équipe disposent d'interactions append-only isolées par entreprise : lectures, exécutions et commentaires (`team_note_reads`, `team_note_executions`, `team_note_comments`), avec contrôle RLS et trigger d'intégrité tenant.
-- Portail client sous `/portal/[token]`, avec consultations d'interventions, notes client et assistance intégrée.
+- Portail client sous `/portal/[token]`, avec consultations d'interventions, notes client et assistance intégrée. L'assistance des utilisateurs de l'application est un volet flottant distinct, disponible uniquement dans `/app` ; le Super Admin distingue les deux origines.
 - Super Admin séparé sous `/super-admin`.
 - Contrats et factures sont gérés comme fichiers dans `documents`, et non comme documents générés par l'application.
 - Le mode démo a été retiré par la migration `0019` : ne pas réintroduire `/demo`, `seed_demo_data` ou `is_demo`.

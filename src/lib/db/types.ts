@@ -332,12 +332,15 @@ export interface Backup {
 // ---- Assistance (module de support intégré) ----
 export type SupportCategory = "bug" | "help" | "suggestion";
 export type SupportStatus = "new" | "in_progress" | "resolved" | "closed";
-export type SupportAuthorType = "client" | "admin";
+export type SupportAuthorType = "client" | "user" | "admin";
 
 export interface SupportConversation {
   id: string;
   workspace_id: string;
-  client_id: string;
+  /** Client du portail, absent pour une demande envoyée depuis l'application. */
+  client_id: string | null;
+  /** Membre à l'origine d'une demande envoyée depuis l'application. */
+  membership_id: string | null;
   category: SupportCategory;
   status: SupportStatus;
   context: Record<string, unknown>;

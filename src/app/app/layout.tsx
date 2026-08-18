@@ -2,6 +2,7 @@ import { requireContext, can } from "@/lib/auth/context";
 import { createClient } from "@/lib/supabase/server";
 import { signedUrl } from "@/lib/storage";
 import { AppShell } from "@/components/app/AppShell";
+import { AppSupportWidget } from "@/components/app/AppSupportWidget";
 import { NAV_ITEMS } from "@/components/app/nav";
 import { memberName } from "@/lib/utils/format";
 
@@ -32,16 +33,19 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   ]);
 
   return (
-    <AppShell
-      items={items}
-      workspaceName={ctx.workspace.name}
-      companyCode={ctx.workspace.company_code}
-      userName={memberName(ctx.membership)}
-      avatarUrl={avatarUrl}
-      roleLabel={ctx.isAdmin ? "Gérant" : "Membre"}
-      notifCount={count ?? 0}
-    >
-      {children}
-    </AppShell>
+    <>
+      <AppShell
+        items={items}
+        workspaceName={ctx.workspace.name}
+        companyCode={ctx.workspace.company_code}
+        userName={memberName(ctx.membership)}
+        avatarUrl={avatarUrl}
+        roleLabel={ctx.isAdmin ? "Gérant" : "Membre"}
+        notifCount={count ?? 0}
+      >
+        {children}
+      </AppShell>
+      <AppSupportWidget />
+    </>
   );
 }

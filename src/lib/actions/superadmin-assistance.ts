@@ -25,7 +25,7 @@ async function fetchConversation(conversationId: string) {
   return data;
 }
 
-/** Le Super Admin répond au client. Le message apparaît côté client (portail). */
+/** Le Super Admin répond au demandeur (client portail ou utilisateur de l'application). */
 export async function replySupportConversation(conversationId: string, content: string): Promise<ActionResult> {
   if (!(await getSuperAdmin())) return fail("Non autorisé.");
   const text = (content ?? "").trim();
@@ -59,7 +59,7 @@ export async function replySupportConversation(conversationId: string, content: 
     action: "support_reply_sent",
     entity_type: "support",
     entity_id: conv.id,
-    summary: "Assistance — réponse envoyée au client",
+    summary: "Assistance — réponse envoyée au demandeur",
   });
 
   revalidatePath("/super-admin/assistance");
@@ -99,7 +99,7 @@ export async function setSupportStatus(conversationId: string, status: string): 
   return ok(`Statut : ${STATUS_BY_KEY[status].label}.`);
 }
 
-/** Marque les messages client comme vus par le Super Admin (badge d'attention). */
+/** Marque les messages du demandeur comme vus par le Super Admin (badge d'attention). */
 export async function markConversationSeenByAdmin(conversationId: string): Promise<ActionResult> {
   if (!(await getSuperAdmin())) return fail("Non autorisé.");
   const conv = await fetchConversation(conversationId);

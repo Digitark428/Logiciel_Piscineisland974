@@ -32,7 +32,7 @@ export default async function SuperAdminAssistancePage({ searchParams }: { searc
     if (fCategory && c.category !== fCategory) return false;
     if (fCompany && c.company !== fCompany) return false;
     if (q) {
-      const hay = `${c.company} ${c.client} ${c.preview} ${c.lastMessage}`.toLowerCase();
+      const hay = `${c.company} ${c.requester} ${c.preview} ${c.lastMessage}`.toLowerCase();
       if (!hay.includes(q)) return false;
     }
     return true;
@@ -84,7 +84,7 @@ export default async function SuperAdminAssistancePage({ searchParams }: { searc
             </select>
           </Field>
           <Field label="Recherche">
-            <input name="q" defaultValue={searchParams.q ?? ""} placeholder="Message, client…" className={SELECT_CLS} />
+            <input name="q" defaultValue={searchParams.q ?? ""} placeholder="Message, demandeur…" className={SELECT_CLS} />
           </Field>
           <div className="flex gap-2">
             <button type="submit" className="rounded-lg bg-pool-600 px-4 py-2 text-sm font-semibold text-white hover:bg-pool-700">Filtrer</button>
@@ -110,7 +110,10 @@ export default async function SuperAdminAssistancePage({ searchParams }: { searc
                           <span className="badge bg-graphite-800 text-graphite-200">{cat.emoji} {cat.label}</span>
                           <span className="font-medium text-graphite-200">{c.company}</span>
                           <span className="text-graphite-500">·</span>
-                          <span className="text-graphite-400">{c.client}</span>
+                          <span className={`badge ${c.requesterType === "user" ? "bg-pool-900/50 text-pool-200" : "bg-graphite-800 text-graphite-200"}`}>
+                            {c.requesterType === "user" ? "👤 Utilisateur app" : "👥 Client portail"}
+                          </span>
+                          <span className="text-graphite-400">{c.requester}</span>
                           {c.adminUnread > 0 && <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">{c.adminUnread}</span>}
                         </div>
                         <div className="truncate text-sm text-graphite-300">

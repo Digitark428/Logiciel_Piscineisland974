@@ -2,7 +2,7 @@ import "server-only";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { clientName } from "@/lib/utils/format";
-import type { SupportCategory, SupportStatus } from "@/lib/db/types";
+import type { SupportAuthorType, SupportCategory, SupportStatus } from "@/lib/db/types";
 
 /**
  * Lecture globale des conversations d'assistance pour le Super Admin.
@@ -11,7 +11,7 @@ import type { SupportCategory, SupportStatus } from "@/lib/db/types";
 
 export interface AdminMessage {
   id: string;
-  author_type: "client" | "admin";
+  author_type: SupportAuthorType;
   author_label: string | null;
   content: string;
   created_at: string;
@@ -20,7 +20,8 @@ export interface AdminMessage {
 export interface AdminConversation {
   id: string;
   workspace_id: string;
-  client_id: string;
+  client_id: string | null;
+  membership_id: string | null;
   category: SupportCategory;
   status: SupportStatus;
   context: Record<string, unknown>;
@@ -29,10 +30,11 @@ export interface AdminConversation {
   resolved_at: string | null;
   admin_last_seen_at: string | null;
   company: string;
-  client: string;
+  requester: string;
+  requesterType: "client" | "user";
   preview: string;
   lastMessage: string;
-  lastAuthor: "client" | "admin";
+  lastAuthor: SupportAuthorType;
   adminUnread: number;
   messages: AdminMessage[];
 }
@@ -61,7 +63,7 @@ export async function getSupportOverview(): Promise<Overview> {
   const admin = createAdminClient();
   const { data: rows } = await admin
     .from("support_conversations")
-    .select("id, workspace_id, client_id, category, status, context, created_at, last_message_at, resolved_at, admin_last_seen_at, clients(first_name,last_name,company_name), workspaces(name)")
+    .select("id, workspace_id, client_id, membership_id, category, status, context, created_at, last_message_at, resolved_at, admin_last_seen_at, clients(first_name,last_name,company_name), memberships(first_name,last_name,email), workspaces(name)")
     .order("last_message_at", { ascending: false })
     .limit(MAX);
 
@@ -83,19 +85,26 @@ export async function getSupportOverview(): Promise<Overview> {
       .filter((m) => m.conversation_id === c.id)
       .map((m) => ({
         id: m.id,
-        author_type: m.author_type as "client" | "admin",
+        author_type: m.author_type as SupportAuthorType,
         author_label: m.author_label,
         content: m.content,
         created_at: m.created_at,
       }));
 
-    const first = messages.find((m) => m.author_type === "client") ?? messages[0];
+    const first = messages.find((m) => m.author_type !== "admin") ?? messages[0];
     const last = messages[messages.length - 1];
     const seen = c.admin_last_seen_at ? new Date(c.admin_last_seen_at).getTime() : 0;
-    const adminUnread = messages.filter((m) => m.author_type === "client" && new Date(m.created_at).getTime() > seen).length;
+    const adminUnread = messages.filter((m) => m.author_type !== "admin" && new Date(m.created_at).getTime() > seen).length;
 
     const clientRel = c.clients as unknown as { first_name: string | null; last_name: string | null; company_name: string | null } | null;
+    const membershipRel = c.memberships as unknown as { first_name: string | null; last_name: string | null; email: string | null } | null;
     const wsRel = c.workspaces as unknown as { name: string | null } | null;
+    // `client_id` est l'indicateur durable de l'origine : membership_id peut
+    // devenir null si un compte est supprimé, sans transformer la demande en client.
+    const requesterType = c.client_id ? "client" as const : "user" as const;
+    const requester = requesterType === "user"
+      ? [membershipRel?.first_name, membershipRel?.last_name].filter(Boolean).join(" ") || membershipRel?.email || "Utilisateur inconnu"
+      : clientRel ? clientName(clientRel) : "Client inconnu";
 
     const status = c.status as SupportStatus;
     const category = c.category as SupportCategory;
@@ -110,6 +119,7 @@ export async function getSupportOverview(): Promise<Overview> {
       id: c.id,
       workspace_id: c.workspace_id,
       client_id: c.client_id,
+      membership_id: c.membership_id,
       category,
       status,
       context: (c.context ?? {}) as Record<string, unknown>,
@@ -118,10 +128,11 @@ export async function getSupportOverview(): Promise<Overview> {
       resolved_at: c.resolved_at,
       admin_last_seen_at: c.admin_last_seen_at,
       company: wsRel?.name ?? "—",
-      client: clientRel ? clientName(clientRel) : "—",
+      requester,
+      requesterType,
       preview: first?.content ?? "",
       lastMessage: last?.content ?? "",
-      lastAuthor: last?.author_type ?? "client",
+      lastAuthor: last?.author_type ?? (requesterType === "user" ? "user" : "client"),
       adminUnread,
       messages,
     };

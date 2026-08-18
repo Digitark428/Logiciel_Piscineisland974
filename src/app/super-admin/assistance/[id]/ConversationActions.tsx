@@ -34,12 +34,12 @@ export function ConversationActions({ conversationId, status }: { conversationId
   return (
     <div className="space-y-4">
       <div>
-        <label className="mb-1.5 block text-sm font-medium text-graphite-200">Répondre au client</label>
+        <label className="mb-1.5 block text-sm font-medium text-graphite-200">Répondre à la demande</label>
         <textarea
           value={reply}
           onChange={(e) => setReply(e.target.value.slice(0, SUPPORT_MESSAGE_MAX))}
           rows={4}
-          placeholder="Votre réponse apparaîtra directement dans l'assistance du client…"
+          placeholder="Votre réponse apparaîtra directement dans cette discussion…"
           className="w-full resize-none rounded-xl border border-graphite-700 bg-graphite-800 px-3.5 py-2.5 text-sm text-graphite-100 placeholder:text-graphite-500 focus:border-pool-500 focus:outline-none"
         />
         {error && <p className="mt-1 text-xs text-red-400">{error}</p>}

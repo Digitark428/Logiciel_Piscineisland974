@@ -53,3 +53,11 @@
 - **Tâche :** correction des calculs de planning qui convertissaient une date civile en UTC et pouvaient ainsi revenir à la veille entre minuit et 4 h à La Réunion.
 - **Portée :** utilitaire `Indian/Reunion` partagé, planning, tableau de bord, filtres de prestations, portail client et génération de prestations récurrentes ; aucune donnée existante modifiée, aucune migration.
 - **Vérification :** tests dédiés au passage de minuit et à la validation des dates civiles, puis typecheck/build.
+
+## 2026-08-18 — Codex — Assistance des utilisateurs de l'application
+
+- **Tâche :** ajout d'un volet flottant « Aide & retours » dans `/app` pour signaler un bug, demander de l'aide ou proposer une amélioration ; aucune exposition aux clients finaux.
+- **Sécurité :** conversations rattachées au `membership_id` issu de la session serveur, actions contrôlées côté serveur et lecture filtrée par membre/workspace avec les RLS existantes. Le portail client et son widget restent séparés et inchangés.
+- **Super Admin :** liste et détail distinguent maintenant clairement un utilisateur de l'application d'un client portail ; les réponses apparaissent dans le bon fil.
+- **Migrations :** aucune — le schéma et les règles RLS de support interne existaient déjà et ont été vérifiés en production.
+- **Vérification :** typecheck, build et 28 tests validés ; 12 tests d'intégration restent ignorés sans secrets Supabase de test.
