@@ -3,6 +3,7 @@ import { requirePermission, can } from "@/lib/auth/context";
 import { createClient } from "@/lib/supabase/server";
 import { Card, PageHeader } from "@/components/ui";
 import { clientName, formatTime } from "@/lib/utils/format";
+import { dateOnlyToUtcDate } from "@/lib/utils/date";
 import {
   type PlanningView, parseAnchor, rangeFor, navFor, toISO,
   addDays, startOfWeek, startOfMonth, weekdayShort, monthName, periodLabel,
@@ -77,7 +78,7 @@ export default async function PlanningPage({ searchParams }: { searchParams: { v
       {view === "day" && <DayView services={byDate.get(toISO(anchor)) ?? []} />}
       {view === "week" && <WeekView start={startOfWeek(anchor)} byDate={byDate} />}
       {view === "month" && <MonthView anchor={anchor} byDate={byDate} />}
-      {view === "year" && <YearView year={anchor.getFullYear()} byDate={byDate} />}
+      {view === "year" && <YearView year={anchor.getUTCFullYear()} byDate={byDate} />}
     </div>
   );
 }
@@ -116,7 +117,7 @@ function WeekView({ start, byDate }: { start: Date; byDate: Map<string, any[]> }
           <div key={iso} className={`card p-3 ${iso === today ? "ring-2 ring-pool-300" : ""}`}>
             <div className="mb-2 flex items-baseline justify-between">
               <span className="text-xs font-semibold uppercase text-graphite-400">{weekdayShort(d)}</span>
-              <span className="text-lg font-bold text-graphite-800">{d.getDate()}</span>
+              <span className="text-lg font-bold text-graphite-800">{d.getUTCDate()}</span>
             </div>
             <div className="space-y-1">
               {list.length === 0 ? <span className="text-xs text-graphite-300">—</span> : list.map((s) => <ServiceRow key={s.id} s={s} />)}
@@ -142,11 +143,11 @@ function MonthView({ anchor, byDate }: { anchor: Date; byDate: Map<string, any[]
         {cells.map((d) => {
           const iso = toISO(d);
           const list = byDate.get(iso) ?? [];
-          const inMonth = d.getMonth() === anchor.getMonth();
+          const inMonth = d.getUTCMonth() === anchor.getUTCMonth();
           return (
             <Link key={iso} href={`/app/planning?view=day&date=${iso}`}
               className={`min-h-[76px] rounded-lg border p-1.5 text-left transition hover:border-pool-300 ${inMonth ? "border-graphite-100 bg-white" : "border-transparent bg-graphite-50/50"} ${iso === today ? "ring-2 ring-pool-300" : ""}`}>
-              <div className={`text-xs font-semibold ${inMonth ? "text-graphite-700" : "text-graphite-300"}`}>{d.getDate()}</div>
+              <div className={`text-xs font-semibold ${inMonth ? "text-graphite-700" : "text-graphite-300"}`}>{d.getUTCDate()}</div>
               <div className="mt-1 space-y-0.5">
                 {list.slice(0, 3).map((s) => (
                   <div key={s.id} className="flex items-center gap-1">
@@ -167,8 +168,8 @@ function MonthView({ anchor, byDate }: { anchor: Date; byDate: Map<string, any[]
 function YearView({ year, byDate }: { year: number; byDate: Map<string, any[]> }) {
   const counts = Array.from({ length: 12 }, () => 0);
   for (const [iso, list] of byDate) {
-    const m = new Date(iso + "T00:00:00").getMonth();
-    counts[m] += list.length;
+    const month = dateOnlyToUtcDate(iso)?.getUTCMonth();
+    if (month !== undefined) counts[month] += list.length;
   }
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

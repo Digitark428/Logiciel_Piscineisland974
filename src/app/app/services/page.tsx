@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { signedUrls } from "@/lib/storage";
 import { PageHeader, Card, EmptyState, Badge, Avatar } from "@/components/ui";
 import { clientName, memberName, formatDate, formatTime, SERVICE_STATUS_LABELS } from "@/lib/utils/format";
+import { todayInReunion } from "@/lib/utils/date";
 
 const FILTERS = [
   { key: "upcoming", label: "À venir" },
@@ -16,7 +17,7 @@ export default async function ServicesPage({ searchParams }: { searchParams: { f
   const ctx = await requirePermission("services.view");
   const supabase = createClient();
   const filter = searchParams.f ?? "upcoming";
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayInReunion();
 
   let query = supabase
     .from("services")

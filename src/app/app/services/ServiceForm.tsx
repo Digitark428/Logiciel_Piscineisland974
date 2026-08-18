@@ -6,6 +6,7 @@ import { createService } from "@/lib/actions/services";
 import { idle } from "@/lib/actions/result";
 import { SubmitButton } from "@/components/forms/SubmitButton";
 import { cn } from "@/lib/utils/cn";
+import { todayInReunion } from "@/lib/utils/date";
 
 interface Opt { id: string; label: string }
 interface PoolOpt { id: string; label: string; client_id: string }
@@ -44,7 +45,7 @@ export function ServiceForm({
     [documents, clientId],
   );
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayInReunion();
 
   return (
     <form action={formAction} className="space-y-6">

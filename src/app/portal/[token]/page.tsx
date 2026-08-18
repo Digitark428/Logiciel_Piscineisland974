@@ -6,6 +6,7 @@ import { Logo } from "@/components/Logo";
 import { PortalCodeForm } from "./PortalCodeForm";
 import { AssistanceWidget, type WidgetConversation } from "./AssistanceWidget";
 import { clientName, formatDate, formatMoney, SERVICE_STATUS_LABELS, INVOICE_STATUS_LABELS } from "@/lib/utils/format";
+import { todayInReunion } from "@/lib/utils/date";
 import type { SupportCategory, SupportStatus } from "@/lib/db/types";
 
 export default async function PortalPage({ params }: { params: { token: string } }) {
@@ -50,8 +51,9 @@ export default async function PortalPage({ params }: { params: { token: string }
   ]);
 
   const name = clientName(client!);
-  const upcoming = (services ?? []).filter((s) => s.scheduled_date >= new Date().toISOString().slice(0, 10) && s.status !== "cancelled");
-  const past = (services ?? []).filter((s) => s.scheduled_date < new Date().toISOString().slice(0, 10) || s.status === "completed");
+  const today = todayInReunion();
+  const upcoming = (services ?? []).filter((s) => s.scheduled_date >= today && s.status !== "cancelled");
+  const past = (services ?? []).filter((s) => s.scheduled_date < today || s.status === "completed");
   const closeAction = closePortal.bind(null, token);
 
   // ---- Assistance : conversations du client (portée stricte à ce client) ----

@@ -3,11 +3,12 @@ import { requireContext, can } from "@/lib/auth/context";
 import { createClient } from "@/lib/supabase/server";
 import { Card, StatCard, Badge, EmptyState, PageHeader } from "@/components/ui";
 import { clientName, formatDate, formatTime, SERVICE_STATUS_LABELS } from "@/lib/utils/format";
+import { todayInReunion } from "@/lib/utils/date";
 
 export default async function DashboardPage() {
   const ctx = await requireContext();
   const supabase = createClient();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayInReunion();
 
   const baseSel =
     "id, code, scheduled_date, scheduled_time, status, service_type, client:clients(first_name,last_name,company_name)";

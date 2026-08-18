@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { actionContext, logActivity, notify } from "@/lib/actions/helpers";
 import { fail, ok, type ActionResult } from "@/lib/actions/result";
+import { dateOnlyToUtcDate, utcDateToDateOnly } from "@/lib/utils/date";
 
 const str = (v: FormDataEntryValue | null) => {
   const t = (v as string | null)?.trim();
@@ -28,7 +29,7 @@ function parseDates(raw: string): string[] {
       const [, d, m, y] = frMatch;
       iso = `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
     }
-    if (iso && !Number.isNaN(new Date(iso).getTime())) out.push(iso);
+    if (iso && dateOnlyToUtcDate(iso)) out.push(iso);
   }
   return out;
 }
@@ -36,14 +37,15 @@ function parseDates(raw: string): string[] {
 /** Génère des dates à partir d'une fréquence régulière. */
 function generateFrequencyDates(start: string, frequency: string, count: number): string[] {
   const dates: string[] = [];
-  const base = new Date(start + "T00:00:00");
+  const base = dateOnlyToUtcDate(start);
+  if (!base) return dates;
   for (let i = 0; i < count; i++) {
     const d = new Date(base);
-    if (frequency === "weekly") d.setDate(base.getDate() + i * 7);
-    else if (frequency === "biweekly") d.setDate(base.getDate() + i * 14);
-    else if (frequency === "monthly") d.setMonth(base.getMonth() + i);
-    else d.setDate(base.getDate() + i * 7);
-    dates.push(d.toISOString().slice(0, 10));
+    if (frequency === "weekly") d.setUTCDate(base.getUTCDate() + i * 7);
+    else if (frequency === "biweekly") d.setUTCDate(base.getUTCDate() + i * 14);
+    else if (frequency === "monthly") d.setUTCMonth(base.getUTCMonth() + i);
+    else d.setUTCDate(base.getUTCDate() + i * 7);
+    dates.push(utcDateToDateOnly(d));
   }
   return dates;
 }

@@ -14,6 +14,7 @@ Piscine Island est un SaaS de gestion destiné aux piscinistes, principalement a
 - Les actions serveur sont organisées par domaine dans `src/lib/actions/` et retournent le format `ActionResult`.
 - Les clients Supabase sont dans `src/lib/supabase/`; `admin.ts` utilise le service role côté serveur uniquement.
 - Les migrations SQL sont numérotées dans `supabase/migrations/` ; l'état connu va de `0001` à `0025`.
+- La V1 est exploitée uniquement à La Réunion : toute date métier sans heure (`YYYY-MM-DD`) doit être calculée dans le fuseau `Indian/Reunion` via `src/lib/utils/date.ts`, jamais avec `toISOString().slice(0, 10)`.
 
 ## Données, sécurité et autorisations
 
