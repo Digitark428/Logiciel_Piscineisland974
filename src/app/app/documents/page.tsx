@@ -1,6 +1,6 @@
 import { requirePermission, can } from "@/lib/auth/context";
 import { createClient } from "@/lib/supabase/server";
-import { signedUrl } from "@/lib/storage";
+import { signedUrls } from "@/lib/storage";
 import { PageHeader, Card, EmptyState } from "@/components/ui";
 import { UploadBox, DocRow } from "./DocumentsClient";
 
@@ -15,14 +15,13 @@ export default async function DocumentsPage() {
     .order("created_at", { ascending: false })
     .limit(200);
 
-  const withUrls = await Promise.all(
-    (docs ?? []).map(async (d) => ({ d, url: await signedUrl("documents", d.storage_path) })),
-  );
+  const documentUrls = await signedUrls("documents", (docs ?? []).map((document) => document.storage_path));
+  const withUrls = (docs ?? []).map((d) => ({ d, url: documentUrls.get(d.storage_path) ?? null }));
   const canManage = can(ctx, "documents.manage");
 
   return (
     <div>
-      <PageHeader title="Documents" subtitle="Fichiers de votre espace, stockés de façon sécurisée." />
+      <PageHeader title="Documents" description="Consultez et partagez les fichiers sécurisés de votre entreprise." />
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
           {withUrls.length === 0 ? (

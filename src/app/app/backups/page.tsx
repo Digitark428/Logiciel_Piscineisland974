@@ -32,7 +32,12 @@ export default async function BackupsPage() {
 
   return (
     <div>
-      <PageHeader title="Sauvegardes" subtitle="Sauvegarde automatique quotidienne à 23h00 + sauvegarde manuelle." action={<ManualBackupButton />} />
+      <PageHeader
+        title="Sauvegardes"
+        description="Consultez les sauvegardes sécurisées de vos données et déclenchez-en une si nécessaire."
+        subtitle="Sauvegarde automatique quotidienne à 23h00 + sauvegarde manuelle."
+        action={<ManualBackupButton />}
+      />
 
       {latest && (
         <Card className="mb-6 border-pool-200 bg-pool-50/40">

@@ -254,6 +254,34 @@ export interface TeamNote {
   created_at: string;
 }
 
+export interface TeamNoteRead {
+  id: string;
+  workspace_id: string;
+  team_note_id: string;
+  membership_id: string | null;
+  reader_label: string;
+  read_at: string;
+}
+
+export interface TeamNoteExecution {
+  id: string;
+  workspace_id: string;
+  team_note_id: string;
+  membership_id: string | null;
+  executor_label: string;
+  executed_at: string;
+}
+
+export interface TeamNoteComment {
+  id: string;
+  workspace_id: string;
+  team_note_id: string;
+  author_membership_id: string | null;
+  author_label: string;
+  content: string;
+  created_at: string;
+}
+
 export interface ServiceClientNote {
   id: string;
   workspace_id: string;

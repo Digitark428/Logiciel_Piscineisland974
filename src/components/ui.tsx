@@ -8,10 +8,13 @@ export function Card({ className, children }: { className?: string; children: Re
 
 export function PageHeader({
   title,
+  description,
   subtitle,
   action,
 }: {
   title: string;
+  /** Courte explication de la section, affichée sous le titre. */
+  description?: string;
   subtitle?: string;
   action?: React.ReactNode;
 }) {
@@ -19,7 +22,8 @@ export function PageHeader({
     <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-graphite-900">{title}</h1>
-        {subtitle && <p className="mt-1 text-sm text-graphite-500">{subtitle}</p>}
+        {description && <p className="mt-1 text-sm text-graphite-500">{description}</p>}
+        {subtitle && <p className={cn(description ? "mt-1 text-xs text-graphite-400" : "mt-1 text-sm text-graphite-500")}>{subtitle}</p>}
       </div>
       {action}
     </div>

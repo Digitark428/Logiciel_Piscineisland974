@@ -17,8 +17,8 @@ const READY = Boolean(URL && ANON && SERVICE);
 const admin = READY ? createClient(URL!, SERVICE!, { auth: { persistSession: false } }) : null;
 
 const rnd = Math.random().toString(36).slice(2, 8);
-const A = { email: `iso-a-${rnd}@example.test`, password: "Password123!", userId: "", workspaceId: "", clientId: "", membershipId: "", poolId: "", serviceId: "" };
-const B = { email: `iso-b-${rnd}@example.test`, password: "Password123!", userId: "", workspaceId: "", clientId: "", membershipId: "", poolId: "", serviceId: "" };
+const A = { email: `iso-a-${rnd}@example.test`, password: "Password123!", userId: "", workspaceId: "", clientId: "", membershipId: "", poolId: "", serviceId: "", noteId: "" };
+const B = { email: `iso-b-${rnd}@example.test`, password: "Password123!", userId: "", workspaceId: "", clientId: "", membershipId: "", poolId: "", serviceId: "", noteId: "" };
 
 async function setupTenant(t: typeof A, name: string) {
   const { data: created } = await admin!.auth.admin.createUser({ email: t.email, password: t.password, email_confirm: true });
@@ -35,6 +35,14 @@ async function setupTenant(t: typeof A, name: string) {
   t.poolId = pool!.id;
   const { data: service } = await admin!.from("services").insert({ workspace_id: t.workspaceId, client_id: t.clientId, pool_id: t.poolId, assigned_membership_id: t.membershipId, scheduled_date: "2026-08-17" }).select("id").single();
   t.serviceId = service!.id;
+  const { data: note } = await admin!.from("team_notes")
+    .insert({ workspace_id: t.workspaceId, author_membership_id: t.membershipId, content: `Note privée ${name}` })
+    .select("id")
+    .single();
+  t.noteId = note!.id;
+  await admin!.from("team_note_reads").insert({ workspace_id: t.workspaceId, team_note_id: t.noteId, membership_id: t.membershipId });
+  await admin!.from("team_note_executions").insert({ workspace_id: t.workspaceId, team_note_id: t.noteId, membership_id: t.membershipId });
+  await admin!.from("team_note_comments").insert({ workspace_id: t.workspaceId, team_note_id: t.noteId, author_membership_id: t.membershipId, content: `Commentaire privé ${name}` });
 }
 
 describe.skipIf(!READY)("Isolation multi-tenant (RLS)", () => {
@@ -93,5 +101,31 @@ describe.skipIf(!READY)("Isolation multi-tenant (RLS)", () => {
 
     const badTask = await admin!.from("service_tasks").insert({ workspace_id: A.workspaceId, service_id: B.serviceId, label: "Intrus" });
     expect(badTask.error).toBeTruthy();
+  });
+
+  it("les interactions de notes restent isolées et l'auteur est dérivé du compte connecté", async () => {
+    const asA = createClient(URL!, ANON!, { auth: { persistSession: false } });
+    await asA.auth.signInWithPassword({ email: A.email, password: A.password });
+
+    const [reads, executions, comments] = await Promise.all([
+      asA.from("team_note_reads").select("id").eq("workspace_id", B.workspaceId),
+      asA.from("team_note_executions").select("id").eq("workspace_id", B.workspaceId),
+      asA.from("team_note_comments").select("id").eq("workspace_id", B.workspaceId),
+    ]);
+    expect(reads.data ?? []).toHaveLength(0);
+    expect(executions.data ?? []).toHaveLength(0);
+    expect(comments.data ?? []).toHaveLength(0);
+
+    const ownComment = await asA.from("team_note_comments")
+      .insert({ workspace_id: A.workspaceId, team_note_id: A.noteId, author_membership_id: A.membershipId, content: "Commentaire de A" })
+      .select("author_label")
+      .single();
+    expect(ownComment.error).toBeNull();
+    expect(ownComment.data?.author_label).toBe("T TenantA");
+
+    const intrusion = await asA.from("team_note_executions")
+      .insert({ workspace_id: B.workspaceId, team_note_id: B.noteId, membership_id: B.membershipId })
+      .select("id");
+    expect(!intrusion.data || intrusion.data.length === 0 || !!intrusion.error).toBe(true);
   });
 });

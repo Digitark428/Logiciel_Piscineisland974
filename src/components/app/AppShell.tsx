@@ -1,14 +1,52 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Logo } from "@/components/Logo";
 import { Avatar } from "@/components/ui";
 import { Icon } from "./icons";
 import { signOut } from "@/lib/auth/actions";
 import type { NavItem } from "./nav";
 import { cn } from "@/lib/utils/cn";
+
+function NavigationLinks({
+  items,
+  pathname,
+  onNavigate,
+  onPrefetch,
+}: {
+  items: NavItem[];
+  pathname: string;
+  onNavigate: () => void;
+  onPrefetch: (href: string) => void;
+}) {
+  return (
+    <nav className="space-y-1">
+      {items.map((item) => {
+        const active = item.href === "/app" ? pathname === "/app" : pathname.startsWith(item.href);
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            onClick={onNavigate}
+            onMouseEnter={() => onPrefetch(item.href)}
+            onFocus={() => onPrefetch(item.href)}
+            className={cn(
+              "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition",
+              active
+                ? "bg-pool-50 text-pool-700"
+                : "text-graphite-600 hover:bg-graphite-100 hover:text-graphite-900",
+            )}
+          >
+            <Icon name={item.icon} size={19} />
+            {item.label}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
 
 export function AppShell({
   items,
@@ -30,31 +68,10 @@ export function AppShell({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
-
-  const isActive = (href: string) =>
-    href === "/app" ? pathname === "/app" : pathname.startsWith(href);
-
-  const NavLinks = () => (
-    <nav className="space-y-1">
-      {items.map((item) => (
-        <Link
-          key={item.href}
-          href={item.href}
-          onClick={() => setOpen(false)}
-          className={cn(
-            "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition",
-            isActive(item.href)
-              ? "bg-pool-50 text-pool-700"
-              : "text-graphite-600 hover:bg-graphite-100 hover:text-graphite-900",
-          )}
-        >
-          <Icon name={item.icon} size={19} />
-          {item.label}
-        </Link>
-      ))}
-    </nav>
-  );
+  const closeMenu = useCallback(() => setOpen(false), []);
+  const prefetch = useCallback((href: string) => router.prefetch(href), [router]);
 
   return (
     <div className="min-h-screen bg-graphite-50">
@@ -70,7 +87,7 @@ export function AppShell({
           </div>
         </div>
         <div className="flex-1 overflow-y-auto px-3 py-2">
-          <NavLinks />
+          <NavigationLinks items={items} pathname={pathname} onNavigate={closeMenu} onPrefetch={prefetch} />
         </div>
       </aside>
 
@@ -89,7 +106,9 @@ export function AppShell({
                 <div className="font-mono text-xs text-graphite-400">{companyCode}</div>
               </div>
             </div>
-            <div className="flex-1 overflow-y-auto px-3 py-2"><NavLinks /></div>
+            <div className="flex-1 overflow-y-auto px-3 py-2">
+              <NavigationLinks items={items} pathname={pathname} onNavigate={closeMenu} onPrefetch={prefetch} />
+            </div>
           </aside>
         </div>
       )}
@@ -101,10 +120,14 @@ export function AppShell({
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
           </button>
           <div className="ml-auto flex items-center gap-2">
-            <Link href="/app/notifications" className="relative btn-ghost p-2" aria-label="Notifications">
+            <Link
+              href="/app/notifications"
+              className="relative inline-flex h-10 w-10 shrink-0 overflow-visible btn-ghost p-2"
+              aria-label={notifCount > 0 ? `Notifications (${notifCount > 99 ? "99+" : notifCount} non lues)` : "Notifications"}
+            >
               <Icon name="bell" size={21} />
               {notifCount > 0 && (
-                <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-[11px] font-bold text-white">
+                <span className="absolute -right-1.5 -top-1.5 z-10 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1.5 text-[11px] font-bold leading-none text-white ring-2 ring-white">
                   {notifCount > 99 ? "99+" : notifCount}
                 </span>
               )}

@@ -39,18 +39,23 @@ export const getSessionContext = cache(
 
     if (!membership) return null;
 
-    const { data: workspace } = await supabase
-      .from("workspaces")
-      .select("*")
-      .eq("id", membership.workspace_id)
-      .maybeSingle();
+    // Une fois le membership connu, l'espace et les permissions sont
+    // indépendants : les lancer ensemble évite un aller-retour Supabase.
+    const [workspaceRes, permsRes] = await Promise.all([
+      supabase
+        .from("workspaces")
+        .select("*")
+        .eq("id", membership.workspace_id)
+        .maybeSingle(),
+      supabase
+        .from("permissions")
+        .select("key, granted")
+        .eq("membership_id", membership.id),
+    ]);
+    const { data: workspace } = workspaceRes;
 
     if (!workspace || workspace.status !== "active") return null;
-
-    const { data: perms } = await supabase
-      .from("permissions")
-      .select("key, granted")
-      .eq("membership_id", membership.id);
+    const { data: perms } = permsRes;
 
     const isAdmin = membership.role === "admin";
     const permissions = new Set<string>(

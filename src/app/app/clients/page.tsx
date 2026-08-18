@@ -33,6 +33,7 @@ export default async function ClientsPage({
     <div>
       <PageHeader
         title="Clients"
+        description="Consultez et gérez les coordonnées et informations de vos clients."
         subtitle={`${clients?.length ?? 0} ${showArchived ? "archivé(s)" : "actif(s)"}`}
         action={
           can(ctx, "clients.edit") ? (

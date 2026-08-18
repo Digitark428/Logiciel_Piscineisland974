@@ -14,6 +14,24 @@ export async function signedUrl(
   return data?.signedUrl ?? null;
 }
 
+/** URLs signées en lot pour limiter les allers-retours Storage sur les listes. */
+export async function signedUrls(
+  bucket: string,
+  paths: Array<string | null | undefined>,
+  expiresIn = 3600,
+): Promise<Map<string, string>> {
+  const uniquePaths = Array.from(new Set(paths.filter((path): path is string => Boolean(path))));
+  if (uniquePaths.length === 0) return new Map();
+
+  const supabase = createClient();
+  const { data } = await supabase.storage.from(bucket).createSignedUrls(uniquePaths, expiresIn);
+  const urls = new Map<string, string>();
+  for (const item of data ?? []) {
+    if (item.path && item.signedUrl) urls.set(item.path, item.signedUrl);
+  }
+  return urls;
+}
+
 /** URL signée forçant le téléchargement (Content-Disposition: attachment) avec un nom de fichier. */
 export async function signedDownloadUrl(
   bucket: string,

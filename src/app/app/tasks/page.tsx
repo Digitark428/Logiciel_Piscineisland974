@@ -16,8 +16,9 @@ export default async function TasksPage() {
   const canManage = can(ctx, "tasks.manage");
   const myId = ctx.membership.id;
 
-  // La RLS (0017) filtre déjà la visibilité : on récupère les tâches visibles par l'utilisateur.
-  const [{ data: tasks }, { data: notes }] = await Promise.all([
+  // Ces lectures sont indépendantes. La RLS filtre déjà la visibilité des tâches,
+  // et les interactions sont résumées pour garder le premier rendu léger.
+  const [tasksRes, notesRes, members] = await Promise.all([
     supabase
       .from("tasks")
       .select("id, title, description, category, status, due_date, assigned_membership_id, created_by, assignee:memberships!tasks_assigned_membership_id_fkey(first_name,last_name,email)")
@@ -25,12 +26,18 @@ export default async function TasksPage() {
       .order("due_date", { nullsFirst: false }),
     supabase
       .from("team_notes")
-      .select("id, content, created_at, author_membership_id, author:memberships!team_notes_author_membership_id_fkey(first_name,last_name,email)")
+      .select(
+        "id, content, created_at, author_membership_id, author:memberships!team_notes_author_membership_id_fkey(first_name,last_name,email), " +
+          "reads:team_note_reads(membership_id,reader_label,read_at), " +
+          "executions:team_note_executions(membership_id,executor_label,executed_at), " +
+          "comments:team_note_comments(count)",
+      )
       .eq("workspace_id", ctx.workspace.id)
       .order("created_at", { ascending: false }),
+    canManage ? getMemberOptions(supabase, ctx.workspace.id) : Promise.resolve([]),
   ]);
-
-  const members = canManage ? await getMemberOptions(supabase, ctx.workspace.id) : [];
+  const tasks = tasksRes.data;
+  const notes = notesRes.data;
 
   const rows = (tasks ?? []).map((t: any) => ({
     id: t.id,
@@ -58,13 +65,28 @@ export default async function TasksPage() {
     content: n.content,
     created_at: n.created_at,
     canDelete: ctx.isAdmin || n.author_membership_id === myId,
+    readers: (n.reads ?? []).map((read: any) => ({
+      membership_id: read.membership_id,
+      reader_label: read.reader_label,
+      read_at: read.read_at,
+    })),
+    executions: (n.executions ?? []).map((execution: any) => ({
+      membership_id: execution.membership_id,
+      executor_label: execution.executor_label,
+      executed_at: execution.executed_at,
+    })),
+    commentCount: Number(n.comments?.[0]?.count ?? 0),
   }));
 
   const openCount = myPersonal.filter((t) => t.status !== "done").length + assigned.filter((t) => t.status !== "done").length;
 
   return (
     <div>
-      <PageHeader title="Tâches & notes" subtitle={`${openCount} tâche(s) en cours`} />
+      <PageHeader
+        title="Tâches & notes"
+        description="Partagez des consignes avec l'équipe, suivez leur lecture et indiquez lorsqu'elles ont été réalisées."
+        subtitle={`${openCount} tâche(s) en cours`}
+      />
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
@@ -113,7 +135,14 @@ export default async function TasksPage() {
             <TeamNoteForm />
             {noteItems.length > 0 && (
               <ul className="mt-4 divide-y divide-graphite-100 border-t border-graphite-100">
-                {noteItems.map((n) => <TeamNoteItem key={n.id} note={n} />)}
+                {noteItems.map((n) => (
+                  <TeamNoteItem
+                    key={n.id}
+                    note={n}
+                    currentMembershipId={myId}
+                    currentMemberName={memberName(ctx.membership)}
+                  />
+                ))}
               </ul>
             )}
           </Card>

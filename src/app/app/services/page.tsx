@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requirePermission, can } from "@/lib/auth/context";
 import { createClient } from "@/lib/supabase/server";
-import { signedUrl } from "@/lib/storage";
+import { signedUrls } from "@/lib/storage";
 import { PageHeader, Card, EmptyState, Badge, Avatar } from "@/components/ui";
 import { clientName, memberName, formatDate, formatTime, SERVICE_STATUS_LABELS } from "@/lib/utils/format";
 
@@ -36,18 +36,13 @@ export default async function ServicesPage({ searchParams }: { searchParams: { f
   const photoPaths = Array.from(
     new Set(((services ?? []) as any[]).map((s) => s.assignee?.photo_path).filter(Boolean)),
   ) as string[];
-  const avatarByPath = new Map<string, string>();
-  await Promise.all(
-    photoPaths.map(async (p) => {
-      const url = await signedUrl("avatars", p);
-      if (url) avatarByPath.set(p, url);
-    }),
-  );
+  const avatarByPath = await signedUrls("avatars", photoPaths);
 
   return (
     <div>
       <PageHeader
         title="Prestations"
+        description="Créez, consultez et gérez les prestations réalisées ou programmées pour vos clients."
         action={can(ctx, "services.create") ? <Link href="/app/services/new" className="btn-primary">+ Nouvelle prestation</Link> : undefined}
       />
 

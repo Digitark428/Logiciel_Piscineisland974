@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireContext, can } from "@/lib/auth/context";
 import { createClient } from "@/lib/supabase/server";
-import { Card, StatCard, Badge, EmptyState } from "@/components/ui";
+import { Card, StatCard, Badge, EmptyState, PageHeader } from "@/components/ui";
 import { clientName, formatDate, formatTime, SERVICE_STATUS_LABELS } from "@/lib/utils/format";
 
 export default async function DashboardPage() {
@@ -46,12 +46,11 @@ export default async function DashboardPage() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight text-graphite-900">
-          Bonjour {ctx.membership.first_name ?? ""} 👋
-        </h1>
-        <p className="mt-1 text-sm text-graphite-500">Voici l'activité de {ctx.workspace.name}.</p>
-      </div>
+      <PageHeader
+        title="Tableau de bord"
+        description="Retrouvez en un coup d'œil l'activité, les interventions et les priorités de votre équipe."
+        subtitle={`Bonjour ${ctx.membership.first_name ?? ""} 👋 · ${ctx.workspace.name}`}
+      />
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard label="Aujourd'hui" value={todayServices.length} hint="prestations" href="/app/planning" />

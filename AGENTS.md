@@ -52,7 +52,7 @@ Un push sur la branche de production déclenche le déploiement Vercel. Vérifie
 - Notifications : in-app uniquement en V1 (pas d’e-mail/Resend).
 
 ## Base de données et migrations
-- Les migrations sont dans `supabase/migrations/` ; l’état connu va de `0001` à `0021`.
+- Les migrations sont dans `supabase/migrations/` ; l’état connu va de `0001` à `0025`.
 - Toute évolution de schéma doit créer une nouvelle migration numérotée : ne jamais modifier une migration existante.
 - Appliquer les migrations à la bonne base Supabase, vérifier concrètement le résultat (tables, colonnes, fonctions) et lancer les contrôles de sécurité/performance.
 - Après application, committer la migration afin de maintenir le dépôt et la base synchronisés.

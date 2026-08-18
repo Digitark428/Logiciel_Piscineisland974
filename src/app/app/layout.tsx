@@ -18,15 +18,18 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   notifQuery = ctx.isAdmin
     ? notifQuery.or(`recipient_membership_id.is.null,recipient_membership_id.eq.${ctx.membership.id}`)
     : notifQuery.eq("recipient_membership_id", ctx.membership.id);
-  const { count } = await notifQuery;
-
   const items = NAV_ITEMS.filter((item) => {
     if (item.adminOnly) return ctx.isAdmin;
     if (!item.perm) return true;
     return can(ctx, item.perm);
   });
 
-  const avatarUrl = await signedUrl("avatars", ctx.membership.photo_path);
+  // Ces deux lectures ne dépendent pas l'une de l'autre et ne doivent pas
+  // retarder mutuellement l'affichage initial de l'application.
+  const [{ count }, avatarUrl] = await Promise.all([
+    notifQuery,
+    signedUrl("avatars", ctx.membership.photo_path),
+  ]);
 
   return (
     <AppShell

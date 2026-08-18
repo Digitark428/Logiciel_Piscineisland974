@@ -28,7 +28,7 @@ export default async function ActivityPage() {
 
   return (
     <div>
-      <PageHeader title="Journal d'activité" subtitle="Historique des actions importantes de votre espace." />
+      <PageHeader title="Journal d'activité" description="Consultez l'historique des actions importantes de votre espace." />
       {!logs || logs.length === 0 ? (
         <EmptyState title="Aucune activité" />
       ) : (

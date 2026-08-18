@@ -8,12 +8,18 @@ export interface MapPoint {
   id: string;
   lat: number;
   lng: number;
-  code: string;
-  serviceType: string;
   client: string;
   address: string;
+  services: MapService[];
+}
+
+export interface MapService {
+  id: string;
+  code: string;
+  serviceType: string;
   date: string;
   time: string;
+  sortKey: string;
   status: "planned" | "in_progress" | "completed" | "cancelled";
   assigneeId: string | null;
   assignee: string;
@@ -27,14 +33,14 @@ interface AssigneeOption {
 // Centre par défaut : Saint-Denis, La Réunion (974).
 const DEFAULT_CENTER: [number, number] = [-20.8823, 55.4504];
 
-const STATUS_COLORS: Record<MapPoint["status"], string> = {
+const STATUS_COLORS: Record<MapService["status"], string> = {
   planned: "#2563eb", // bleu piscine
   in_progress: "#f59e0b", // ambre
   completed: "#10b981", // vert
   cancelled: "#9ca3af", // gris
 };
 
-const STATUS_LABELS: Record<MapPoint["status"], string> = {
+const STATUS_LABELS: Record<MapService["status"], string> = {
   planned: "Planifiée",
   in_progress: "En cours",
   completed: "Terminée",
@@ -43,7 +49,7 @@ const STATUS_LABELS: Record<MapPoint["status"], string> = {
 
 // Marqueur personnalisé « goutte d'eau / piscine » aux couleurs de Piscine Island,
 // teinté selon le statut (jamais rouge). Épingle SVG + petite vague à l'intérieur.
-function markerHtml(status: MapPoint["status"]): string {
+function markerHtml(status: MapService["status"]): string {
   const color = STATUS_COLORS[status];
   return `
     <div style="position:relative;width:34px;height:44px;filter:drop-shadow(0 2px 3px rgba(15,23,42,.35))">
@@ -64,22 +70,51 @@ function popupHtml(p: MapPoint): string {
   const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}`;
   const esc = (s: string) =>
     s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-  const when = [p.date, p.time].filter(Boolean).join(" à ");
+  const services = p.services.map((service) => {
+    const when = [service.date, service.time].filter(Boolean).join(" à ");
+    return `
+      <a href="/app/services/${service.id}" style="display:block;margin-top:6px;border:1px solid #e5e7eb;border-radius:8px;padding:7px 8px;text-decoration:none">
+        <div style="font-size:12px;font-weight:600;color:#111827">${esc(service.serviceType)}</div>
+        <div style="font-size:11px;color:#6b7280;margin-top:2px">${esc(STATUS_LABELS[service.status])}${when ? ` · ${esc(when)}` : ""}${service.code ? ` · ${esc(service.code)}` : ""}</div>
+      </a>`;
+  }).join("");
   return `
-    <div style="min-width:190px">
+    <div style="min-width:210px;max-width:280px">
       <div style="font-weight:600;color:#111827">${esc(p.client)}</div>
-      <div style="font-size:12px;color:#6b7280;margin-top:2px">${esc(p.serviceType)} · ${esc(STATUS_LABELS[p.status])}</div>
-      ${when ? `<div style="font-size:12px;color:#6b7280">${esc(when)}</div>` : ""}
       ${p.address ? `<div style="font-size:12px;color:#6b7280;margin-top:2px">${esc(p.address)}</div>` : ""}
-      ${p.assignee ? `<div style="font-size:12px;color:#6b7280;margin-top:2px">👤 ${esc(p.assignee)}</div>` : ""}
+      <div style="margin-top:9px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">Prestations (${p.services.length})</div>
+      ${services}
       <div style="display:flex;gap:6px;margin-top:8px">
         <a href="${wazeUrl}" target="_blank" rel="noopener noreferrer"
            style="flex:1;text-align:center;background:#2563eb;color:#fff;border-radius:8px;padding:6px 8px;font-size:12px;text-decoration:none">🚗 Waze</a>
         <a href="${mapsUrl}" target="_blank" rel="noopener noreferrer"
            style="flex:1;text-align:center;background:#f3f4f6;color:#111827;border-radius:8px;padding:6px 8px;font-size:12px;text-decoration:none">Maps</a>
       </div>
-      <a href="/app/services/${p.id}" style="display:block;margin-top:6px;font-size:12px;color:#2563eb;text-decoration:none">Ouvrir la fiche →</a>
     </div>`;
+}
+
+interface VisiblePoint extends MapPoint {
+  visibleServices: MapService[];
+}
+
+function matchesFilters(
+  service: MapService,
+  assigneeFilter: string,
+  statusFilter: string,
+): boolean {
+  if (assigneeFilter !== "all") {
+    if (assigneeFilter === "none" ? service.assigneeId !== null : service.assigneeId !== assigneeFilter) return false;
+  }
+  if (statusFilter === "active" && (service.status === "completed" || service.status === "cancelled")) return false;
+  if (statusFilter !== "active" && statusFilter !== "all" && service.status !== statusFilter) return false;
+  return true;
+}
+
+function markerStatus(services: MapService[]): MapService["status"] {
+  return services.find((service) => service.status === "in_progress")?.status
+    ?? services.find((service) => service.status === "planned")?.status
+    ?? services.find((service) => service.status === "completed")?.status
+    ?? "cancelled";
 }
 
 export function ServiceMap({
@@ -97,16 +132,13 @@ export function ServiceMap({
   const [assigneeFilter, setAssigneeFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("active");
 
-  const filtered = useMemo(() => {
-    return points.filter((p) => {
-      if (assigneeFilter !== "all") {
-        if (assigneeFilter === "none" ? p.assigneeId !== null : p.assigneeId !== assigneeFilter) return false;
-      }
-      if (statusFilter === "active" && (p.status === "completed" || p.status === "cancelled")) return false;
-      if (statusFilter !== "active" && statusFilter !== "all" && p.status !== statusFilter) return false;
-      return true;
+  const filtered = useMemo<VisiblePoint[]>(() => {
+    return points.flatMap((point) => {
+      const visibleServices = point.services.filter((service) => matchesFilters(service, assigneeFilter, statusFilter));
+      return visibleServices.length > 0 ? [{ ...point, visibleServices }] : [];
     });
   }, [points, assigneeFilter, statusFilter]);
+  const visibleServiceCount = filtered.reduce((count, point) => count + point.visibleServices.length, 0);
 
   // Initialise la carte une seule fois (Leaflet nécessite le DOM → import dynamique).
   useEffect(() => {
@@ -144,7 +176,7 @@ export function ServiceMap({
     if (!map || !layer) return;
     layer.clearLayers();
     const iconCache = new Map<string, DivIcon>();
-    const icon = (status: MapPoint["status"]) => {
+    const icon = (status: MapService["status"]) => {
       let ic = iconCache.get(status);
       if (!ic) {
         ic = L.divIcon({
@@ -160,7 +192,7 @@ export function ServiceMap({
     };
     const markers: Marker[] = [];
     for (const p of filtered) {
-      const marker = L.marker([p.lat, p.lng], { icon: icon(p.status) });
+      const marker = L.marker([p.lat, p.lng], { icon: icon(markerStatus(p.visibleServices)) });
       marker.bindPopup(popupHtml(p));
       marker.addTo(layer);
       markers.push(marker);
@@ -197,7 +229,7 @@ export function ServiceMap({
           <option value="completed">Terminées</option>
         </select>
         <span className="text-sm text-graphite-500">
-          {filtered.length} prestation{filtered.length > 1 ? "s" : ""} sur la carte
+          {filtered.length} point{filtered.length > 1 ? "s" : ""} · {visibleServiceCount} prestation{visibleServiceCount > 1 ? "s" : ""}
         </span>
       </div>
 

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requirePermission, can } from "@/lib/auth/context";
 import { createClient } from "@/lib/supabase/server";
-import { Card } from "@/components/ui";
+import { Card, PageHeader } from "@/components/ui";
 import { clientName, formatTime } from "@/lib/utils/format";
 import {
   type PlanningView, parseAnchor, rangeFor, navFor, toISO,
@@ -47,12 +47,16 @@ export default async function PlanningPage({ searchParams }: { searchParams: { v
 
   return (
     <div>
+      <PageHeader
+        title="Planning"
+        description="Retrouvez l'ensemble des interventions et prestations programmées de votre équipe."
+      />
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Link href={link(view, prev)} className="btn-secondary px-3">‹</Link>
           <Link href={link(view, new Date())} className="btn-secondary">Aujourd'hui</Link>
           <Link href={link(view, next)} className="btn-secondary px-3">›</Link>
-          <h1 className="ml-2 text-lg font-semibold capitalize text-graphite-900">{periodLabel(view, anchor)}</h1>
+          <h2 className="ml-2 text-lg font-semibold capitalize text-graphite-900">{periodLabel(view, anchor)}</h2>
         </div>
         <div className="flex gap-1 rounded-xl bg-white p-1 ring-1 ring-graphite-200">
           {(["day", "week", "month", "year"] as PlanningView[]).map((v) => (

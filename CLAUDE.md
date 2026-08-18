@@ -75,7 +75,7 @@ Next.js 14 (App Router) · TypeScript strict · Supabase (Postgres + Auth + Stor
 suppression d'un projet/déploiement, changement d'une cible d'infra). Là on prévient d'abord.
 
 ## 5. Migrations base de données — RÈGLE IMPORTANTE
-- Les migrations sont des fichiers **numérotés** dans `supabase/migrations/` (`0001` … actuellement `0021`).
+- Les migrations sont des fichiers **numérotés** dans `supabase/migrations/` (`0001` … actuellement `0025`).
   - `0014` (assistance app users) avait été appliquée en base sans être commitée : fichier restauré.
   - `0015` documents.category + liens prestation↔contrat/facture ; `0016` champs d'accès client structurés ;
     `0017` confidentialité des tâches + table `team_notes` ; `0018` `service_client_notes` (notes portail client) ;

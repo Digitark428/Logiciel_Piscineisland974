@@ -4,6 +4,11 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { actionContext, logActivity } from "@/lib/actions/helpers";
 import { fail, ok, type ActionResult } from "@/lib/actions/result";
+import { can, type SessionContext } from "@/lib/auth/context";
+
+function canUseTeamNotes(ctx: SessionContext) {
+  return can(ctx, "tasks.view");
+}
 
 /**
  * Notes d'équipe — communication interne. Tout membre peut créer une note ;
@@ -40,4 +45,68 @@ export async function deleteTeamNote(id: string): Promise<ActionResult> {
   if (error) return fail("Suppression impossible.");
   revalidatePath("/app/tasks");
   return ok("Note supprimée.");
+}
+
+/** Enregistre la lecture une seule fois pour le membre connecté. */
+export async function markTeamNoteRead(id: string): Promise<ActionResult> {
+  const res = await actionContext();
+  if ("error" in res) return res.error;
+  const { ctx } = res;
+  if (!canUseTeamNotes(ctx)) return fail("Accès aux notes d'équipe refusé.");
+
+  const supabase = createClient();
+  const { error } = await supabase.from("team_note_reads").upsert(
+    {
+      workspace_id: ctx.workspace.id,
+      team_note_id: id,
+      membership_id: ctx.membership.id,
+    },
+    { onConflict: "team_note_id,membership_id", ignoreDuplicates: true },
+  );
+  if (error) return fail("Impossible d'enregistrer la lecture.");
+  revalidatePath("/app/tasks");
+  return ok();
+}
+
+/** Enregistre une exécution une seule fois pour le membre connecté. */
+export async function markTeamNoteExecuted(id: string): Promise<ActionResult> {
+  const res = await actionContext();
+  if ("error" in res) return res.error;
+  const { ctx } = res;
+  if (!canUseTeamNotes(ctx)) return fail("Accès aux notes d'équipe refusé.");
+
+  const supabase = createClient();
+  const { error } = await supabase.from("team_note_executions").upsert(
+    {
+      workspace_id: ctx.workspace.id,
+      team_note_id: id,
+      membership_id: ctx.membership.id,
+    },
+    { onConflict: "team_note_id,membership_id", ignoreDuplicates: true },
+  );
+  if (error) return fail("Impossible d'enregistrer l'exécution.");
+  revalidatePath("/app/tasks");
+  return ok();
+}
+
+/** Ajoute un commentaire à une note d'équipe depuis la vue détaillée. */
+export async function createTeamNoteComment(id: string, rawContent: string): Promise<ActionResult> {
+  const res = await actionContext();
+  if ("error" in res) return res.error;
+  const { ctx } = res;
+  if (!canUseTeamNotes(ctx)) return fail("Accès aux notes d'équipe refusé.");
+  const content = rawContent.trim();
+  if (!content) return fail("Le commentaire est vide.");
+  if (content.length > 4000) return fail("Commentaire trop long.");
+
+  const supabase = createClient();
+  const { error } = await supabase.from("team_note_comments").insert({
+    workspace_id: ctx.workspace.id,
+    team_note_id: id,
+    author_membership_id: ctx.membership.id,
+    content,
+  });
+  if (error) return fail("Impossible de publier le commentaire.");
+  revalidatePath("/app/tasks");
+  return ok();
 }

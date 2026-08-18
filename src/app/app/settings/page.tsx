@@ -11,7 +11,7 @@ export default async function SettingsPage() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <PageHeader title="Paramètres" subtitle="Informations de votre entreprise." />
+      <PageHeader title="Paramètres" description="Gérez les informations et préférences de votre entreprise." />
 
       <Card className="mb-6">
         <div className="flex flex-wrap items-center justify-between gap-3">

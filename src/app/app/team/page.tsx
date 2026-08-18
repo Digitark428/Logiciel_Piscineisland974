@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requireContext } from "@/lib/auth/context";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { signedUrl } from "@/lib/storage";
+import { signedUrls } from "@/lib/storage";
 import { PageHeader, Card, Badge, Avatar } from "@/components/ui";
 import { memberName, MEMBER_TYPE_LABELS } from "@/lib/utils/format";
 import type { Membership } from "@/lib/db/types";
@@ -20,9 +20,8 @@ export default async function TeamPage() {
     .order("first_name", { nullsFirst: false });
 
   const list = (members ?? []) as Membership[];
-  const withAvatars = await Promise.all(
-    list.map(async (m) => ({ m, url: await signedUrl("avatars", m.photo_path) })),
-  );
+  const avatarByPath = await signedUrls("avatars", list.map((member) => member.photo_path));
+  const withAvatars = list.map((m) => ({ m, url: m.photo_path ? avatarByPath.get(m.photo_path) ?? null : null }));
   const admins = withAvatars.filter((x) => x.m.role === "admin");
   const team = withAvatars.filter((x) => x.m.role === "member");
 
@@ -30,6 +29,7 @@ export default async function TeamPage() {
     <div>
       <PageHeader
         title="Équipe"
+        description="Retrouvez les membres de votre équipe et leurs informations de travail."
         subtitle={`${list.length} membre(s)`}
         action={<Link href="/app/team/new" className="btn-primary">+ Nouveau membre</Link>}
       />

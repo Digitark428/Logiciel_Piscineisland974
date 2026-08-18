@@ -40,3 +40,10 @@
 - **Migrations :** `0022_tenant_security_hardening` et `0023_portal_attempts_deny_policy`, appliquées au projet Supabase de production.
 - **Vérification :** diagnostic préalable sans relation cross-workspace incohérente ; triggers et fonctions non exécutables directement par anon/authenticated ; typecheck, lint et build validés.
 - **À surveiller :** les tests intégration Supabase sont conditionnels aux variables locales ; deux tests Planning restent dépendants du fuseau horaire local (antérieurs à cette intervention).
+
+## 2026-08-18 — Codex — Fluidité, interactions de notes et carte groupée
+
+- **Tâche :** navigation perçue instantanément (squelette d'application, préchargement au survol, requêtes parallélisées et URLs Storage groupées), ordre prioritaire du menu, en-têtes explicatifs, boutons plus légers, badge de notifications corrigé et carte regroupant les prestations d'une même adresse/client.
+- **Notes d'équipe :** ajout des lectures, exécutions et commentaires en détail de note avec mises à jour optimistes ; les listes de commentaires restent différées.
+- **Migrations :** `0024_team_note_interactions` et `0025_team_note_interaction_indexes`, appliquées en production ; RLS, trigger d'intégrité multi-tenant et index FK vérifiés.
+- **Vérification :** typecheck et build validés ; tests unitaires/intégration exécutés (deux échecs Planning de fuseau horaire, préexistants) ; interface de connexion vérifiée sans erreur aux formats desktop, tablette et mobile.

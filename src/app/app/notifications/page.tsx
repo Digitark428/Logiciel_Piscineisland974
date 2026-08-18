@@ -23,7 +23,11 @@ export default async function NotificationsPage() {
 
   return (
     <div>
-      <PageHeader title="Notifications" action={<MarkAllButton hasUnread={hasUnread} />} />
+      <PageHeader
+        title="Notifications"
+        description="Retrouvez les informations importantes qui demandent votre attention."
+        action={<MarkAllButton hasUnread={hasUnread} />}
+      />
       {list.length === 0 ? (
         <EmptyState title="Aucune notification" description="Les événements importants apparaîtront ici." />
       ) : (
