@@ -6,11 +6,14 @@ export interface NavItem {
   icon: string; // clé d'icône (rendue dans AppShell)
   perm?: PermissionKey; // permission requise pour l'afficher (admin voit tout)
   adminOnly?: boolean;
+  development?: boolean;
 }
 
 export const NAV_ITEMS: NavItem[] = [
   { href: "/app", label: "Tableau de bord", icon: "home" },
-  { href: "/app/services", label: "Prestations", icon: "wrench", perm: "services.view" },
+  { href: "/app/services", label: "Mes entretiens", icon: "wrench", perm: "services.view" },
+  { href: "/app/chantiers", label: "Mes chantiers", icon: "wrench", development: true },
+  { href: "/app/comptabilite", label: "Gérer ma comptabilité", icon: "activity", development: true },
   { href: "/app/planning", label: "Planning", icon: "calendar", perm: "planning.view" },
   { href: "/app/tasks", label: "Tâches", icon: "check", perm: "tasks.view" },
   { href: "/app/map", label: "Carte", icon: "map", perm: "map.view" },

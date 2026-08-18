@@ -42,8 +42,8 @@ export default async function ServicesPage({ searchParams }: { searchParams: { f
   return (
     <div>
       <PageHeader
-        title="Prestations"
-        description="Créez, consultez et gérez les prestations réalisées ou programmées pour vos clients."
+        title="Mes entretiens"
+        description="Créez, consultez et gérez les entretiens et interventions programmés pour vos clients."
         action={can(ctx, "services.create") ? <Link href="/app/services/new" className="btn-primary">+ Nouvelle prestation</Link> : undefined}
       />
 

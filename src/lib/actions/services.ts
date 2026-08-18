@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { actionContext, logActivity, notify } from "@/lib/actions/helpers";
 import { fail, ok, type ActionResult } from "@/lib/actions/result";
 import { dateOnlyToUtcDate, utcDateToDateOnly } from "@/lib/utils/date";
+import { parseMoneyToCents } from "@/lib/utils/money";
 
 const str = (v: FormDataEntryValue | null) => {
   const t = (v as string | null)?.trim();
@@ -55,6 +56,50 @@ const baseSchema = z.object({
   service_type: z.string().optional(),
 });
 
+function readFinancialAmount(formData: FormData): { cents: number | null; message?: string } {
+  const raw = str(formData.get("amount"));
+  if (!raw) return { cents: null };
+  const cents = parseMoneyToCents(raw);
+  if (cents === null) return { cents: null, message: "Saisissez un montant valide, par exemple 200 ou 200,50." };
+  return { cents };
+}
+
+async function saveFinancialAmount(
+  supabase: ReturnType<typeof createClient>,
+  input: {
+    workspaceId: string;
+    clientId: string;
+    serviceId: string | null;
+    serviceSeriesId: string | null;
+    amountCents: number;
+  },
+): Promise<string | null> {
+  const targetColumn = input.serviceId ? "service_id" : "service_series_id";
+  const targetId = input.serviceId ?? input.serviceSeriesId;
+  if (!targetId) return "La série de prestations est introuvable.";
+
+  const { data: existing, error: selectError } = await supabase
+    .from("service_financials")
+    .select("id")
+    .eq("workspace_id", input.workspaceId)
+    .eq(targetColumn, targetId)
+    .maybeSingle();
+  if (selectError) return "La valeur financière est inaccessible.";
+
+  const payload = {
+    workspace_id: input.workspaceId,
+    client_id: input.clientId,
+    financial_kind: input.serviceId ? "one_off" : "monthly_contract",
+    service_id: input.serviceId,
+    service_series_id: input.serviceSeriesId,
+    amount_cents: input.amountCents,
+  };
+  const { error } = existing
+    ? await supabase.from("service_financials").update({ amount_cents: input.amountCents }).eq("id", existing.id)
+    : await supabase.from("service_financials").insert(payload);
+  return error ? "Enregistrement du montant impossible." : null;
+}
+
 async function validateServiceReferences(
   supabase: ReturnType<typeof createClient>, workspaceId: string,
   refs: { clientId: string; poolId: string | null; assignedId: string | null; contractDocumentId: string | null; invoiceDocumentId: string | null },
@@ -96,6 +141,9 @@ export async function createService(_prev: ActionResult, formData: FormData): Pr
     .split("\n")
     .map((t) => t.trim())
     .filter(Boolean);
+  const financialAmount = ctx.isAdmin ? readFinancialAmount(formData) : { cents: null };
+  if (financialAmount.message) return fail(financialAmount.message);
+  if (ctx.isAdmin && financialAmount.cents === null) return fail("Le montant facturé est requis pour le gérant.");
 
   if (!(await validateServiceReferences(supabase, ctx.workspace.id, { clientId: client_id, poolId: pool_id, assignedId: assigned, contractDocumentId: contract_document_id, invoiceDocumentId: invoice_document_id }))) {
     return fail("Un élément lié est introuvable dans cet espace.");
@@ -117,7 +165,7 @@ export async function createService(_prev: ActionResult, formData: FormData): Pr
       const count = Math.min(Math.max(Number(formData.get("count") ?? 8), 1), 60);
       if (!start) return fail("Date de début requise.");
       dates = generateFrequencyDates(start, frequency, count);
-      const { data: series } = await supabase
+      const { data: series, error: seriesError } = await supabase
         .from("service_series")
         .insert({
           workspace_id: ctx.workspace.id,
@@ -135,12 +183,13 @@ export async function createService(_prev: ActionResult, formData: FormData): Pr
         })
         .select("id")
         .single();
+      if (seriesError || !series) return fail("Création de la série impossible.");
       series_id = series?.id ?? null;
     } else {
       const raw = String(formData.get("manual_dates") ?? "");
       dates = parseDates(raw);
       if (dates.length === 0) return fail("Saisissez au moins une date valide (JJ/MM/AAAA ou AAAA-MM-JJ).");
-      const { data: series } = await supabase
+      const { data: series, error: seriesError } = await supabase
         .from("service_series")
         .insert({
           workspace_id: ctx.workspace.id,
@@ -157,6 +206,7 @@ export async function createService(_prev: ActionResult, formData: FormData): Pr
         })
         .select("id")
         .single();
+      if (seriesError || !series) return fail("Création de la série impossible.");
       series_id = series?.id ?? null;
     }
   }
@@ -180,6 +230,23 @@ export async function createService(_prev: ActionResult, formData: FormData): Pr
 
   const { data: created, error } = await supabase.from("services").insert(rows).select("id");
   if (error || !created) return fail("Création impossible (droits insuffisants ?).");
+
+  // Les montants sont écrits dans la table financière RLS admin-only, jamais
+  // dans les occurrences. Une récurrence pointe vers sa série unique.
+  if (ctx.isAdmin && financialAmount.cents !== null) {
+    const financialError = await saveFinancialAmount(supabase, {
+      workspaceId: ctx.workspace.id,
+      clientId: client_id,
+      serviceId: kind === "unique" ? created[0]?.id ?? null : null,
+      serviceSeriesId: kind === "recurring" ? series_id : null,
+      amountCents: financialAmount.cents,
+    });
+    if (financialError) {
+      await supabase.from("services").delete().in("id", created.map((service) => service.id)).eq("workspace_id", ctx.workspace.id);
+      if (series_id) await supabase.from("service_series").delete().eq("id", series_id).eq("workspace_id", ctx.workspace.id);
+      return fail(financialError);
+    }
+  }
 
   // Tâches d'entretien communes appliquées à chaque prestation
   if (taskLines.length > 0) {
@@ -218,6 +285,8 @@ export async function createService(_prev: ActionResult, formData: FormData): Pr
 
   revalidatePath("/app/services");
   revalidatePath("/app/planning");
+  revalidatePath("/app");
+  revalidatePath(`/app/clients/${client_id}`);
   if (created.length === 1) redirect(`/app/services/${created[0].id}`);
   redirect(`/app/clients/${client_id}`);
 }
@@ -244,15 +313,36 @@ export async function updateService(_prev: ActionResult, formData: FormData): Pr
   if (!payload.scheduled_date) return fail("La date est requise.");
 
   const supabase = createClient();
-  const { data: existing } = await supabase.from("services").select("client_id").eq("id", id).eq("workspace_id", ctx.workspace.id).maybeSingle();
+  const { data: existing } = await supabase
+    .from("services")
+    .select("client_id, kind, series_id")
+    .eq("id", id)
+    .eq("workspace_id", ctx.workspace.id)
+    .maybeSingle();
   if (!existing || !(await validateServiceReferences(supabase, ctx.workspace.id, { clientId: existing.client_id, poolId: payload.pool_id, assignedId: payload.assigned_membership_id, contractDocumentId: payload.contract_document_id, invoiceDocumentId: payload.invoice_document_id }))) {
     return fail("Un élément lié est introuvable dans cet espace.");
+  }
+  if (ctx.isAdmin) {
+    const financialAmount = readFinancialAmount(formData);
+    if (financialAmount.message) return fail(financialAmount.message);
+    if (financialAmount.cents !== null) {
+      const financialError = await saveFinancialAmount(supabase, {
+        workspaceId: ctx.workspace.id,
+        clientId: existing.client_id,
+        serviceId: existing.kind === "unique" ? id : null,
+        serviceSeriesId: existing.kind === "recurring" ? existing.series_id : null,
+        amountCents: financialAmount.cents,
+      });
+      if (financialError) return fail(financialError);
+    }
   }
   const { error } = await supabase.from("services").update(payload).eq("id", id).eq("workspace_id", ctx.workspace.id);
   if (error) return fail("Enregistrement impossible.");
   await logActivity(ctx, { action: "update", entity_type: "service", entity_id: id, summary: "Prestation modifiée" });
   revalidatePath(`/app/services/${id}`);
   revalidatePath("/app/planning");
+  revalidatePath("/app");
+  revalidatePath(`/app/clients/${existing.client_id}`);
   return ok("Prestation enregistrée.");
 }
 
@@ -261,6 +351,12 @@ export async function setServiceStatus(id: string, status: "planned" | "in_progr
   if ("error" in res) return res.error;
   const { ctx } = res;
   const supabase = createClient();
+  const { data: service } = await supabase
+    .from("services")
+    .select("client_id")
+    .eq("id", id)
+    .eq("workspace_id", ctx.workspace.id)
+    .maybeSingle();
 
   const patch: Record<string, unknown> = { status };
   if (status === "in_progress") patch.started_at = new Date().toISOString();
@@ -286,6 +382,7 @@ export async function setServiceStatus(id: string, status: "planned" | "in_progr
   revalidatePath(`/app/services/${id}`);
   revalidatePath("/app/planning");
   revalidatePath("/app");
+  if (service?.client_id) revalidatePath(`/app/clients/${service.client_id}`);
   return ok("Statut mis à jour.");
 }
 
@@ -318,10 +415,18 @@ export async function deleteService(id: string): Promise<ActionResult> {
   if ("error" in res) return res.error;
   const { ctx } = res;
   const supabase = createClient();
+  const { data: service } = await supabase
+    .from("services")
+    .select("client_id")
+    .eq("id", id)
+    .eq("workspace_id", ctx.workspace.id)
+    .maybeSingle();
   const { error } = await supabase.from("services").delete().eq("id", id).eq("workspace_id", ctx.workspace.id);
   if (error) return fail("Suppression impossible.");
   await logActivity(ctx, { action: "delete", entity_type: "service", entity_id: id, summary: "Prestation supprimée" });
   revalidatePath("/app/services");
   revalidatePath("/app/planning");
+  revalidatePath("/app");
+  if (service?.client_id) revalidatePath(`/app/clients/${service.client_id}`);
   redirect("/app/services");
 }

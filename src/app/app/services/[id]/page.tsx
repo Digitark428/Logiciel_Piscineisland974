@@ -6,6 +6,7 @@ import { signedUrl } from "@/lib/storage";
 import { Card, Badge, Avatar } from "@/components/ui";
 import { StatusActions, TasksChecklist, ReportForm, GoThereButton } from "./ServiceControls";
 import { clientName, memberName, formatDate, formatTime, formatDuration, SERVICE_STATUS_LABELS } from "@/lib/utils/format";
+import { formatMoneyCents } from "@/lib/utils/money";
 import type { ServiceTask } from "@/lib/db/types";
 
 export default async function ServiceDetailPage({ params }: { params: { id: string } }) {
@@ -25,19 +26,31 @@ export default async function ServiceDetailPage({ params }: { params: { id: stri
     notFound();
   }
 
-  const { data: tasks } = await supabase
-    .from("service_tasks")
-    .select("*")
-    .eq("service_id", service.id)
-    .eq("workspace_id", ctx.workspace.id)
-    .order("position");
-
-  const { data: clientNotes } = await supabase
-    .from("service_client_notes")
-    .select("id, content, is_important, created_at")
-    .eq("service_id", service.id)
-    .eq("workspace_id", ctx.workspace.id)
-    .order("created_at", { ascending: false });
+  const [tasksRes, clientNotesRes, financialRes] = await Promise.all([
+    supabase
+      .from("service_tasks")
+      .select("*")
+      .eq("service_id", service.id)
+      .eq("workspace_id", ctx.workspace.id)
+      .order("position"),
+    supabase
+      .from("service_client_notes")
+      .select("id, content, is_important, created_at")
+      .eq("service_id", service.id)
+      .eq("workspace_id", ctx.workspace.id)
+      .order("created_at", { ascending: false }),
+    ctx.isAdmin
+      ? supabase
+        .from("service_financials")
+        .select("amount_cents")
+        .eq("workspace_id", ctx.workspace.id)
+        .eq(service.kind === "recurring" ? "service_series_id" : "service_id", service.kind === "recurring" ? service.series_id ?? "" : service.id)
+        .maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
+  const tasks = tasksRes.data;
+  const clientNotes = clientNotesRes.data;
+  const financialAmountCents = financialRes.data?.amount_cents ?? null;
 
   const client = (service as any).client;
   const pool = (service as any).pool;
@@ -73,7 +86,7 @@ export default async function ServiceDetailPage({ params }: { params: { id: stri
 
   return (
     <div>
-      <Link href="/app/services" className="mb-4 inline-block text-sm text-graphite-500 hover:text-graphite-700">← Prestations</Link>
+      <Link href="/app/services" className="mb-4 inline-block text-sm text-graphite-500 hover:text-graphite-700">← Mes entretiens</Link>
 
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
@@ -154,6 +167,12 @@ export default async function ServiceDetailPage({ params }: { params: { id: stri
           <Card>
             <h2 className="mb-3 text-base font-semibold text-graphite-900">Suivi</h2>
             <dl className="space-y-3 text-sm">
+              {ctx.isAdmin && financialAmountCents !== null && (
+                <div>
+                  <dt className="text-xs uppercase tracking-wide text-graphite-400">{service.kind === "recurring" ? "Contrat" : "Montant facturé"}</dt>
+                  <dd className="mt-0.5 font-semibold text-graphite-900">{formatMoneyCents(financialAmountCents)}{service.kind === "recurring" ? " / mois" : ""}</dd>
+                </div>
+              )}
               <div>
                 <dt className="text-xs uppercase tracking-wide text-graphite-400">Contrat lié</dt>
                 <dd className="mt-0.5 text-graphite-800">

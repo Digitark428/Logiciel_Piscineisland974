@@ -12,6 +12,7 @@ import {
   formatDate,
   SERVICE_STATUS_LABELS,
 } from "@/lib/utils/format";
+import { formatMoneyCents } from "@/lib/utils/money";
 
 export default async function ClientDetailPage({ params }: { params: { id: string } }) {
   const ctx = await requirePermission("clients.view");
@@ -26,16 +27,24 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
   if (!client) notFound();
 
   const canViewDocs = can(ctx, "documents.view");
-  const [poolsRes, servicesRes, docsRes] = await Promise.all([
+  const [poolsRes, servicesRes, docsRes, financialsRes] = await Promise.all([
     supabase.from("pools").select("id, name, pool_type, city, water_treatment").eq("client_id", client.id).eq("workspace_id", ctx.workspace.id),
     supabase.from("services").select("id, code, scheduled_date, status, service_type").eq("client_id", client.id).eq("workspace_id", ctx.workspace.id).order("scheduled_date", { ascending: false }).limit(10),
     canViewDocs
       ? supabase.from("documents").select("id, name, size_bytes, created_at, storage_path, category").eq("workspace_id", ctx.workspace.id).eq("entity_type", "client").eq("entity_id", client.id).order("created_at", { ascending: false })
       : Promise.resolve({ data: [] as any[] }),
+    ctx.isAdmin
+      ? supabase.from("service_financials").select("id, financial_kind, amount_cents, service:services(status)").eq("workspace_id", ctx.workspace.id).eq("client_id", client.id)
+      : Promise.resolve({ data: [] as any[] }),
   ]);
 
   const pools = poolsRes.data ?? [];
   const services = servicesRes.data ?? [];
+  const financials = (financialsRes.data ?? []) as any[];
+  const contracts = financials.filter((financial) => financial.financial_kind === "monthly_contract");
+  const oneOffCents = financials
+    .filter((financial) => financial.financial_kind === "one_off" && financial.service?.status !== "cancelled")
+    .reduce((total, financial) => total + Number(financial.amount_cents ?? 0), 0);
   const name = clientName(client);
   const canSensitive = can(ctx, "sensitive.view");
   const canManageDocs = can(ctx, "documents.manage");
@@ -191,6 +200,25 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
         </div>
 
         <div className="space-y-6">
+          {ctx.isAdmin && financials.length > 0 && (
+            <Card>
+              <h2 className="mb-3 text-base font-semibold text-graphite-900">Synthèse financière</h2>
+              <dl className="space-y-3 text-sm">
+                {contracts.map((contract) => (
+                  <div key={contract.id}>
+                    <dt className="text-xs uppercase tracking-wide text-graphite-400">Contrat entretien</dt>
+                    <dd className="mt-0.5 font-semibold text-graphite-900">{formatMoneyCents(Number(contract.amount_cents))} / mois</dd>
+                  </div>
+                ))}
+                {oneOffCents > 0 && (
+                  <div>
+                    <dt className="text-xs uppercase tracking-wide text-graphite-400">Prestations ponctuelles</dt>
+                    <dd className="mt-0.5 font-semibold text-graphite-900">{formatMoneyCents(oneOffCents)}</dd>
+                  </div>
+                )}
+              </dl>
+            </Card>
+          )}
           {can(ctx, "clients.edit") && (
             <ClientPortalCard
               clientId={client.id}

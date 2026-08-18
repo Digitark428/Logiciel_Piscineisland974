@@ -24,12 +24,20 @@ export default async function EditServicePage({ params }: { params: { id: string
     getClientDocumentOptions(supabase, ctx.workspace.id),
   ]);
   const clientDocuments = documents.filter((d) => d.client_id === service.client_id);
+  const financialResult = ctx.isAdmin
+    ? await supabase
+      .from("service_financials")
+      .select("amount_cents")
+      .eq("workspace_id", ctx.workspace.id)
+      .eq(service.kind === "recurring" ? "service_series_id" : "service_id", service.kind === "recurring" ? service.series_id ?? "" : service.id)
+      .maybeSingle()
+    : { data: null };
 
   return (
     <div className="mx-auto max-w-3xl">
-      <Link href={`/app/services/${params.id}`} className="mb-4 inline-block text-sm text-graphite-500 hover:text-graphite-700">← Prestation</Link>
+      <Link href={`/app/services/${params.id}`} className="mb-4 inline-block text-sm text-graphite-500 hover:text-graphite-700">← Entretien</Link>
       <PageHeader title="Modifier la prestation" />
-      <ServiceEditForm service={service as Service} members={members} pools={pools} documents={clientDocuments} />
+      <ServiceEditForm service={service as Service} members={members} pools={pools} documents={clientDocuments} isAdmin={ctx.isAdmin} financialAmountCents={financialResult.data?.amount_cents ?? null} />
     </div>
   );
 }

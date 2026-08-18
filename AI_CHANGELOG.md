@@ -68,3 +68,11 @@
 - **Cause :** le trigger partagé lisait des colonnes `NEW` absentes sur certaines des trois tables d'interactions.
 - **Migration :** `0026_fix_team_note_interaction_guard`, appliquée au projet Supabase de production ; l'intégrité multi-tenant, la RLS et la non-exécution directe de la fonction sont conservées.
 - **Vérification :** typecheck, build et 28 tests locaux validés ; transaction de production sous rôle authentifié validant les trois insertions, puis annulée sans créer de donnée.
+
+## 2026-08-18 — Codex — Revenus des entretiens et aperçu financier
+
+- **Tâche :** renommage visible de « Prestations » en « Mes entretiens », annonces de navigation « Mes chantiers » et « Gérer ma comptabilité », puis ajout des montants facturés aux prestations ponctuelles et des revenus mensuels aux contrats récurrents.
+- **Architecture et sécurité :** nouvelle table séparée `service_financials`, isolée par `workspace_id` et protégée en lecture/écriture par RLS admin-only. Un montant récurrent est relié à une série, jamais à ses occurrences ; les employés ne reçoivent aucune requête, donnée ou rendu financier.
+- **Dashboard :** carrousel financier réservé au gérant avec les quatre vues prévues : entretiens, ponctuel mensuel, total et frais « En développement ».
+- **Migrations :** `20260818192021_service_financials`, `20260818193027_service_financials_client_index` et `20260818193724_service_financials_guard_service_kind`, appliquées au projet Supabase de production.
+- **Vérification :** typecheck, lint, build et tests unitaires validés ; transaction RLS annulée validant les droits admin, le refus membre et l'isolation des workspaces.

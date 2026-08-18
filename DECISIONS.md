@@ -32,6 +32,12 @@
 
 **Raison :** ce comportement correspond au périmètre fonctionnel actuel.
 
+## Données financières des entretiens
+
+**Décision :** les montants facturés sont conservés dans `service_financials`, reliés soit à une prestation ponctuelle, soit à une seule `service_series` récurrente, avec RLS réservée aux admins du workspace.
+
+**Raison :** `services` et `service_series` peuvent être consultés par des membres opérationnels. Cette séparation empêche toute lecture ou modification financière par un employé et évite de dupliquer le revenu mensuel sur les occurrences techniques d'un contrat.
+
 ## Mode démo
 
 **Décision :** le mode démo reste retiré et ne doit pas être réintroduit.

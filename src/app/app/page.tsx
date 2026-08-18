@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Card, StatCard, Badge, EmptyState, PageHeader } from "@/components/ui";
 import { clientName, formatDate, formatTime, SERVICE_STATUS_LABELS } from "@/lib/utils/format";
 import { todayInReunion } from "@/lib/utils/date";
+import { FinancialCarousel } from "@/components/app/FinancialCarousel";
 
 export default async function DashboardPage() {
   const ctx = await requireContext();
@@ -18,7 +19,7 @@ export default async function DashboardPage() {
   const applyScope = (q: any): any =>
     scopeMine ? q.eq("assigned_membership_id", ctx.membership.id) : q;
 
-  const [todayRes, upcomingRes, doneCountRes, inProgressRes, tasksRes, activityRes] = await Promise.all([
+  const [todayRes, upcomingRes, doneCountRes, inProgressRes, tasksRes, activityRes, financialRes] = await Promise.all([
     applyScope(
       supabase.from("services").select(baseSel).eq("workspace_id", ctx.workspace.id).eq("scheduled_date", today).order("scheduled_time"),
     ) as Promise<{ data: any[] | null }>,
@@ -35,6 +36,9 @@ export default async function DashboardPage() {
     ctx.isAdmin
       ? supabase.from("activity_logs").select("id, action, summary, created_at, actor_label").eq("workspace_id", ctx.workspace.id).order("created_at", { ascending: false }).limit(6)
       : Promise.resolve({ data: [] as any[] }),
+    ctx.isAdmin
+      ? supabase.rpc("financial_dashboard_metrics", { p_workspace_id: ctx.workspace.id, p_month: today }).maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
 
   const todayServices = todayRes.data ?? [];
@@ -42,6 +46,7 @@ export default async function DashboardPage() {
   const inProgress = inProgressRes.data ?? [];
   const tasks = tasksRes.data ?? [];
   const activity = activityRes.data ?? [];
+  const financialMetrics = financialRes.data as { recurring_cents: number; one_off_cents: number } | null;
 
   const cn2 = (s: any) => clientName(s.client ?? {});
 
@@ -59,6 +64,15 @@ export default async function DashboardPage() {
         <StatCard label="En cours" value={inProgress.length} hint="en intervention" tone="amber" />
         <StatCard label="Terminées" value={doneCountRes.count ?? 0} hint="au total" tone="emerald" />
       </div>
+
+      {ctx.isAdmin && (
+        <div className="mt-6">
+          <FinancialCarousel
+            recurringCents={Number(financialMetrics?.recurring_cents ?? 0)}
+            oneOffCents={Number(financialMetrics?.one_off_cents ?? 0)}
+          />
+        </div>
+      )}
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">

@@ -19,6 +19,7 @@ export function ServiceForm({
   documents = [],
   defaultClientId,
   defaultPoolId,
+  isAdmin,
 }: {
   clients: Opt[];
   pools: PoolOpt[];
@@ -26,6 +27,7 @@ export function ServiceForm({
   documents?: DocOpt[];
   defaultClientId?: string;
   defaultPoolId?: string;
+  isAdmin: boolean;
 }) {
   const [state, formAction] = useFormState(createService, idle);
   const [kind, setKind] = useState<"unique" | "recurring">("unique");
@@ -126,6 +128,21 @@ export function ServiceForm({
           </p>
         )}
       </div>
+
+      {isAdmin && (
+        <div className="card p-6">
+          <div className="max-w-sm">
+            <label className="label" htmlFor="amount">{kind === "recurring" ? "Montant mensuel du contrat" : "Montant facturé"} *</label>
+            <div className="relative">
+              <input id="amount" name="amount" required inputMode="decimal" className="input pr-10" placeholder={kind === "recurring" ? "200,00" : "850,00"} />
+              <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm font-medium text-graphite-500">€{kind === "recurring" ? " / mois" : ""}</span>
+            </div>
+            <p className="mt-2 text-xs text-graphite-400">
+              {kind === "recurring" ? "Valeur mensuelle du contrat, quel que soit le nombre de passages." : "Montant facturé pour cette intervention unique."}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Dates */}
       <div className="card p-6">

@@ -25,6 +25,17 @@ function NavigationLinks({
     <nav className="space-y-1">
       {items.map((item) => {
         const active = item.href === "/app" ? pathname === "/app" : pathname.startsWith(item.href);
+        if (item.development) {
+          return (
+            <div key={item.href} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-graphite-500" aria-label={`${item.label} — En développement`}>
+              <Icon name={item.icon} size={19} />
+              <span className="min-w-0 leading-tight">
+                <span className="block truncate">{item.label}</span>
+                <span className="mt-1 inline-flex rounded-full bg-graphite-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-graphite-500">En développement</span>
+              </span>
+            </div>
+          );
+        }
         return (
           <Link
             key={item.href}

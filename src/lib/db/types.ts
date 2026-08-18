@@ -10,6 +10,7 @@ export type MemberStatus = "active" | "disabled";
 export type ClientStatus = "active" | "archived";
 export type ServiceKind = "unique" | "recurring";
 export type ServiceStatus = "planned" | "in_progress" | "completed" | "cancelled";
+export type ServiceFinancialKind = "one_off" | "monthly_contract";
 export type SeriesMode = "frequency" | "manual";
 export type Frequency = "weekly" | "biweekly" | "monthly" | "custom";
 export type TaskCategory = "professional" | "personal";
@@ -157,6 +158,19 @@ export interface Service {
   started_at: string | null;
   completed_at: string | null;
   completed_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Montant isolé des données opérationnelles, réservé au gérant par RLS. */
+export interface ServiceFinancial {
+  id: string;
+  workspace_id: string;
+  client_id: string;
+  financial_kind: ServiceFinancialKind;
+  service_id: string | null;
+  service_series_id: string | null;
+  amount_cents: number;
   created_at: string;
   updated_at: string;
 }

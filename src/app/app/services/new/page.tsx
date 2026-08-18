@@ -16,9 +16,9 @@ export default async function NewServicePage({ searchParams }: { searchParams: {
   ]);
   return (
     <div className="mx-auto max-w-3xl">
-      <Link href="/app/services" className="mb-4 inline-block text-sm text-graphite-500 hover:text-graphite-700">← Prestations</Link>
+      <Link href="/app/services" className="mb-4 inline-block text-sm text-graphite-500 hover:text-graphite-700">← Mes entretiens</Link>
       <PageHeader title="Nouvelle prestation" subtitle="Ponctuelle, récurrente ou avec dates saisies manuellement." />
-      <ServiceForm clients={clients} pools={pools} members={members} documents={documents} defaultClientId={searchParams.client} defaultPoolId={searchParams.pool} />
+      <ServiceForm clients={clients} pools={pools} members={members} documents={documents} defaultClientId={searchParams.client} defaultPoolId={searchParams.pool} isAdmin={ctx.isAdmin} />
     </div>
   );
 }

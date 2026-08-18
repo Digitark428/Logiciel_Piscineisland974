@@ -6,6 +6,7 @@ import { ActionForm } from "@/components/forms/ActionForm";
 import { SubmitButton } from "@/components/forms/SubmitButton";
 import { updateService, deleteService } from "@/lib/actions/services";
 import type { Service } from "@/lib/db/types";
+import { moneyCentsInputValue } from "@/lib/utils/money";
 
 interface Opt { id: string; label: string }
 interface PoolOpt { id: string; label: string; client_id: string }
@@ -16,11 +17,15 @@ export function ServiceEditForm({
   members,
   pools,
   documents = [],
+  isAdmin,
+  financialAmountCents,
 }: {
   service: Service;
   members: Opt[];
   pools: PoolOpt[];
   documents?: DocOpt[];
+  isAdmin: boolean;
+  financialAmountCents?: number | null;
 }) {
   const [pending, start] = useTransition();
   const router = useRouter();
@@ -84,6 +89,20 @@ export function ServiceEditForm({
             </div>
           </div>
         </div>
+        {isAdmin && (
+          <div className="card p-6">
+            <div className="max-w-sm">
+              <label className="label" htmlFor="amount">{service.kind === "recurring" ? "Montant mensuel du contrat" : "Montant facturé"}</label>
+              <div className="relative">
+                <input id="amount" name="amount" inputMode="decimal" className="input pr-10" defaultValue={moneyCentsInputValue(financialAmountCents)} placeholder={service.kind === "recurring" ? "200,00" : "850,00"} />
+                <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm font-medium text-graphite-500">€{service.kind === "recurring" ? " / mois" : ""}</span>
+              </div>
+              <p className="mt-2 text-xs text-graphite-400">
+                {service.kind === "recurring" ? "Cette valeur est portée par le contrat, et non par chaque passage." : "Laissez vide pour ne pas modifier le montant existant."}
+              </p>
+            </div>
+          </div>
+        )}
         <div className="flex justify-end">
           <SubmitButton>Enregistrer</SubmitButton>
         </div>
