@@ -61,3 +61,10 @@
 - **Super Admin :** liste et détail distinguent maintenant clairement un utilisateur de l'application d'un client portail ; les réponses apparaissent dans le bon fil.
 - **Migrations :** aucune — le schéma et les règles RLS de support interne existaient déjà et ont été vérifiés en production.
 - **Vérification :** typecheck, build et 28 tests validés ; 12 tests d'intégration restent ignorés sans secrets Supabase de test.
+
+## 2026-08-18 — Codex — Correctif des interactions de notes d'équipe
+
+- **Tâche :** correction de l'échec des actions « Lu », « Fait » et des commentaires dans les notes d'équipe.
+- **Cause :** le trigger partagé lisait des colonnes `NEW` absentes sur certaines des trois tables d'interactions.
+- **Migration :** `0026_fix_team_note_interaction_guard`, appliquée au projet Supabase de production ; l'intégrité multi-tenant, la RLS et la non-exécution directe de la fonction sont conservées.
+- **Vérification :** typecheck, build et 28 tests locaux validés ; transaction de production sous rôle authentifié validant les trois insertions, puis annulée sans créer de donnée.

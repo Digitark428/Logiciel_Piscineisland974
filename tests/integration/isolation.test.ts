@@ -116,6 +116,26 @@ describe.skipIf(!READY)("Isolation multi-tenant (RLS)", () => {
     expect(executions.data ?? []).toHaveLength(0);
     expect(comments.data ?? []).toHaveLength(0);
 
+    const { data: interactionNote } = await admin!.from("team_notes")
+      .insert({ workspace_id: A.workspaceId, author_membership_id: A.membershipId, content: "Note à traiter" })
+      .select("id")
+      .single();
+    expect(interactionNote?.id).toBeTruthy();
+
+    const ownRead = await asA.from("team_note_reads")
+      .insert({ workspace_id: A.workspaceId, team_note_id: interactionNote!.id, membership_id: A.membershipId })
+      .select("reader_label")
+      .single();
+    expect(ownRead.error).toBeNull();
+    expect(ownRead.data?.reader_label).toBe("T TenantA");
+
+    const ownExecution = await asA.from("team_note_executions")
+      .insert({ workspace_id: A.workspaceId, team_note_id: interactionNote!.id, membership_id: A.membershipId })
+      .select("executor_label")
+      .single();
+    expect(ownExecution.error).toBeNull();
+    expect(ownExecution.data?.executor_label).toBe("T TenantA");
+
     const ownComment = await asA.from("team_note_comments")
       .insert({ workspace_id: A.workspaceId, team_note_id: A.noteId, author_membership_id: A.membershipId, content: "Commentaire de A" })
       .select("author_label")
