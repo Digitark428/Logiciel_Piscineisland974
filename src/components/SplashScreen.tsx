@@ -37,7 +37,7 @@ export function SplashScreen() {
     >
       <div className="leti-splash-content flex flex-col items-center">
         <img src="/leti/leti-symbol-transparent.png" alt="" className="leti-splash-symbol h-28 w-28 object-contain sm:h-32 sm:w-32" />
-        <img src="/leti/leti-wordmark-transparent.png" alt="" className="leti-splash-wordmark -mt-4 h-16 w-36 object-contain sm:h-[4.5rem] sm:w-40" />
+        <img src="/leti/leti-wordmark-transparent.png" alt="" className="leti-splash-wordmark mt-1 h-16 w-36 object-contain sm:h-[4.5rem] sm:w-40" />
       </div>
     </div>
   );

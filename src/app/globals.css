@@ -132,44 +132,28 @@ body {
 }
 
 .leti-splash {
-  background:
-    radial-gradient(circle at 50% 42%, rgba(120, 216, 236, 0.18), transparent 24rem),
-    var(--leti-canvas);
-}
-
-.leti-splash-content {
-  animation: leti-splash-content-in 860ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  background: var(--leti-canvas);
 }
 
 .leti-splash-symbol {
-  animation: leti-symbol-in 680ms cubic-bezier(0.16, 1, 0.3, 1) 90ms both;
+  animation: leti-fade-in 680ms ease-out 90ms both;
 }
 
 .leti-splash-wordmark {
-  animation: leti-wordmark-in 560ms cubic-bezier(0.16, 1, 0.3, 1) 500ms both;
+  animation: leti-fade-in 560ms ease-out 500ms both;
 }
 
 .leti-splash-leaving {
-  animation: leti-splash-out 500ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: leti-splash-out 500ms ease-in forwards;
 }
 
-@keyframes leti-splash-content-in {
-  from { opacity: 0; transform: scale(0.985); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-@keyframes leti-symbol-in {
-  from { opacity: 0; transform: translateY(14px) scale(0.92); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-@keyframes leti-wordmark-in {
-  from { opacity: 0; transform: translateY(9px); filter: blur(2px); }
-  to { opacity: 1; transform: translateY(0); }
+@keyframes leti-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes leti-splash-out {
-  to { opacity: 0; transform: scale(1.012); visibility: hidden; }
+  to { opacity: 0; visibility: hidden; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -182,7 +166,6 @@ body {
   }
 
   .leti-splash,
-  .leti-splash-content,
   .leti-splash-symbol,
   .leti-splash-wordmark {
     animation-duration: 1ms;

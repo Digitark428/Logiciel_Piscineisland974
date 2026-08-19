@@ -2,6 +2,11 @@
 
 > Ajouter une entrée courte après chaque intervention significative. Ne pas y dupliquer la documentation durable de `PROJECT_CONTEXT.md`.
 
+## 2026-08-20 — Codex — Épure de l'accueil et de la connexion
+
+- **Accueil :** retrait du halo aqua et remplacement de la promesse principale par « SIMPLE MAIS PUISSANT », en conservant le verrouillage du sous-titre sous le logo centré.
+- **Connexion et splash :** choix de rôle sans emoji, avec les deux actions corail, et splash ajusté (mot-symbole plus bas, apparition/disparition uniquement en fondu, sans halo ni mouvement).
+
 ## 2026-08-19 — Codex — Accueil LETI simplifié
 
 - **Landing page :** suppression de l'en-tête, des cartes de fonctionnalités et des logos secondaires. L'accueil se concentre désormais sur le logo central, le positionnement, la promesse, les deux actions et un pied de page discret centré.

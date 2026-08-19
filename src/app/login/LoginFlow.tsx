@@ -71,22 +71,20 @@ export function LoginFlow() {
         <div className="mt-6 space-y-3">
           <button
             onClick={() => { setRole("admin"); setStep(3); }}
-            className="flex w-full items-center gap-3 rounded-xl border border-graphite-200 bg-white px-4 py-4 text-left transition hover:border-pool-300 hover:bg-pool-50"
+            className="btn-primary w-full justify-start px-4 py-4 text-left"
           >
-            <span className="text-2xl">👔</span>
             <span>
               <span className="block font-semibold text-graphite-900">Je suis le gérant</span>
-              <span className="block text-sm text-graphite-500">Accès administrateur complet</span>
+              <span className="block text-sm text-graphite-700">Accès administrateur complet</span>
             </span>
           </button>
           <button
             onClick={() => { setRole("member"); setStep(3); }}
-            className="flex w-full items-center gap-3 rounded-xl border border-graphite-200 bg-white px-4 py-4 text-left transition hover:border-pool-300 hover:bg-pool-50"
+            className="btn-primary w-full justify-start px-4 py-4 text-left"
           >
-            <span className="text-2xl">🧰</span>
             <span>
               <span className="block font-semibold text-graphite-900">Je suis un membre de l'équipe</span>
-              <span className="block text-sm text-graphite-500">Accès selon vos permissions</span>
+              <span className="block text-sm text-graphite-700">Accès selon vos permissions</span>
             </span>
           </button>
         </div>
