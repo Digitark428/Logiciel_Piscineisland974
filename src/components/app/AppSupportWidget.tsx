@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState, useTransition, type TransitionStartFunction } from "react";
+import { useCallback, useEffect, useMemo, useState, useTransition, type TransitionStartFunction } from "react";
 import {
   createAppSupportConversation,
   markAppConversationSeen,
@@ -57,14 +57,14 @@ function timeLabel(iso: string): string {
  * Les données ne sont demandées qu'à l'ouverture : aucune requête ne retarde
  * le rendu ou la navigation entre les pages de l'espace /app.
  */
-export function AppSupportWidget() {
-  const [open, setOpen] = useState(false);
+export function AppSupportWidget({ initiallyOpen = false }: { initiallyOpen?: boolean }) {
+  const [open, setOpen] = useState(initiallyOpen);
   const [screen, setScreen] = useState<Screen>("home");
   const [category, setCategory] = useState<SupportCategory>("bug");
   const [activeId, setActiveId] = useState<string | null>(null);
   const [data, setData] = useState<SupportData>({ conversations: [], unreadTotal: 0 });
   const [loaded, setLoaded] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(initiallyOpen);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -88,11 +88,14 @@ export function AppSupportWidget() {
     }
   }, []);
 
+  useEffect(() => {
+    if (open) void loadSupport();
+  }, [loadSupport, open]);
+
   function openPanel() {
     setOpen(true);
     setScreen("home");
     setError(null);
-    void loadSupport();
   }
 
   function goHome() {
@@ -137,6 +140,8 @@ export function AppSupportWidget() {
         <section
           className="fixed inset-x-3 bottom-3 z-50 mx-auto flex max-h-[85vh] w-auto max-w-sm flex-col overflow-hidden rounded-2xl border border-graphite-200 bg-white shadow-2xl sm:inset-x-auto sm:bottom-5 sm:right-5 sm:w-[370px]"
           role="dialog"
+          tabIndex={-1}
+          autoFocus
           aria-label="Aide et retours"
         >
           <WidgetHeader

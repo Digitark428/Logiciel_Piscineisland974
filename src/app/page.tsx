@@ -40,8 +40,10 @@ export default function HomePage() {
       </header>
 
       <main className="mx-auto max-w-6xl px-5">
-        <section className="py-16 text-center sm:py-24">
-          <p className="leti-eyebrow mb-5 inline-flex items-center gap-2 rounded-full bg-pool-50 px-3 py-1.5 text-pool-800">
+        <section className="relative isolate overflow-hidden py-16 text-center sm:py-24">
+          <div aria-hidden="true" className="absolute left-1/2 top-8 -z-10 h-64 w-[34rem] -translate-x-1/2 rounded-full bg-pool-100/60 blur-3xl sm:h-72" />
+          <Logo size="hero" className="mb-7 justify-center" />
+          <p className="leti-eyebrow mb-5 inline-flex items-center gap-2 rounded-full border border-white/75 bg-white/55 px-3 py-1.5 text-pool-800 shadow-sm backdrop-blur-sm">
             Logiciel pour piscinistes
           </p>
           <h1 className="mx-auto max-w-3xl text-4xl font-semibold tracking-[-0.045em] text-graphite-900 sm:text-6xl">

@@ -2,6 +2,14 @@
 
 > Ajouter une entrée courte après chaque intervention significative. Ne pas y dupliquer la documentation durable de `PROJECT_CONTEXT.md`.
 
+## 2026-08-19 — Codex — Finitions LETI et fluidité de navigation
+
+- **Marque et interface :** création de déclinaisons PNG réellement transparentes du sigle, du mot-symbole et du lockup officiels (originaux conservés) ; le logo n'a plus de plaque blanche dans le splash ni dans la navigation. Le hero de l'accueil met désormais LETI en avant, les boutons ont un reflet vitre discret et les fonds clairs reçoivent une touche aqua légère.
+- **Splash :** séquence plus lente et plus fluide (sigle, mot-symbole, temps de lecture puis fondu), toujours non bloquante et respectueuse de `prefers-reduced-motion`.
+- **Fluidité :** navigation `/app` préchargée seulement sur intention explicite (une destination à la fois), retour visuel immédiat au clic et volet d'assistance chargé à la demande. Le contexte de session regroupe membership, workspace et permissions dans une seule lecture relationnelle après l'authentification, supprimant un aller-retour serveur par rendu authentifié.
+- **Base :** audit Supabase effectué ; aucun index ou policy RLS n'a été modifié, car le volume réel et les index actuels n'expliquent pas la lenteur ressentie.
+- **Vérification :** typecheck, build et 35 tests unitaires validés ; accueil, splash et connexion contrôlés localement sans overlay ni débordement.
+
 ## 2026-08-19 — Codex — Rebranding et Design System LETI
 
 - **Tâche :** refonte visuelle complète de l'expérience utilisateur, sans changement de logique métier, données, routes ou permissions.

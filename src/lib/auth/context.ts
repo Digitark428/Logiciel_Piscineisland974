@@ -28,38 +28,34 @@ export const getSessionContext = cache(
     } = await supabase.auth.getUser();
     if (!user) return null;
 
-    const { data: membership } = await supabase
+    // Le membership, l'espace et les permissions forment un seul contexte.
+    // Les embarquer dans la même lecture supprime un aller-retour PostgREST à
+    // chaque rendu de route /app, sans changer les contrôles RLS appliqués à
+    // chacune des relations.
+    const { data: membershipWithContext } = await supabase
       .from("memberships")
-      .select("*")
+      .select("*, workspace:workspaces(*), permissions(key, granted)")
       .eq("user_id", user.id)
       .eq("status", "active")
       .order("created_at", { ascending: true })
       .limit(1)
       .maybeSingle();
 
-    if (!membership) return null;
+    if (!membershipWithContext) return null;
 
-    // Une fois le membership connu, l'espace et les permissions sont
-    // indépendants : les lancer ensemble évite un aller-retour Supabase.
-    const [workspaceRes, permsRes] = await Promise.all([
-      supabase
-        .from("workspaces")
-        .select("*")
-        .eq("id", membership.workspace_id)
-        .maybeSingle(),
-      supabase
-        .from("permissions")
-        .select("key, granted")
-        .eq("membership_id", membership.id),
-    ]);
-    const { data: workspace } = workspaceRes;
+    const membership = membershipWithContext as Membership & {
+      workspace: Workspace | Workspace[] | null;
+      permissions: Array<{ key: string; granted: boolean }> | null;
+    };
+    const workspace = Array.isArray(membership.workspace)
+      ? membership.workspace[0] ?? null
+      : membership.workspace;
 
     if (!workspace || workspace.status !== "active") return null;
-    const { data: perms } = permsRes;
 
     const isAdmin = membership.role === "admin";
     const permissions = new Set<string>(
-      (perms ?? []).filter((p) => p.granted).map((p) => p.key as string),
+      (membership.permissions ?? []).filter((p) => p.granted).map((p) => p.key),
     );
 
     return {

@@ -2,7 +2,7 @@ import { requireContext, can } from "@/lib/auth/context";
 import { createClient } from "@/lib/supabase/server";
 import { signedUrl } from "@/lib/storage";
 import { AppShell } from "@/components/app/AppShell";
-import { AppSupportWidget } from "@/components/app/AppSupportWidget";
+import { DeferredAppSupportWidget } from "@/components/app/DeferredAppSupportWidget";
 import { NAV_ITEMS } from "@/components/app/nav";
 import { memberJobTitle, memberName } from "@/lib/utils/format";
 
@@ -45,7 +45,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       >
         {children}
       </AppShell>
-      <AppSupportWidget />
+      <DeferredAppSupportWidget />
     </>
   );
 }
