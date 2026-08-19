@@ -2,6 +2,12 @@
 
 > Ajouter une entrée courte après chaque intervention significative. Ne pas y dupliquer la documentation durable de `PROJECT_CONTEXT.md`.
 
+## 2026-08-19 — Codex — Compression photo Safari
+
+- **Tâche :** correction du repli Safari qui transformait parfois une demande WebP en PNG trop volumineux.
+- **Correctif :** préférence stricte pour WebP réel, puis JPEG ; réduction progressive de la résolution et de la qualité jusqu’à 5 Mo au maximum.
+- **Vérification :** typecheck, build et 35 tests locaux validés.
+
 ## 2026-08-19 — Codex — Publication photo mobile « Entre nous »
 
 - **Tâche :** correction du formulaire de publication qui pouvait afficher une erreur JavaScript opaque après l’ajout d’une photo mobile.

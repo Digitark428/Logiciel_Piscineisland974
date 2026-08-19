@@ -27,6 +27,14 @@ const REACTION_LABELS: Record<CommunityReactionKind, { emoji: string; label: str
 
 const OUTPUT_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const SOURCE_IMAGE_TYPES = new Set(["image/avif", "image/gif", "image/heic", "image/heif", "image/jpeg", "image/png", "image/webp"]);
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const IMAGE_ATTEMPTS = [
+  { longestSide: 2048, quality: 0.82 },
+  { longestSide: 1800, quality: 0.8 },
+  { longestSide: 1600, quality: 0.78 },
+  { longestSide: 1400, quality: 0.76 },
+  { longestSide: 1200, quality: 0.74 },
+];
 
 function isImageSource(file: File): boolean {
   return SOURCE_IMAGE_TYPES.has(file.type.toLowerCase()) || /\.(avif|gif|heic|heif|jpe?g|png|webp)$/i.test(file.name);
@@ -371,24 +379,31 @@ function CommunityPostCard({
 async function optimizeImage(file: File): Promise<File> {
   if (!isImageSource(file)) throw new Error("Sélectionnez un fichier image.");
   const image = await decodeImage(file);
-  const largestSide = Math.max(image.width, image.height);
-  const ratio = Math.min(1, 2048 / largestSide);
-  const width = Math.max(1, Math.round(image.width * ratio));
-  const height = Math.max(1, Math.round(image.height * ratio));
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-  const context = canvas.getContext("2d");
-  if (!context) throw new Error("Votre navigateur ne peut pas optimiser cette photo.");
+  let optimized: Blob | null = null;
   try {
-    image.draw(context, width, height);
+    const largestSide = Math.max(image.width, image.height);
+    for (const attempt of IMAGE_ATTEMPTS) {
+      const ratio = Math.min(1, attempt.longestSide / largestSide);
+      const width = Math.max(1, Math.round(image.width * ratio));
+      const height = Math.max(1, Math.round(image.height * ratio));
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const context = canvas.getContext("2d");
+      if (!context) throw new Error("Votre navigateur ne peut pas optimiser cette photo.");
+      image.draw(context, width, height);
+      const blob = await compressedCanvasBlob(canvas, attempt.quality);
+      if (blob.size <= MAX_IMAGE_BYTES) {
+        optimized = blob;
+        break;
+      }
+    }
   } finally {
     image.close();
   }
-  const blob = await compressedCanvasBlob(canvas);
-  if (blob.size > 5 * 1024 * 1024) throw new Error("Une photo reste trop volumineuse après optimisation.");
+  if (!optimized) throw new Error("Cette photo reste trop volumineuse. Essayez une photo plus légère.");
   const name = file.name.replace(/\.[^.]+$/, "") || "photo";
-  return new File([blob], `${name}.${imageExtension(blob.type)}`, { type: blob.type });
+  return new File([optimized], `${name}.${imageExtension(optimized.type)}`, { type: optimized.type });
 }
 
 type DecodedImage = {
@@ -434,11 +449,14 @@ async function decodeImage(file: File): Promise<DecodedImage> {
   }
 }
 
-async function compressedCanvasBlob(canvas: HTMLCanvasElement): Promise<Blob> {
+async function compressedCanvasBlob(canvas: HTMLCanvasElement, quality: number): Promise<Blob> {
   const toBlob = (type: string, quality: number) => new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, type, quality));
-  const webp = await toBlob("image/webp", 0.84);
+  const webp = await toBlob("image/webp", quality);
+  if (webp?.type === "image/webp") return webp;
+  // Safari peut convertir une demande WebP en PNG. Préférer alors le JPEG,
+  // beaucoup plus léger pour les photos prises sur mobile.
+  const jpeg = await toBlob("image/jpeg", quality);
+  if (jpeg?.type === "image/jpeg") return jpeg;
   if (webp && OUTPUT_IMAGE_TYPES.has(webp.type)) return webp;
-  const jpeg = await toBlob("image/jpeg", 0.86);
-  if (jpeg && OUTPUT_IMAGE_TYPES.has(jpeg.type)) return jpeg;
   throw new Error("Impossible d'optimiser cette photo.");
 }
