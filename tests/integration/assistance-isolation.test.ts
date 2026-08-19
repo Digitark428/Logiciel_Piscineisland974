@@ -18,8 +18,8 @@ const READY = Boolean(URL && ANON && SERVICE);
 const admin = READY ? createClient(URL!, SERVICE!, { auth: { persistSession: false } }) : null;
 
 const rnd = Math.random().toString(36).slice(2, 8);
-const A = { email: `sup-a-${rnd}@example.test`, password: "Password123!", userId: "", workspaceId: "", clientId: "", convId: "" };
-const B = { email: `sup-b-${rnd}@example.test`, password: "Password123!", userId: "", workspaceId: "", clientId: "", convId: "" };
+const A = { email: `sup-a-${rnd}@example.test`, password: "Password123!", userId: "", workspaceId: "", membershipId: "", convId: "" };
+const B = { email: `sup-b-${rnd}@example.test`, password: "Password123!", userId: "", workspaceId: "", membershipId: "", convId: "" };
 
 async function setupTenant(t: typeof A, name: string) {
   const { data: created } = await admin!.auth.admin.createUser({ email: t.email, password: t.password, email_confirm: true });
@@ -28,15 +28,15 @@ async function setupTenant(t: typeof A, name: string) {
     p_user_id: t.userId, p_company_name: name, p_admin_first: "T", p_admin_last: name, p_admin_email: t.email,
   });
   t.workspaceId = (Array.isArray(prov) ? prov[0] : prov).workspace_id;
-  const { data: client } = await admin!.from("clients").insert({ workspace_id: t.workspaceId, first_name: "Client", last_name: name }).select("id").single();
-  t.clientId = client!.id;
+  const { data: ms } = await admin!.from("memberships").select("id").eq("workspace_id", t.workspaceId).eq("user_id", t.userId).single();
+  t.membershipId = ms!.id;
   const { data: conv } = await admin!
     .from("support_conversations")
-    .insert({ workspace_id: t.workspaceId, client_id: t.clientId, category: "bug", status: "new" })
+    .insert({ workspace_id: t.workspaceId, membership_id: t.membershipId, category: "bug", status: "new" })
     .select("id").single();
   t.convId = conv!.id;
   await admin!.from("support_messages").insert({
-    conversation_id: t.convId, workspace_id: t.workspaceId, author_type: "client", author_label: name, content: `Message secret de ${name}`,
+    conversation_id: t.convId, workspace_id: t.workspaceId, author_type: "user", author_label: name, content: `Message secret de ${name}`,
   });
 }
 
@@ -81,7 +81,7 @@ describe.skipIf(!READY)("Isolation Assistance (RLS)", () => {
     const asA = createClient(URL!, ANON!, { auth: { persistSession: false } });
     await asA.auth.signInWithPassword({ email: A.email, password: A.password });
     const { data, error } = await asA.from("support_messages").insert({
-      conversation_id: A.convId, workspace_id: A.workspaceId, author_type: "client", content: "Tentative directe",
+      conversation_id: A.convId, workspace_id: A.workspaceId, author_type: "user", content: "Tentative directe",
     }).select("id");
     // Aucune policy INSERT → refus.
     expect(!data || data.length === 0 || !!error).toBe(true);
@@ -91,7 +91,7 @@ describe.skipIf(!READY)("Isolation Assistance (RLS)", () => {
     const asA = createClient(URL!, ANON!, { auth: { persistSession: false } });
     await asA.auth.signInWithPassword({ email: A.email, password: A.password });
     const { data, error } = await asA.from("support_conversations").insert({
-      workspace_id: B.workspaceId, client_id: B.clientId, category: "bug", status: "new",
+      workspace_id: B.workspaceId, membership_id: B.membershipId, category: "bug", status: "new",
     }).select("id");
     expect(!data || data.length === 0 || !!error).toBe(true);
   });

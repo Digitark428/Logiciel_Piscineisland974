@@ -1,7 +1,7 @@
 import "server-only";
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { clientName } from "@/lib/utils/format";
+import { memberName } from "@/lib/utils/format";
 import type { SupportCategory, SupportStatus } from "@/lib/db/types";
 
 /**
@@ -11,7 +11,7 @@ import type { SupportCategory, SupportStatus } from "@/lib/db/types";
 
 export interface AdminMessage {
   id: string;
-  author_type: "client" | "admin";
+  author_type: "user" | "admin";
   author_label: string | null;
   content: string;
   created_at: string;
@@ -20,7 +20,7 @@ export interface AdminMessage {
 export interface AdminConversation {
   id: string;
   workspace_id: string;
-  client_id: string;
+  membership_id: string | null;
   category: SupportCategory;
   status: SupportStatus;
   context: Record<string, unknown>;
@@ -29,10 +29,11 @@ export interface AdminConversation {
   resolved_at: string | null;
   admin_last_seen_at: string | null;
   company: string;
-  client: string;
+  /** L'utilisateur de l'app (gérant ou membre) qui a ouvert la demande. */
+  requester: string;
   preview: string;
   lastMessage: string;
-  lastAuthor: "client" | "admin";
+  lastAuthor: "user" | "admin";
   adminUnread: number;
   messages: AdminMessage[];
 }
@@ -61,7 +62,7 @@ export async function getSupportOverview(): Promise<Overview> {
   const admin = createAdminClient();
   const { data: rows } = await admin
     .from("support_conversations")
-    .select("id, workspace_id, client_id, category, status, context, created_at, last_message_at, resolved_at, admin_last_seen_at, clients(first_name,last_name,company_name), workspaces(name)")
+    .select("id, workspace_id, membership_id, category, status, context, created_at, last_message_at, resolved_at, admin_last_seen_at, memberships(first_name,last_name,email), workspaces(name)")
     .order("last_message_at", { ascending: false })
     .limit(MAX);
 
@@ -83,18 +84,18 @@ export async function getSupportOverview(): Promise<Overview> {
       .filter((m) => m.conversation_id === c.id)
       .map((m) => ({
         id: m.id,
-        author_type: m.author_type as "client" | "admin",
+        author_type: m.author_type as "user" | "admin",
         author_label: m.author_label,
         content: m.content,
         created_at: m.created_at,
       }));
 
-    const first = messages.find((m) => m.author_type === "client") ?? messages[0];
+    const first = messages.find((m) => m.author_type === "user") ?? messages[0];
     const last = messages[messages.length - 1];
     const seen = c.admin_last_seen_at ? new Date(c.admin_last_seen_at).getTime() : 0;
-    const adminUnread = messages.filter((m) => m.author_type === "client" && new Date(m.created_at).getTime() > seen).length;
+    const adminUnread = messages.filter((m) => m.author_type === "user" && new Date(m.created_at).getTime() > seen).length;
 
-    const clientRel = c.clients as unknown as { first_name: string | null; last_name: string | null; company_name: string | null } | null;
+    const memberRel = c.memberships as unknown as { first_name: string | null; last_name: string | null; email: string | null } | null;
     const wsRel = c.workspaces as unknown as { name: string | null } | null;
 
     const status = c.status as SupportStatus;
@@ -109,7 +110,7 @@ export async function getSupportOverview(): Promise<Overview> {
     return {
       id: c.id,
       workspace_id: c.workspace_id,
-      client_id: c.client_id,
+      membership_id: c.membership_id,
       category,
       status,
       context: (c.context ?? {}) as Record<string, unknown>,
@@ -118,10 +119,10 @@ export async function getSupportOverview(): Promise<Overview> {
       resolved_at: c.resolved_at,
       admin_last_seen_at: c.admin_last_seen_at,
       company: wsRel?.name ?? "—",
-      client: clientRel ? clientName(clientRel) : "—",
+      requester: memberRel ? memberName(memberRel) : "—",
       preview: first?.content ?? "",
       lastMessage: last?.content ?? "",
-      lastAuthor: last?.author_type ?? "client",
+      lastAuthor: last?.author_type ?? "user",
       adminUnread,
       messages,
     };

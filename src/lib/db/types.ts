@@ -277,12 +277,14 @@ export interface Backup {
 // ---- Assistance (module de support intégré) ----
 export type SupportCategory = "bug" | "help" | "suggestion";
 export type SupportStatus = "new" | "in_progress" | "resolved" | "closed";
-export type SupportAuthorType = "client" | "admin";
+// 'user' = utilisateur de l'app (gérant ou membre) ; 'admin' = Super Admin plateforme.
+export type SupportAuthorType = "user" | "admin";
 
 export interface SupportConversation {
   id: string;
   workspace_id: string;
-  client_id: string;
+  membership_id: string | null;
+  client_id: string | null;
   category: SupportCategory;
   status: SupportStatus;
   context: Record<string, unknown>;

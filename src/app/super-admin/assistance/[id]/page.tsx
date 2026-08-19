@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireSuperAdmin } from "@/lib/auth/superadmin";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { clientName, formatDateTime } from "@/lib/utils/format";
+import { memberName, formatDateTime } from "@/lib/utils/format";
 import { CATEGORY_BY_KEY, STATUS_BY_KEY } from "@/lib/assistance";
 import type { SupportCategory, SupportStatus } from "@/lib/db/types";
 import { ConversationActions } from "./ConversationActions";
@@ -15,7 +15,7 @@ export default async function SuperAdminConversationPage({ params }: { params: {
 
   const { data: conv } = await admin
     .from("support_conversations")
-    .select("id, workspace_id, client_id, category, status, context, created_at, resolved_at, clients(first_name,last_name,company_name,email,phone), workspaces(name)")
+    .select("id, workspace_id, membership_id, category, status, context, created_at, resolved_at, memberships(first_name,last_name,email,phone,job_title), workspaces(name)")
     .eq("id", params.id)
     .maybeSingle();
 
@@ -32,7 +32,7 @@ export default async function SuperAdminConversationPage({ params }: { params: {
 
   const cat = CATEGORY_BY_KEY[conv.category as SupportCategory];
   const st = STATUS_BY_KEY[conv.status as SupportStatus];
-  const clientRel = conv.clients as unknown as { first_name: string | null; last_name: string | null; company_name: string | null; email: string | null; phone: string | null } | null;
+  const memberRel = conv.memberships as unknown as { first_name: string | null; last_name: string | null; email: string | null; phone: string | null; job_title: string | null } | null;
   const wsRel = conv.workspaces as unknown as { name: string | null } | null;
   const context = (conv.context ?? {}) as Record<string, unknown>;
   const serviceCode = typeof context.service_code === "string" ? context.service_code : null;
@@ -69,7 +69,7 @@ export default async function SuperAdminConversationPage({ params }: { params: {
                   m.author_type === "admin" ? "rounded-br-sm bg-pool-600 text-white" : "rounded-bl-sm bg-graphite-800 text-graphite-100"
                 }`}>
                   <div className={`mb-0.5 text-[11px] font-semibold ${m.author_type === "admin" ? "text-pool-100" : "text-pool-300"}`}>
-                    {m.author_type === "admin" ? "Vous (Assistance)" : (m.author_label ?? "Client")}
+                    {m.author_type === "admin" ? "Vous (Assistance)" : (m.author_label ?? "Utilisateur")}
                   </div>
                   <div className="whitespace-pre-wrap break-words">{m.content}</div>
                   <div className={`mt-1 text-[10px] ${m.author_type === "admin" ? "text-pool-200" : "text-graphite-500"}`}>{formatDateTime(m.created_at)}</div>
@@ -90,9 +90,10 @@ export default async function SuperAdminConversationPage({ params }: { params: {
             <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-graphite-400">Informations</h2>
             <dl className="space-y-2 text-sm">
               <Info label="Entreprise" value={wsRel?.name ?? "—"} />
-              <Info label="Client" value={clientRel ? clientName(clientRel) : "—"} />
-              {clientRel?.email && <Info label="E-mail" value={clientRel.email} />}
-              {clientRel?.phone && <Info label="Téléphone" value={clientRel.phone} />}
+              <Info label="Utilisateur" value={memberRel ? memberName(memberRel) : "—"} />
+              {memberRel?.job_title && <Info label="Rôle" value={memberRel.job_title} />}
+              {memberRel?.email && <Info label="E-mail" value={memberRel.email} />}
+              {memberRel?.phone && <Info label="Téléphone" value={memberRel.phone} />}
               <Info label="Catégorie" value={`${cat.emoji} ${cat.label}`} />
               <Info label="Statut" value={`${st.emoji} ${st.label}`} />
               <Info label="Créée le" value={formatDateTime(conv.created_at)} />

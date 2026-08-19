@@ -67,7 +67,7 @@ Next.js 14 (App Router) · TypeScript strict · Supabase (Postgres + Auth + Stor
 suppression d'un projet/déploiement, changement d'une cible d'infra). Là on prévient d'abord.
 
 ## 5. Migrations base de données — RÈGLE IMPORTANTE
-- Les migrations sont des fichiers **numérotés** dans `supabase/migrations/` (`0001` … actuellement `0013`).
+- Les migrations sont des fichiers **numérotés** dans `supabase/migrations/` (`0001` … actuellement `0014`).
 - **Toute** modif de schéma = **nouveau fichier** `00XX_description.sql` (jamais éditer un ancien).
 - Application : via l'outil MCP Supabase `apply_migration` (préféré, l'enregistre dans le ledger),
   sinon coller le SQL dans **Supabase → SQL Editor** (le lien direct :
@@ -88,25 +88,30 @@ suppression d'un projet/déploiement, changement d'une cible d'infra). Là on pr
 - Server Actions par domaine dans `src/lib/actions/`. Retour standard `ActionResult` + `ActionForm`.
 - Notifications = **in-app uniquement** (pas de Resend/email en V1).
 
-### Module « Assistance » (support intégré) — migration `0013`
-- **But** : le client final contacte le support Piscine Island depuis le **portail client**.
-  Flux `Client (portail) → Supabase → Super Admin → réponse → Client`. Aucun WhatsApp, aucun Resend.
-- **Tables** : `support_conversations` (workspace_id, client_id, `category` bug/help/suggestion,
-  `status` new/in_progress/resolved/closed, `context` jsonb, `*_last_seen_at`, `resolved_at`) et
-  `support_messages` (conversation_id, workspace_id, `author_type` client/admin, content, metadata).
-  Trigger `support_touch_conversation` (SECURITY DEFINER, EXECUTE révoqué) maj `last_message_at`.
-- **RLS** : SELECT = `auth_is_platform_admin() OR auth_is_member(workspace_id)`. Aucune policy
-  INSERT/UPDATE/DELETE → **écritures via service_role uniquement** (portail + Super Admin), workspace_id
-  et client_id **dérivés côté serveur** de la session portail vérifiée (pas d'usurpation possible).
-- **Côté client** : `AssistanceWidget` (bouton flottant 💬 + chat + saisie vocale Web Speech API)
-  dans `src/app/portal/[token]/` ; actions `src/lib/actions/assistance.ts` (réutilise le cookie portail).
+### Module « Assistance » (support intégré) — migrations `0013` + `0014`
+- **But** : les **utilisateurs de l'app** (gérant + membres d'équipe, dans `/app`) contactent le support
+  Piscine Island. Flux `Utilisateur app → Supabase → Super Admin → réponse → Utilisateur`.
+  ⚠️ **PAS dans le portail client** (les clients finaux des utilisateurs ne voient jamais ce chat).
+  Aucun WhatsApp, aucun Resend.
+- **Tables** : `support_conversations` (workspace_id, **membership_id** = utilisateur demandeur, `client_id`
+  facultatif, `category` bug/help/suggestion, `status` new/in_progress/resolved/closed, `context` jsonb,
+  `client_last_seen_at` = « vu » côté utilisateur, `admin_last_seen_at` = « vu » côté Super Admin,
+  `resolved_at`) et `support_messages` (conversation_id, workspace_id, `author_type` **user**/admin,
+  content, metadata). Trigger `support_touch_conversation` (SECURITY DEFINER, EXECUTE révoqué) maj `last_message_at`.
+- **RLS** (migration `0014`) : SELECT = `auth_is_platform_admin() OR auth_is_admin(workspace_id) OR
+  membership_id ∈ mes memberships` → **un membre voit SES conversations, le gérant (admin) voit toutes
+  celles de son entreprise, le Super Admin voit tout**. Aucune policy INSERT/UPDATE/DELETE → **écritures
+  via service_role uniquement**, workspace_id/membership **dérivés côté serveur** de la session (`requireContext`) — pas d'usurpation.
+- **Côté app** : `AssistanceWidget` (bouton flottant 💬 + chat + saisie vocale Web Speech API) dans
+  `src/components/app/AssistanceWidget.tsx`, monté dans `src/app/app/layout.tsx` (visible partout) ;
+  actions `src/lib/actions/assistance.ts` (réutilise la session authentifiée).
 - **Côté Super Admin** : `/super-admin/assistance` (tableau de bord + filtres + recherche) et
-  `/super-admin/assistance/[id]` (fiche + réponse + statuts) ; badge d'attention dans l'en-tête.
-  Lecture globale via `src/lib/assistance-admin.ts` ; actions `src/lib/actions/superadmin-assistance.ts`.
+  `/super-admin/assistance/[id]` (fiche : entreprise + **utilisateur demandeur** + contexte + réponse + statuts) ;
+  badge d'attention dans l'en-tête. Lecture globale via `src/lib/assistance-admin.ts` ; actions `src/lib/actions/superadmin-assistance.ts`.
 - **Constantes partagées** : `src/lib/assistance.ts` (catégories/statuts/placeholders — extensible).
 - **Journal** : événements (`support_conversation_created`, `support_message_sent`, `support_reply_sent`,
   `support_status_changed`) écrits dans `activity_logs`. **Démo** : `seed_demo_data` crée 3 conversations
-  réalistes (bug/aide/suggestion) et les réinitialise avec la démo.
+  réalistes (bug par salarié / aide par gérant / suggestion par salarié) et les réinitialise avec la démo.
 
 ## 7. Pièges déjà rencontrés (à connaître)
 - **RLS & fonctions** : migration `0009` a révoqué l'EXECUTE (anon/authenticated) sur les fonctions

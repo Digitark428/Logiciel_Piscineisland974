@@ -4,9 +4,7 @@ import { portalCookieName, verifyPortalSession } from "@/lib/portal";
 import { closePortal } from "@/lib/actions/portal";
 import { Logo } from "@/components/Logo";
 import { PortalCodeForm } from "./PortalCodeForm";
-import { AssistanceWidget, type WidgetConversation } from "./AssistanceWidget";
 import { clientName, formatDate, formatMoney, SERVICE_STATUS_LABELS, INVOICE_STATUS_LABELS } from "@/lib/utils/format";
-import type { SupportCategory, SupportStatus } from "@/lib/db/types";
 
 export default async function PortalPage({ params }: { params: { token: string } }) {
   const token = params.token;
@@ -44,7 +42,7 @@ export default async function PortalPage({ params }: { params: { token: string }
   // ---- Données du client (portée stricte à ce client) ----
   const [{ data: pools }, { data: services }, { data: invoices }, { data: workspace }] = await Promise.all([
     admin.from("pools").select("id, name, pool_type, water_treatment").eq("client_id", client!.id),
-    admin.from("services").select("id, code, scheduled_date, status, service_type").eq("client_id", client!.id).order("scheduled_date", { ascending: false }).limit(20),
+    admin.from("services").select("id, scheduled_date, status, service_type").eq("client_id", client!.id).order("scheduled_date", { ascending: false }).limit(20),
     admin.from("invoices").select("id, number, status, total, issue_date").eq("client_id", client!.id).order("issue_date", { ascending: false }),
     admin.from("workspaces").select("name, phone, email").eq("id", client!.workspace_id).maybeSingle(),
   ]);
@@ -53,55 +51,6 @@ export default async function PortalPage({ params }: { params: { token: string }
   const upcoming = (services ?? []).filter((s) => s.scheduled_date >= new Date().toISOString().slice(0, 10) && s.status !== "cancelled");
   const past = (services ?? []).filter((s) => s.scheduled_date < new Date().toISOString().slice(0, 10) || s.status === "completed");
   const closeAction = closePortal.bind(null, token);
-
-  // ---- Assistance : conversations du client (portée stricte à ce client) ----
-  const { data: convRows } = await admin
-    .from("support_conversations")
-    .select("id, category, status, created_at, last_message_at, client_last_seen_at, context")
-    .eq("client_id", client!.id)
-    .order("last_message_at", { ascending: false });
-
-  const convIds = (convRows ?? []).map((c) => c.id);
-  const { data: msgRows } = convIds.length
-    ? await admin
-        .from("support_messages")
-        .select("id, conversation_id, author_type, author_label, content, created_at")
-        .in("conversation_id", convIds)
-        .order("created_at", { ascending: true })
-    : { data: [] as { id: string; conversation_id: string; author_type: string; author_label: string | null; content: string; created_at: string }[] };
-
-  let unreadTotal = 0;
-  const assistanceConversations: WidgetConversation[] = (convRows ?? []).map((c) => {
-    const messages = (msgRows ?? [])
-      .filter((m) => m.conversation_id === c.id)
-      .map((m) => ({
-        id: m.id,
-        author_type: m.author_type as "client" | "admin",
-        author_label: m.author_label,
-        content: m.content,
-        created_at: m.created_at,
-      }));
-    const seen = c.client_last_seen_at ? new Date(c.client_last_seen_at).getTime() : 0;
-    const unread = messages.filter((m) => m.author_type === "admin" && new Date(m.created_at).getTime() > seen).length;
-    unreadTotal += unread;
-    return {
-      id: c.id,
-      category: c.category as SupportCategory,
-      status: c.status as SupportStatus,
-      created_at: c.created_at,
-      last_message_at: c.last_message_at,
-      context: (c.context ?? {}) as Record<string, unknown>,
-      messages,
-      unread,
-    };
-  });
-
-  // Prestations récentes proposées comme « prestation concernée » (facultatif).
-  const assistanceServices = (services ?? []).slice(0, 15).map((s) => ({
-    id: s.id,
-    code: (s as { code?: string }).code ?? "",
-    label: `${(s as { code?: string }).code ?? ""} · ${s.service_type ?? "Intervention"} · ${formatDate(s.scheduled_date)}`.trim(),
-  }));
 
   return (
     <div className="min-h-screen bg-graphite-50">
@@ -184,13 +133,6 @@ export default async function PortalPage({ params }: { params: { token: string }
           Une question ? Contactez {workspace?.name} {workspace?.phone ? `au ${workspace.phone}` : ""}.
         </p>
       </main>
-
-      <AssistanceWidget
-        token={token}
-        conversations={assistanceConversations}
-        unreadTotal={unreadTotal}
-        services={assistanceServices}
-      />
     </div>
   );
 }

@@ -32,7 +32,7 @@ export default async function SuperAdminAssistancePage({ searchParams }: { searc
     if (fCategory && c.category !== fCategory) return false;
     if (fCompany && c.company !== fCompany) return false;
     if (q) {
-      const hay = `${c.company} ${c.client} ${c.preview} ${c.lastMessage}`.toLowerCase();
+      const hay = `${c.company} ${c.requester} ${c.preview} ${c.lastMessage}`.toLowerCase();
       if (!hay.includes(q)) return false;
     }
     return true;
@@ -110,7 +110,7 @@ export default async function SuperAdminAssistancePage({ searchParams }: { searc
                           <span className="badge bg-graphite-800 text-graphite-200">{cat.emoji} {cat.label}</span>
                           <span className="font-medium text-graphite-200">{c.company}</span>
                           <span className="text-graphite-500">·</span>
-                          <span className="text-graphite-400">{c.client}</span>
+                          <span className="text-graphite-400">{c.requester}</span>
                           {c.adminUnread > 0 && <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">{c.adminUnread}</span>}
                         </div>
                         <div className="truncate text-sm text-graphite-300">

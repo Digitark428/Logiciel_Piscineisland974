@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   createSupportConversation,
   sendSupportMessage,
-  markConversationSeenByClient,
+  markConversationSeenByUser,
 } from "@/lib/actions/assistance";
 import {
   SUPPORT_CATEGORIES,
@@ -17,7 +17,7 @@ import type { SupportCategory, SupportStatus } from "@/lib/db/types";
 
 export interface WidgetMessage {
   id: string;
-  author_type: "client" | "admin";
+  author_type: "user" | "admin";
   author_label: string | null;
   content: string;
   created_at: string;
@@ -39,7 +39,6 @@ export interface WidgetService {
 }
 
 interface Props {
-  token: string;
   conversations: WidgetConversation[];
   unreadTotal: number;
   services: WidgetService[];
@@ -61,7 +60,7 @@ function deviceLabel(): string {
   return `${os} · ${br}`;
 }
 
-export function AssistanceWidget({ token, conversations, unreadTotal, services }: Props) {
+export function AssistanceWidget({ conversations, unreadTotal, services }: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [screen, setScreen] = useState<Screen>(conversations.length ? "home" : "category");
@@ -75,7 +74,7 @@ export function AssistanceWidget({ token, conversations, unreadTotal, services }
   // Si la conversation active reçoit une réponse, marquer comme vue.
   useEffect(() => {
     if (open && screen === "thread" && active && active.unread > 0) {
-      markConversationSeenByClient(token, active.id).then(() => router.refresh());
+      markConversationSeenByUser(active.id).then(() => router.refresh());
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, screen, activeId, active?.unread]);
@@ -143,7 +142,7 @@ export function AssistanceWidget({ token, conversations, unreadTotal, services }
                 onSend={(content, serviceId) => {
                   setError(null);
                   startTransition(async () => {
-                    const res = await createSupportConversation(token, {
+                    const res = await createSupportConversation({
                       category,
                       content,
                       route: typeof window !== "undefined" ? window.location.pathname : undefined,
@@ -171,7 +170,7 @@ export function AssistanceWidget({ token, conversations, unreadTotal, services }
                 onReply={(content) => {
                   setError(null);
                   startTransition(async () => {
-                    const res = await sendSupportMessage(token, active.id, content);
+                    const res = await sendSupportMessage(active.id, content);
                     if (!res.ok) { setError(res.message ?? "Envoi impossible."); return; }
                     router.refresh();
                   });
@@ -200,7 +199,7 @@ function Header({ screen, onBack, onClose }: { screen: Screen; onBack: () => voi
         )}
         <div>
           <div className="text-sm font-semibold text-graphite-900">Assistance</div>
-          <div className="text-xs text-graphite-400">Nous vous répondons ici</div>
+          <div className="text-xs text-graphite-400">Une question, un bug, une idée ?</div>
         </div>
       </div>
       <button onClick={onClose} aria-label="Fermer" className="rounded-lg p-1.5 text-graphite-400 hover:bg-graphite-100">
@@ -420,17 +419,17 @@ function Thread({
 
       <div className="flex-1 space-y-3 overflow-y-auto p-4">
         {conversation.messages.map((m) => (
-          <div key={m.id} className={`flex ${m.author_type === "client" ? "justify-end" : "justify-start"}`}>
+          <div key={m.id} className={`flex ${m.author_type === "user" ? "justify-end" : "justify-start"}`}>
             <div
               className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-sm ${
-                m.author_type === "client"
+                m.author_type === "user"
                   ? "rounded-br-sm bg-pool-600 text-white"
                   : "rounded-bl-sm bg-graphite-100 text-graphite-800"
               }`}
             >
               {m.author_type === "admin" && <div className="mb-0.5 text-[11px] font-semibold text-pool-700">Assistance</div>}
               <div className="whitespace-pre-wrap break-words">{m.content}</div>
-              <div className={`mt-1 text-[10px] ${m.author_type === "client" ? "text-pool-100" : "text-graphite-400"}`}>{timeLabel(m.created_at)}</div>
+              <div className={`mt-1 text-[10px] ${m.author_type === "user" ? "text-pool-100" : "text-graphite-400"}`}>{timeLabel(m.created_at)}</div>
             </div>
           </div>
         ))}
