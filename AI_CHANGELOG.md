@@ -2,6 +2,10 @@
 
 > Ajouter une entrée courte après chaque intervention significative. Ne pas y dupliquer la documentation durable de `PROJECT_CONTEXT.md`.
 
+## 2026-08-19 — Codex — Accueil LETI simplifié
+
+- **Landing page :** suppression de l'en-tête, des cartes de fonctionnalités et des logos secondaires. L'accueil se concentre désormais sur le logo central, le positionnement, la promesse, les deux actions et un pied de page discret centré.
+
 ## 2026-08-19 — Codex — Finitions LETI et fluidité de navigation
 
 - **Marque et interface :** création de déclinaisons PNG réellement transparentes du sigle, du mot-symbole et du lockup officiels (originaux conservés) ; le logo n'a plus de plaque blanche dans le splash ni dans la navigation. Le hero de l'accueil met désormais LETI en avant, les boutons ont un reflet vitre discret et les fonds clairs reçoivent une touche aqua légère.
