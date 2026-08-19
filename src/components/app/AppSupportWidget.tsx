@@ -225,7 +225,7 @@ function WidgetHeader({ screen, onBack, onClose }: { screen: Screen; onBack: () 
         )}
         <div>
           <div className="text-sm font-semibold text-graphite-900">Aide & retours</div>
-          <div className="text-xs text-graphite-400">Réservé aux utilisateurs Piscine Island</div>
+          <div className="text-xs text-graphite-400">Réservé aux utilisateurs LETI</div>
         </div>
       </div>
       <button type="button" onClick={onClose} aria-label="Fermer" className="rounded-lg p-1.5 text-graphite-400 hover:bg-graphite-100">✕</button>
@@ -307,7 +307,7 @@ function CategoryChoice({
   return (
     <div className="p-4">
       <h3 className="mb-1 text-center text-base font-semibold text-graphite-900">Comment pouvons-nous vous aider ?</h3>
-      <p className="mb-4 text-center text-xs text-graphite-500">Votre retour est adressé à l'équipe Piscine Island.</p>
+      <p className="mb-4 text-center text-xs text-graphite-500">Votre retour est adressé à l'équipe LETI.</p>
       <div className="space-y-2.5">
         {SUPPORT_CATEGORIES.map((item) => (
           <button
@@ -386,7 +386,7 @@ function Thread({
           return (
             <div key={message.id} className={`flex ${isAdmin ? "justify-start" : "justify-end"}`}>
               <div className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-sm ${isAdmin ? "rounded-bl-sm bg-graphite-100 text-graphite-800" : "rounded-br-sm bg-pool-600 text-white"}`}>
-                <div className={`mb-0.5 text-[11px] font-semibold ${isAdmin ? "text-graphite-500" : "text-pool-100"}`}>{isAdmin ? "Assistance Piscine Island" : "Vous"}</div>
+                <div className={`mb-0.5 text-[11px] font-semibold ${isAdmin ? "text-graphite-500" : "text-pool-100"}`}>{isAdmin ? "Assistance LETI" : "Vous"}</div>
                 <div className="whitespace-pre-wrap break-words">{message.content}</div>
                 <div className={`mt-1 text-[10px] ${isAdmin ? "text-graphite-400" : "text-pool-100"}`}>{timeLabel(message.created_at)}</div>
               </div>

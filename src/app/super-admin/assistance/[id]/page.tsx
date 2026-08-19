@@ -48,17 +48,17 @@ export default async function SuperAdminConversationPage({ params }: { params: {
   const device = typeof context.device === "string" ? context.device : null;
 
   return (
-    <div className="min-h-screen bg-graphite-950 text-graphite-100">
-      <header className="border-b border-graphite-800">
+    <div className="min-h-screen bg-graphite-50 text-graphite-900">
+      <header className="border-b border-graphite-200 bg-white/90 backdrop-blur">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-5 py-4">
           <div className="flex items-center gap-3 text-sm font-semibold">
-            <Link href="/super-admin" className="text-graphite-400 hover:text-graphite-200">🛡️ Super Admin</Link>
-            <span className="text-graphite-600">/</span>
-            <Link href="/super-admin/assistance" className="text-graphite-400 hover:text-graphite-200">💬 Assistance</Link>
-            <span className="text-graphite-600">/</span>
+            <Link href="/super-admin" className="text-graphite-600 hover:text-graphite-900">Administration LETI</Link>
+            <span className="text-graphite-300">/</span>
+            <Link href="/super-admin/assistance" className="text-graphite-600 hover:text-graphite-900">Assistance</Link>
+            <span className="text-graphite-300">/</span>
             <span>Conversation</span>
           </div>
-          <Link href="/super-admin/assistance" className="rounded-lg bg-graphite-800 px-3 py-1.5 text-sm text-graphite-100 hover:bg-graphite-700">← Retour</Link>
+          <Link href="/super-admin/assistance" className="btn-secondary min-h-0 px-3 py-1.5">← Retour</Link>
         </div>
       </header>
 
@@ -67,39 +67,39 @@ export default async function SuperAdminConversationPage({ params }: { params: {
         <div className="order-2 lg:order-1">
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <span className={`badge ${st.tone}`}>{st.emoji} {st.label}</span>
-            <span className="badge bg-graphite-800 text-graphite-200">{cat.emoji} {cat.label}</span>
+            <span className="badge bg-graphite-100 text-graphite-600">{cat.emoji} {cat.label}</span>
           </div>
 
-          <div className="space-y-3 rounded-2xl border border-graphite-800 bg-graphite-900 p-4">
+          <div className="card space-y-3 p-4">
             {(messages ?? []).map((m) => (
               <div key={m.id} className={`flex ${m.author_type === "admin" ? "justify-end" : "justify-start"}`}>
                 <div className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-sm ${
-                  m.author_type === "admin" ? "rounded-br-sm bg-pool-600 text-white" : "rounded-bl-sm bg-graphite-800 text-graphite-100"
+                  m.author_type === "admin" ? "rounded-br-sm bg-pool-100 text-graphite-900" : "rounded-bl-sm bg-graphite-100 text-graphite-800"
                 }`}>
-                  <div className={`mb-0.5 text-[11px] font-semibold ${m.author_type === "admin" ? "text-pool-100" : "text-pool-300"}`}>
+                  <div className={`mb-0.5 text-[11px] font-semibold ${m.author_type === "admin" ? "text-pool-800" : "text-graphite-500"}`}>
                     {m.author_type === "admin" ? "Vous (Assistance)" : (m.author_label ?? (requesterType === "user" ? "Utilisateur" : "Client"))}
                   </div>
                   <div className="whitespace-pre-wrap break-words">{m.content}</div>
-                  <div className={`mt-1 text-[10px] ${m.author_type === "admin" ? "text-pool-200" : "text-graphite-500"}`}>{formatDateTime(m.created_at)}</div>
+                  <div className={`mt-1 text-[10px] ${m.author_type === "admin" ? "text-pool-800" : "text-graphite-400"}`}>{formatDateTime(m.created_at)}</div>
                 </div>
               </div>
             ))}
             {(messages ?? []).length === 0 && <p className="text-sm text-graphite-500">Aucun message.</p>}
           </div>
 
-          <div className="mt-5 rounded-2xl border border-graphite-800 bg-graphite-900 p-4">
+          <div className="card mt-5 p-4">
             <ConversationActions conversationId={conv.id} status={conv.status as SupportStatus} />
           </div>
         </div>
 
         {/* Informations / contexte */}
         <aside className="order-1 space-y-3 lg:order-2">
-          <div className="rounded-2xl border border-graphite-800 bg-graphite-900 p-4">
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-graphite-400">Informations</h2>
+          <div className="card p-4">
+            <h2 className="leti-eyebrow mb-3">Informations</h2>
             <dl className="space-y-2 text-sm">
               <Info label="Entreprise" value={wsRel?.name ?? "—"} />
               <Info label={requesterType === "user" ? "Utilisateur" : "Client"} value={requester} />
-              <Info label="Origine" value={requesterType === "user" ? "Application Piscine Island" : "Portail client"} />
+              <Info label="Origine" value={requesterType === "user" ? "Application LETI" : "Portail client"} />
               {requesterEmail && <Info label="E-mail" value={requesterEmail} />}
               {requesterType === "client" && clientRel?.phone && <Info label="Téléphone" value={clientRel.phone} />}
               <Info label="Catégorie" value={`${cat.emoji} ${cat.label}`} />
@@ -109,8 +109,8 @@ export default async function SuperAdminConversationPage({ params }: { params: {
             </dl>
           </div>
 
-          <div className="rounded-2xl border border-graphite-800 bg-graphite-900 p-4">
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-graphite-400">Contexte</h2>
+          <div className="card p-4">
+            <h2 className="leti-eyebrow mb-3">Contexte</h2>
             <dl className="space-y-2 text-sm">
               <Info label="Prestation" value={serviceCode ?? "—"} highlight={!!serviceCode} />
               <Info label="Page" value={route ?? "—"} />
@@ -127,7 +127,7 @@ function Info({ label, value, highlight }: { label: string; value: string; highl
   return (
     <div className="flex items-start justify-between gap-3">
       <dt className="shrink-0 text-graphite-500">{label}</dt>
-      <dd className={`text-right ${highlight ? "font-mono font-semibold text-pool-300" : "text-graphite-200"}`}>{value}</dd>
+      <dd className={`text-right ${highlight ? "font-mono font-semibold text-pool-800" : "text-graphite-800"}`}>{value}</dd>
     </div>
   );
 }

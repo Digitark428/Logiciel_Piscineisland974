@@ -18,7 +18,7 @@ export interface FileEntry {
  * Section de fichiers d'un client (Factures / Contrats / autres documents).
  * Import (ordinateur, téléphone, photo, PDF), consultation, téléchargement, suppression.
  * Réutilise le bucket privé « documents » et ses permissions (upload/suppression =
- * documents.manage). Piscine Island ne GÉNÈRE pas ces documents : il les stocke.
+ * documents.manage). LETI ne GÉNÈRE pas ces documents : il les stocke.
  */
 export function ClientFiles({
   title,

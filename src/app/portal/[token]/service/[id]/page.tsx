@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { portalCookieName, verifyPortalSession } from "@/lib/portal";
 import { clientName, memberJobTitle, memberName, initials, formatDate, formatDate as fd, SERVICE_STATUS_LABELS } from "@/lib/utils/format";
 import { PortalServiceNote } from "./PortalServiceNote";
+import { Logo } from "@/components/Logo";
 
 export const dynamic = "force-dynamic";
 
@@ -82,11 +83,14 @@ export default async function PortalServicePage({ params }: { params: { token: s
 
   return (
     <div className="min-h-screen bg-graphite-50">
-      <header className="border-b border-graphite-100 bg-white">
+      <header className="border-b border-graphite-200 bg-white">
         <div className="mx-auto flex max-w-2xl items-center justify-between px-5 py-4">
-          <div>
+          <div className="flex items-center gap-3">
+            <Logo showText={false} />
+            <div>
             <div className="text-sm text-graphite-400">{workspace?.name}</div>
             <div className="font-semibold text-graphite-900">{name}</div>
+            </div>
           </div>
           <Link href={`/portal/${token}`} className="btn-ghost text-sm">← Retour</Link>
         </div>
@@ -94,7 +98,7 @@ export default async function PortalServicePage({ params }: { params: { token: s
 
       <main className="mx-auto max-w-2xl space-y-6 px-5 py-8">
         {/* Message d'accueil chaleureux + illustration sobre */}
-        <section className="overflow-hidden rounded-2xl bg-gradient-to-br from-pool-500 to-pool-700 p-6 text-white">
+        <section className="overflow-hidden rounded-2xl bg-graphite-900 p-6 text-white shadow-card">
           <div className="flex items-center justify-between gap-4">
             <div>
               <h1 className="text-lg font-semibold">Votre fiche d'intervention</h1>

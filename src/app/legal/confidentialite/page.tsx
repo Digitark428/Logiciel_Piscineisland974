@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
 
-export const metadata = { title: "Confidentialité — Piscine Island" };
+export const metadata = { title: "Confidentialité — LETI" };
 
 export default function ConfidentialitePage() {
   return (
@@ -16,7 +16,7 @@ export default function ConfidentialitePage() {
 
         <div className="prose mt-8 space-y-6 text-graphite-700">
           <Section title="1. Responsable du traitement">
-            Les données saisies dans Piscine Island sont traitées pour le compte de chaque entreprise
+            Les données saisies dans LETI sont traitées pour le compte de chaque entreprise
             cliente (le « responsable de traitement »), dans son espace isolé.
           </Section>
           <Section title="2. Données collectées">

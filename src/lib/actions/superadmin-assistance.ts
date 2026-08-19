@@ -13,7 +13,7 @@ import type { SupportStatus } from "@/lib/db/types";
  * Les écritures passent par service_role ; l'autorisation est vérifiée ici.
  */
 
-const ADMIN_LABEL = "Assistance Piscine Island";
+const ADMIN_LABEL = "Assistance LETI";
 
 async function fetchConversation(conversationId: string) {
   const admin = createAdminClient();

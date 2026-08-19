@@ -2,6 +2,13 @@
 
 > Ajouter une entrée courte après chaque intervention significative. Ne pas y dupliquer la documentation durable de `PROJECT_CONTEXT.md`.
 
+## 2026-08-19 — Codex — Rebranding et Design System LETI
+
+- **Tâche :** refonte visuelle complète de l'expérience utilisateur, sans changement de logique métier, données, routes ou permissions.
+- **Design System :** tokens LETI dans Tailwind/CSS (bleu nuit, aqua, corail mesuré, blanc cassé, Inter, surfaces et contrôles partagés) ; suppression de l'ancien effet de boutons « verre » et harmonisation de l'App Shell, des écrans publics, portail et Super Admin.
+- **Marque et Splash :** assets officiels intégrés sous `public/leti/`, logo SVG historique remplacé, métadonnées/favicons/libellés visibles renommés LETI ; splash non bloquant au chargement initial (symbole puis wordmark, transition courte, `prefers-reduced-motion`).
+- **Vérification :** typecheck, build et 35 tests unitaires validés ; inspection navigateur de l'accueil et de la connexion à 375, 768 et 1440 px sans débordement, overlay ni erreur avec la configuration locale.
+
 ## 2026-08-19 — Codex — Compression photo Safari
 
 - **Tâche :** correction du repli Safari qui transformait parfois une demande WebP en PNG trop volumineux.

@@ -34,26 +34,26 @@ export function ConversationActions({ conversationId, status }: { conversationId
   return (
     <div className="space-y-4">
       <div>
-        <label className="mb-1.5 block text-sm font-medium text-graphite-200">Répondre à la demande</label>
+        <label className="label">Répondre à la demande</label>
         <textarea
           value={reply}
           onChange={(e) => setReply(e.target.value.slice(0, SUPPORT_MESSAGE_MAX))}
           rows={4}
           placeholder="Votre réponse apparaîtra directement dans cette discussion…"
-          className="w-full resize-none rounded-xl border border-graphite-700 bg-graphite-800 px-3.5 py-2.5 text-sm text-graphite-100 placeholder:text-graphite-500 focus:border-pool-500 focus:outline-none"
+          className="input resize-none"
         />
         {error && <p className="mt-1 text-xs text-red-400">{error}</p>}
         <button
           onClick={send}
           disabled={reply.trim().length === 0 || pending}
-          className="mt-2 rounded-lg bg-pool-600 px-4 py-2 text-sm font-semibold text-white hover:bg-pool-700 disabled:opacity-50"
+          className="btn-primary mt-2"
         >
           {pending ? "Envoi…" : "Envoyer la réponse"}
         </button>
       </div>
 
       <div>
-        <div className="mb-1.5 text-sm font-medium text-graphite-200">Statut</div>
+        <div className="label">Statut</div>
         <div className="flex flex-wrap gap-2">
           {SUPPORT_STATUSES.map((s) => (
             <button
@@ -62,8 +62,8 @@ export function ConversationActions({ conversationId, status }: { conversationId
               disabled={pending || s.key === status}
               className={`rounded-lg border px-3 py-1.5 text-sm transition disabled:opacity-60 ${
                 s.key === status
-                  ? "border-pool-500 bg-pool-600/20 text-white"
-                  : "border-graphite-700 bg-graphite-800 text-graphite-200 hover:bg-graphite-700"
+                  ? "border-pool-400 bg-pool-100 text-graphite-900"
+                  : "border-graphite-200 bg-white text-graphite-600 hover:bg-graphite-50"
               }`}
             >
               {s.emoji} {s.label}

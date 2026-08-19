@@ -1,9 +1,19 @@
-# AGENTS.md — Piscine Island
+# AGENTS.md — LETI
 
 ## Mission
-Piscine Island est un SaaS multi-tenant de gestion pour piscinistes (TPE de 2 à 10 personnes). Les priorités sont la simplicité, la fiabilité, la sécurité et une interface sobre (blanc, graphite, bleu piscine).
+LETI est un SaaS multi-tenant de gestion pour piscinistes (TPE de 2 à 10 personnes). Les priorités sont la simplicité, la fiabilité, la sécurité et une interface sobre. Les noms historiques du dépôt et de l'infrastructure restent inchangés tant qu'une évolution technique distincte n'est pas demandée.
 
 Pour les détails de conception et l’historique, consulter `ARCHITECTURE.md`, `README.md` et `CLAUDE.md` seulement si la tâche le nécessite. Ne jamais inscrire de secret dans ce fichier ni dans le dépôt.
+
+## LETI — Design System & UI Guidelines
+
+- **Marque visible :** LETI est la marque affichée à l'utilisateur. Ne jamais redessiner le logo : utiliser exclusivement les assets officiels de `public/leti/` et leurs recadrages techniques fidèles. Tout nouveau contenu visible remplace « Piscine Island » par « LETI » ; les identifiants techniques, cibles d'infrastructure et données existantes restent inchangés.
+- **Palette :** bleu nuit `#183A59` pour la structure et les textes, corail `#F48B82` comme accent mesuré, corail clair `#F7B7AE`, bleu piscine `#78D8EC`, bleu aqua `#5FC6E3` et blanc cassé `#F7F7F5`. L'interface reste majoritairement claire ; le corail n'est jamais un fond dominant.
+- **Fondations :** Inter (avec une pile système de repli), espacement 4/8/12/16/24/32, rayons 8 puis 14-16 px, bordures fines et ombres très douces. Réutiliser les tokens Tailwind et les composants partagés avant toute classe ou couleur locale.
+- **Composants :** `src/components/ui.tsx`, `AppShell` et les primitives `.card`, `.btn-*`, `.input`, `.label` constituent le socle. Une évolution d'usage commun se fait à la source, avec une action principale claire par zone.
+- **Responsive et accessibilité :** le mobile est un usage terrain prioritaire : ne pas comprimer un tableau desktop, préserver des zones tactiles d'au moins 44 px, le focus visible, le contraste et `prefers-reduced-motion`. Vérifier 375-430 px, 768-1024 px, 1280-1440 px et grand écran avant livraison.
+- **Splash :** `SplashScreen` est une couche de présentation non bloquante, jouée uniquement au chargement initial du layout (symbole officiel puis wordmark). Il ne doit jamais modifier Auth, les redirections, les permissions ou la navigation interne.
+- **Non-régression :** toute refonte LETI reste strictement visuelle. Ne modifier ni Supabase, ni RLS, ni schéma, ni actions métier, ni routes, ni permissions sans demande explicite distincte.
 
 ## Cibles autorisées
 Utiliser exclusivement ces ressources, sauf instruction explicite du propriétaire :

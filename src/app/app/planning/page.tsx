@@ -62,7 +62,7 @@ export default async function PlanningPage({ searchParams }: { searchParams: { v
         <div className="flex gap-1 rounded-xl bg-white p-1 ring-1 ring-graphite-200">
           {(["day", "week", "month", "year"] as PlanningView[]).map((v) => (
             <Link key={v} href={link(v, anchor)}
-              className={`rounded-lg px-3 py-1.5 text-sm font-medium ${view === v ? "bg-pool-600 text-white" : "text-graphite-600 hover:bg-graphite-100"}`}>
+              className={`rounded-lg px-3 py-1.5 text-sm font-medium ${view === v ? "bg-pool-100 text-graphite-900" : "text-graphite-600 hover:bg-graphite-100"}`}>
               {v === "day" ? "Jour" : v === "week" ? "Semaine" : v === "month" ? "Mois" : "Année"}
             </Link>
           ))}

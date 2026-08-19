@@ -47,7 +47,7 @@ const STATUS_LABELS: Record<MapService["status"], string> = {
   cancelled: "Annulée",
 };
 
-// Marqueur personnalisé « goutte d'eau / piscine » aux couleurs de Piscine Island,
+// Marqueur personnalisé « goutte d'eau / piscine » aux couleurs de LETI,
 // teinté selon le statut (jamais rouge). Épingle SVG + petite vague à l'intérieur.
 function markerHtml(status: MapService["status"]): string {
   const color = STATUS_COLORS[status];

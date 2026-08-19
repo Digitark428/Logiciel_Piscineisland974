@@ -19,10 +19,10 @@ export function PageHeader({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
+    <div className="mb-7 flex flex-wrap items-start justify-between gap-4">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-graphite-900">{title}</h1>
-        {description && <p className="mt-1 text-sm text-graphite-500">{description}</p>}
+        <h1 className="text-2xl font-semibold tracking-[-0.025em] text-graphite-900 sm:text-[1.75rem]">{title}</h1>
+        {description && <p className="mt-1.5 max-w-2xl text-sm leading-6 text-graphite-500">{description}</p>}
         {subtitle && <p className={cn(description ? "mt-1 text-xs text-graphite-400" : "mt-1 text-sm text-graphite-500")}>{subtitle}</p>}
       </div>
       {action}
@@ -41,7 +41,7 @@ export function EmptyState({
 }) {
   return (
     <div className="card flex flex-col items-center justify-center px-6 py-14 text-center">
-      <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-pool-50 text-pool-500">
+      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-pool-50 text-pool-600">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M4 12h16M12 4v16" strokeLinecap="round" />
         </svg>
@@ -66,7 +66,7 @@ const BADGE_TONES: Record<string, string> = {
   paid: "bg-emerald-50 text-emerald-700",
   todo: "bg-graphite-100 text-graphite-600",
   done: "bg-emerald-50 text-emerald-700",
-  admin: "bg-pool-100 text-pool-800",
+  admin: "bg-coral-50 text-graphite-700",
   member: "bg-graphite-100 text-graphite-600",
 };
 
@@ -134,7 +134,7 @@ export function StatCard({
     amber: "text-amber-600",
   };
   const inner = (
-    <div className="card p-5 transition hover:shadow-float">
+    <div className="card p-5 transition hover:border-pool-200 hover:shadow-float">
       <div className="text-sm font-medium text-graphite-500">{label}</div>
       <div className={cn("mt-1 text-3xl font-bold tracking-tight", tones[tone])}>{value}</div>
       {hint && <div className="mt-1 text-xs text-graphite-400">{hint}</div>}

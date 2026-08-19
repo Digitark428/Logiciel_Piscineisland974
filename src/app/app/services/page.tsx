@@ -51,7 +51,7 @@ export default async function ServicesPage({ searchParams }: { searchParams: { f
       <div className="mb-5 flex flex-wrap gap-2">
         {FILTERS.map((f) => (
           <Link key={f.key} href={`/app/services?f=${f.key}`}
-            className={`badge px-3 py-1.5 ${filter === f.key ? "bg-pool-600 text-white" : "bg-white text-graphite-600 ring-1 ring-graphite-200"}`}>
+            className={`badge px-3 py-1.5 ${filter === f.key ? "bg-pool-100 text-graphite-900 ring-1 ring-pool-300" : "bg-white text-graphite-600 ring-1 ring-graphite-200"}`}>
             {f.label}
           </Link>
         ))}

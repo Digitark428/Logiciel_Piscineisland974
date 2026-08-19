@@ -4,7 +4,7 @@
 
 ## Produit
 
-Piscine Island est un SaaS de gestion destiné aux piscinistes, principalement aux TPE de 2 à 10 personnes. Les priorités produit sont la simplicité, la fiabilité, la sécurité et une interface sobre blanc / graphite / bleu piscine.
+LETI est le nom visible du SaaS de gestion destiné aux piscinistes, principalement aux TPE de 2 à 10 personnes. Les noms historiques du dépôt et de l'infrastructure restent inchangés. Les priorités produit sont la simplicité, la fiabilité, la sécurité et une interface LETI claire (bleu nuit, accents aqua et corail mesuré).
 
 ## Stack et organisation
 

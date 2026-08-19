@@ -109,11 +109,14 @@ export default async function PortalPage({ params }: { params: { token: string }
 
   return (
     <div className="min-h-screen bg-graphite-50">
-      <header className="border-b border-graphite-100 bg-white">
+      <header className="border-b border-graphite-200 bg-white">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-5 py-4">
-          <div>
+          <div className="flex items-center gap-3">
+            <Logo showText={false} />
+            <div>
             <div className="text-sm text-graphite-400">{workspace?.name}</div>
             <div className="font-semibold text-graphite-900">{name}</div>
+            </div>
           </div>
           <form action={closeAction}><button className="btn-ghost text-sm">Se déconnecter</button></form>
         </div>
