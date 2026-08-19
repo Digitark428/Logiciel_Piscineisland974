@@ -2,6 +2,10 @@
 
 > Ajouter une entrée courte après chaque intervention significative. Ne pas y dupliquer la documentation durable de `PROJECT_CONTEXT.md`.
 
+## 2026-08-20 — Codex — Récupération Super Admin
+
+- **Authentification :** ajout d'un parcours de récupération par e-mail à usage unique pour le Super Admin : demande non énumérante, page de choix d'un nouveau mot de passe et redirection vers la console. Aucun mot de passe n'est généré, exposé ni conservé par l'application.
+
 ## 2026-08-20 — Codex — Épure de l'accueil et de la connexion
 
 - **Accueil :** retrait du halo aqua et remplacement de la promesse principale par « SIMPLE MAIS PUISSANT », en conservant le verrouillage du sous-titre sous le logo centré.

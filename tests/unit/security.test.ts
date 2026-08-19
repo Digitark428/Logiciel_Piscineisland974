@@ -5,8 +5,10 @@ import { signPortalSession, verifyPortalSession, portalCookieName } from "@/lib/
 describe("Code privé client (hachage)", () => {
   it("ne stocke jamais le code en clair", () => {
     const stored = hashPrivateCode("4826");
-    expect(stored).not.toContain("4826");
-    expect(stored.startsWith("scrypt$")).toBe(true);
+    // Une empreinte hexadécimale aléatoire peut contenir ces quatre chiffres
+    // par coïncidence : vérifier le format du sel et de l'empreinte évite un
+    // faux positif sans affaiblir la garantie de stockage haché.
+    expect(stored).toMatch(/^scrypt\$[a-f0-9]{32}\$[a-f0-9]{64}$/);
   });
 
   it("vérifie le bon code et rejette les mauvais", () => {
