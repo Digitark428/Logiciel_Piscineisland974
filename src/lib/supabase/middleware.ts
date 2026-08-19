@@ -45,8 +45,12 @@ export async function updateSession(request: NextRequest) {
 
   // Routes de l'application authentifiée
   const isAppRoute = path.startsWith("/app");
+  // La récupération démarre depuis un e-mail Supabase : elle doit pouvoir
+  // recevoir le jeton avant qu'une session Super Admin existe.
   const isSuperAdminApp =
-    path.startsWith("/super-admin") && !path.startsWith("/super-admin/login");
+    path.startsWith("/super-admin") &&
+    !path.startsWith("/super-admin/login") &&
+    !path.startsWith("/super-admin/reset-password");
 
   if ((isAppRoute || isSuperAdminApp) && !user) {
     const url = request.nextUrl.clone();

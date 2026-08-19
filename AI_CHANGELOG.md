@@ -5,6 +5,7 @@
 ## 2026-08-20 — Codex — Récupération Super Admin
 
 - **Authentification :** ajout d'un parcours de récupération par e-mail à usage unique pour le Super Admin : demande non énumérante, page de choix d'un nouveau mot de passe et redirection vers la console. Aucun mot de passe n'est généré, exposé ni conservé par l'application.
+- **Accès :** la page de récupération est explicitement publique dans le middleware, uniquement pour laisser le lien signé établir sa session avant la protection de la console.
 
 ## 2026-08-20 — Codex — Épure de l'accueil et de la connexion
 
