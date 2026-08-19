@@ -2,6 +2,13 @@
 
 > Ajouter une entrée courte après chaque intervention significative. Ne pas y dupliquer la documentation durable de `PROJECT_CONTEXT.md`.
 
+## 2026-08-19 — Codex — Fil interne « Entre nous » et fonctions d’équipe
+
+- **Tâche :** ajout du fil privé par entreprise (statuts, photos optimisées, réactions, commentaires, modération et pagination), nouveau menu dédié et renommage « Tâches & Notes » ; les fonctions sont maintenant saisissables à la création d’un membre et affichées avec son identité.
+- **Sécurité :** tables, RLS, permissions `community.view` / `community.publish`, trigger d’intégrité multi-tenant et bucket `community-media` privé ; les opérations sensibles passent par des actions serveur contrôlées.
+- **Migrations :** `20260819063848_community_feed` et `20260819065159_community_feed_indexes`, appliquées au projet Supabase de production.
+- **Vérification :** contrôle structurel et advisor Supabase sans nouveau signal de sécurité pour ce domaine ; tests, typecheck et build relancés avant publication.
+
 ## 2026-08-17 — Codex — Workflow collaboratif initialisé
 
 - **Tâche :** création de la mémoire commune et ajout des règles de continuité dans `AGENTS.md` et `CLAUDE.md`.

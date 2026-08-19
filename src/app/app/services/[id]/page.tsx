@@ -4,8 +4,9 @@ import { requirePermission, can } from "@/lib/auth/context";
 import { createClient } from "@/lib/supabase/server";
 import { signedUrl } from "@/lib/storage";
 import { Card, Badge, Avatar } from "@/components/ui";
+import { MemberIdentity } from "@/components/members/MemberIdentity";
 import { StatusActions, TasksChecklist, ReportForm, GoThereButton } from "./ServiceControls";
-import { clientName, memberName, formatDate, formatTime, formatDuration, SERVICE_STATUS_LABELS } from "@/lib/utils/format";
+import { clientName, formatDate, formatTime, formatDuration, SERVICE_STATUS_LABELS } from "@/lib/utils/format";
 import { formatMoneyCents } from "@/lib/utils/money";
 import type { ServiceTask } from "@/lib/db/types";
 
@@ -15,7 +16,7 @@ export default async function ServiceDetailPage({ params }: { params: { id: stri
 
   const { data: service } = await supabase
     .from("services")
-    .select("*, client:clients(*), pool:pools(*), assignee:memberships!services_assigned_membership_id_fkey(first_name,last_name,email,photo_path)")
+    .select("*, client:clients(*), pool:pools(*), assignee:memberships!services_assigned_membership_id_fkey(first_name,last_name,email,role,job_title,photo_path)")
     .eq("id", params.id)
     .eq("workspace_id", ctx.workspace.id)
     .maybeSingle();
@@ -206,7 +207,7 @@ export default async function ServiceDetailPage({ params }: { params: { id: stri
               <div>
                 <dt className="text-xs uppercase tracking-wide text-graphite-400">Assigné à</dt>
                 <dd className="mt-0.5 flex items-center gap-2 text-graphite-800">
-                  {assignee ? (<><Avatar name={memberName(assignee)} size={24} /> {memberName(assignee)}</>) : "Non assigné"}
+                  {assignee ? <MemberIdentity member={assignee} avatarSize={24} nameClassName="text-sm" /> : "Non assigné"}
                 </dd>
               </div>
               <div>

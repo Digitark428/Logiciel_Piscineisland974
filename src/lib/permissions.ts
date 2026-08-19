@@ -17,6 +17,8 @@ export const PERMISSION_KEYS = [
   "map.view",
   "tasks.view",
   "tasks.manage",
+  "community.view",
+  "community.publish",
   "documents.view",
   "documents.manage",
   "contracts.manage",
@@ -68,6 +70,13 @@ export const PERMISSION_GROUPS: {
     ],
   },
   {
+    label: "Entre nous",
+    items: [
+      { key: "community.view", label: "Consulter Entre nous" },
+      { key: "community.publish", label: "Publier, réagir et commenter" },
+    ],
+  },
+  {
     label: "Documents & facturation",
     items: [
       { key: "documents.view", label: "Consulter les documents" },
@@ -95,5 +104,7 @@ export const DEFAULT_MEMBER_PERMISSIONS: PermissionKey[] = [
   "planning.view",
   "map.view",
   "tasks.view",
+  "community.view",
+  "community.publish",
   "documents.view",
 ];

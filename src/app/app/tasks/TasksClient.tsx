@@ -14,6 +14,8 @@ import {
 import { SubmitButton } from "@/components/forms/SubmitButton";
 import { idle } from "@/lib/actions/result";
 import { formatDate, formatDateTime, formatRelative } from "@/lib/utils/format";
+import { memberName } from "@/lib/utils/format";
+import { MemberIdentity, type MemberIdentityData } from "@/components/members/MemberIdentity";
 
 interface TaskItem {
   id: string;
@@ -64,7 +66,8 @@ export function TaskRow({ task, canToggle, canDelete }: { task: TaskItem; canTog
 
 interface NoteItem {
   id: string;
-  author: string;
+  author: MemberIdentityData;
+  authorAvatarUrl: string | null;
   content: string;
   created_at: string;
   canDelete: boolean;
@@ -89,6 +92,8 @@ interface NoteComment {
   id: string;
   author_membership_id: string | null;
   author_label: string;
+  author?: MemberIdentityData | null;
+  authorAvatarUrl?: string | null;
   content: string;
   created_at: string;
 }
@@ -243,11 +248,10 @@ export function TeamNoteItem({
           onClick={openDetails}
           className="min-w-0 flex-1 text-left"
           aria-expanded={open}
-          aria-label={`Ouvrir la note de ${note.author}`}
+          aria-label={`Ouvrir la note de ${memberName(note.author)}`}
         >
-          <div className="text-xs font-medium text-graphite-500">
-            {note.author} — {formatRelative(note.created_at)}
-          </div>
+          <MemberIdentity member={note.author} avatarUrl={note.authorAvatarUrl} avatarSize={30} nameClassName="text-xs text-graphite-700" />
+          <div className="ml-[42px] mt-0.5 text-xs text-graphite-400">{formatRelative(note.created_at)}</div>
           <p className="mt-1 whitespace-pre-wrap text-sm text-graphite-800">{note.content}</p>
         </button>
         {note.canDelete && (
@@ -358,7 +362,8 @@ function TeamNoteDetailsDialog({
         <div className="sticky top-0 flex items-start justify-between gap-3 border-b border-graphite-100 bg-white px-5 py-4 sm:px-6">
           <div className="min-w-0">
             <h2 id={`team-note-${note.id}`} className="text-base font-semibold text-graphite-900">Note d'équipe</h2>
-            <p className="mt-0.5 text-xs text-graphite-500">{note.author} · {formatDateTime(note.created_at)}</p>
+            <div className="mt-1"><MemberIdentity member={note.author} avatarUrl={note.authorAvatarUrl} avatarSize={28} nameClassName="text-xs text-graphite-700" /></div>
+            <p className="ml-[40px] mt-0.5 text-xs text-graphite-400">{formatDateTime(note.created_at)}</p>
           </div>
           <button type="button" className="btn-ghost p-2" onClick={onClose} aria-label="Fermer les détails">✕</button>
         </div>
@@ -391,7 +396,14 @@ function TeamNoteDetailsDialog({
                   <ul className="space-y-3">
                     {comments.map((comment) => (
                       <li key={comment.id} className="rounded-xl bg-graphite-50 px-3 py-3">
-                        <div className="text-xs font-semibold text-graphite-600">{comment.author_label} <span className="font-normal text-graphite-400">· {formatDateTime(comment.created_at)}</span></div>
+                        {comment.author ? (
+                          <>
+                            <MemberIdentity member={comment.author} avatarUrl={comment.authorAvatarUrl} avatarSize={28} nameClassName="text-xs text-graphite-700" />
+                            <div className="ml-[40px] mt-0.5 text-[11px] text-graphite-400">{formatDateTime(comment.created_at)}</div>
+                          </>
+                        ) : (
+                          <div className="text-xs font-semibold text-graphite-600">{comment.author_label} <span className="font-normal text-graphite-400">· {formatDateTime(comment.created_at)}</span></div>
+                        )}
                         <p className="mt-1 whitespace-pre-wrap text-sm text-graphite-800">{comment.content}</p>
                       </li>
                     ))}

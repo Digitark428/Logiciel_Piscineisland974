@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { portalCookieName, verifyPortalSession } from "@/lib/portal";
-import { clientName, memberName, initials, formatDate, formatDate as fd, SERVICE_STATUS_LABELS } from "@/lib/utils/format";
+import { clientName, memberJobTitle, memberName, initials, formatDate, formatDate as fd, SERVICE_STATUS_LABELS } from "@/lib/utils/format";
 import { PortalServiceNote } from "./PortalServiceNote";
 
 export const dynamic = "force-dynamic";
@@ -45,11 +45,11 @@ export default async function PortalServicePage({ params }: { params: { token: s
   ]);
 
   // Intervenant assigné (photo + nom ; téléphone seulement si l'entreprise l'autorise).
-  let assignee: { name: string; photoUrl: string | null; phone: string | null } | null = null;
+  let assignee: { name: string; jobTitle: string | null; photoUrl: string | null; phone: string | null } | null = null;
   if (service.assigned_membership_id) {
     const { data: m } = await admin
       .from("memberships")
-      .select("first_name, last_name, email, phone, photo_path")
+      .select("first_name, last_name, email, phone, role, job_title, photo_path")
       .eq("id", service.assigned_membership_id)
       .eq("workspace_id", client!.workspace_id)
       .maybeSingle();
@@ -60,7 +60,7 @@ export default async function PortalServicePage({ params }: { params: { token: s
         photoUrl = signed?.signedUrl ?? null;
       }
       const sharePhone = Boolean((workspace?.settings as Record<string, unknown>)?.portal_share_assignee_phone);
-      assignee = { name: memberName(m), photoUrl, phone: sharePhone ? m.phone : null };
+      assignee = { name: memberName(m), jobTitle: memberJobTitle(m), photoUrl, phone: sharePhone ? m.phone : null };
     }
   }
 
@@ -155,6 +155,7 @@ export default async function PortalServicePage({ params }: { params: { token: s
               )}
               <div>
                 <div className="font-semibold text-graphite-900">{assignee.name}</div>
+                {assignee.jobTitle && <div className="mt-1 inline-flex rounded-full bg-graphite-100 px-2 py-0.5 text-xs font-medium text-graphite-600">{assignee.jobTitle}</div>}
                 {assignee.phone && (
                   <a href={`tel:${assignee.phone}`} className="text-sm text-pool-700">📞 {assignee.phone}</a>
                 )}

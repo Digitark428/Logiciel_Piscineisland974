@@ -13,7 +13,7 @@ Piscine Island est un SaaS de gestion destiné aux piscinistes, principalement a
 - Les routes sont dans `src/app/`; les composants réutilisables dans `src/components/`.
 - Les actions serveur sont organisées par domaine dans `src/lib/actions/` et retournent le format `ActionResult`.
 - Les clients Supabase sont dans `src/lib/supabase/`; `admin.ts` utilise le service role côté serveur uniquement.
-- Les migrations SQL sont numérotées dans `supabase/migrations/` ; l'état connu va de `0001` à `0029`.
+- Les migrations SQL sont numérotées dans `supabase/migrations/` ; la dernière migration appliquée est `20260819065159_community_feed_indexes`.
 - La V1 est exploitée uniquement à La Réunion : toute date métier sans heure (`YYYY-MM-DD`) doit être calculée dans le fuseau `Indian/Reunion` via `src/lib/utils/date.ts`, jamais avec `toISOString().slice(0, 10)`.
 
 ## Données, sécurité et autorisations
@@ -29,6 +29,8 @@ Piscine Island est un SaaS de gestion destiné aux piscinistes, principalement a
 
 - Gestion des clients, piscines, entretiens ponctuels ou récurrents, planning, équipe, tâches, documents, sauvegardes, notifications internes et journal d'activité. Les revenus restent réservés au gérant : montant par prestation ponctuelle, montant mensuel unique par série récurrente et synthèse financière admin-only du tableau de bord.
 - Les notes d'équipe disposent d'interactions append-only isolées par entreprise : lectures, exécutions et commentaires (`team_note_reads`, `team_note_executions`, `team_note_comments`), avec contrôle RLS et trigger d'intégrité tenant.
+- « Entre nous » est le fil interne privé d'une entreprise : publications texte/photos, réactions, commentaires et pagination par curseur. Les contenus et médias sont isolés par `workspace_id`, RLS et un trigger d'intégrité tenant ; le bucket `community-media` reste privé.
+- La fonction d'équipe (`memberships.job_title`) est distincte du rôle de sécurité (`admin` / `member`) et affichée avec l'identité du membre, avec le repli « Gérant » pour les administrateurs sans fonction renseignée.
 - Portail client sous `/portal/[token]`, avec consultations d'interventions, notes client et assistance intégrée. L'assistance des utilisateurs de l'application est un volet flottant distinct, disponible uniquement dans `/app` ; le Super Admin distingue les deux origines.
 - Super Admin séparé sous `/super-admin`.
 - Contrats et factures sont gérés comme fichiers dans `documents`, et non comme documents générés par l'application.

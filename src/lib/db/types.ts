@@ -296,6 +296,44 @@ export interface TeamNoteComment {
   created_at: string;
 }
 
+export type CommunityReaction = "like" | "love" | "laugh";
+
+export interface CommunityPost {
+  id: string;
+  workspace_id: string;
+  author_membership_id: string;
+  content: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CommunityPostMedia {
+  id: string;
+  workspace_id: string;
+  post_id: string;
+  storage_path: string;
+  position: number;
+  created_at: string;
+}
+
+export interface CommunityPostReaction {
+  id: string;
+  workspace_id: string;
+  post_id: string;
+  membership_id: string;
+  reaction: CommunityReaction;
+  created_at: string;
+}
+
+export interface CommunityPostComment {
+  id: string;
+  workspace_id: string;
+  post_id: string;
+  author_membership_id: string;
+  content: string;
+  created_at: string;
+}
+
 export interface ServiceClientNote {
   id: string;
   workspace_id: string;

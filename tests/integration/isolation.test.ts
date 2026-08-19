@@ -17,8 +17,8 @@ const READY = Boolean(URL && ANON && SERVICE);
 const admin = READY ? createClient(URL!, SERVICE!, { auth: { persistSession: false } }) : null;
 
 const rnd = Math.random().toString(36).slice(2, 8);
-const A = { email: `iso-a-${rnd}@example.test`, password: "Password123!", userId: "", workspaceId: "", clientId: "", membershipId: "", poolId: "", serviceId: "", cancelledServiceId: "", seriesId: "", recurringServiceId: "", financialId: "", employeeEmail: `iso-member-${rnd}@example.test`, employeeUserId: "", employeeMembershipId: "", noteId: "" };
-const B = { email: `iso-b-${rnd}@example.test`, password: "Password123!", userId: "", workspaceId: "", clientId: "", membershipId: "", poolId: "", serviceId: "", cancelledServiceId: "", seriesId: "", recurringServiceId: "", financialId: "", employeeEmail: "", employeeUserId: "", employeeMembershipId: "", noteId: "" };
+const A = { email: `iso-a-${rnd}@example.test`, password: "Password123!", userId: "", workspaceId: "", clientId: "", membershipId: "", poolId: "", serviceId: "", cancelledServiceId: "", seriesId: "", recurringServiceId: "", financialId: "", employeeEmail: `iso-member-${rnd}@example.test`, employeeUserId: "", employeeMembershipId: "", noteId: "", communityPostId: "" };
+const B = { email: `iso-b-${rnd}@example.test`, password: "Password123!", userId: "", workspaceId: "", clientId: "", membershipId: "", poolId: "", serviceId: "", cancelledServiceId: "", seriesId: "", recurringServiceId: "", financialId: "", employeeEmail: "", employeeUserId: "", employeeMembershipId: "", noteId: "", communityPostId: "" };
 
 async function setupTenant(t: typeof A, name: string) {
   const { data: created } = await admin!.auth.admin.createUser({ email: t.email, password: t.password, email_confirm: true });
@@ -72,6 +72,11 @@ async function setupTenant(t: typeof A, name: string) {
   await admin!.from("team_note_reads").insert({ workspace_id: t.workspaceId, team_note_id: t.noteId, membership_id: t.membershipId });
   await admin!.from("team_note_executions").insert({ workspace_id: t.workspaceId, team_note_id: t.noteId, membership_id: t.membershipId });
   await admin!.from("team_note_comments").insert({ workspace_id: t.workspaceId, team_note_id: t.noteId, author_membership_id: t.membershipId, content: `Commentaire privé ${name}` });
+  const { data: communityPost } = await admin!.from("community_posts")
+    .insert({ workspace_id: t.workspaceId, author_membership_id: t.membershipId, content: `Publication privée ${name}` })
+    .select("id")
+    .single();
+  t.communityPostId = communityPost!.id;
 }
 
 describe.skipIf(!READY)("Isolation multi-tenant (RLS)", () => {
@@ -250,5 +255,33 @@ describe.skipIf(!READY)("Isolation multi-tenant (RLS)", () => {
       .insert({ workspace_id: B.workspaceId, team_note_id: B.noteId, membership_id: B.membershipId })
       .select("id");
     expect(!intrusion.data || intrusion.data.length === 0 || !!intrusion.error).toBe(true);
+  });
+
+  it("Entre nous isole les publications, réactions et commentaires par workspace", async () => {
+    const asA = createClient(URL!, ANON!, { auth: { persistSession: false } });
+    await asA.auth.signInWithPassword({ email: A.email, password: A.password });
+
+    const hidden = await asA.from("community_posts").select("id").eq("workspace_id", B.workspaceId);
+    expect(hidden.data ?? []).toHaveLength(0);
+
+    const directIntrusion = await asA.from("community_post_comments")
+      .insert({ workspace_id: B.workspaceId, post_id: B.communityPostId, author_membership_id: B.membershipId, content: "Intrusion" });
+    expect(directIntrusion.error).toBeTruthy();
+
+    const badPost = await admin!.from("community_posts")
+      .insert({ workspace_id: A.workspaceId, author_membership_id: B.membershipId, content: "Intrusion serveur" });
+    expect(badPost.error).toBeTruthy();
+
+    const badReaction = await admin!.from("community_post_reactions")
+      .insert({ workspace_id: A.workspaceId, post_id: B.communityPostId, membership_id: A.membershipId, reaction: "like" });
+    expect(badReaction.error).toBeTruthy();
+
+    const badMedia = await admin!.from("community_post_media")
+      .insert({ workspace_id: A.workspaceId, post_id: B.communityPostId, storage_path: `${A.workspaceId}/posts/intrusion/0.webp`, position: 0 });
+    expect(badMedia.error).toBeTruthy();
+
+    const badComment = await admin!.from("community_post_comments")
+      .insert({ workspace_id: A.workspaceId, post_id: B.communityPostId, author_membership_id: A.membershipId, content: "Intrusion serveur" });
+    expect(badComment.error).toBeTruthy();
   });
 });

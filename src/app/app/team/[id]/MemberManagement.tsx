@@ -10,7 +10,7 @@ import {
   updateMemberProfile, updateMemberPermissions, updateMemberEmail,
   resetMemberPassword, setMemberStatus, uploadMemberPhoto, removeMemberPhoto,
 } from "@/lib/actions/team";
-import { MEMBER_TYPE_LABELS } from "@/lib/utils/format";
+import { MEMBER_TYPE_LABELS, memberJobTitle } from "@/lib/utils/format";
 import type { Membership } from "@/lib/db/types";
 
 export function MemberManagement({
@@ -32,7 +32,7 @@ export function MemberManagement({
   return (
     <div className="grid gap-6 lg:grid-cols-3">
       <div className="space-y-6">
-        <PhotoCard memberId={member.id} avatarUrl={avatarUrl} name={name} />
+        <PhotoCard memberId={member.id} avatarUrl={avatarUrl} name={name} jobTitle={memberJobTitle(member)} />
         <StatusCard memberId={member.id} disabled={member.status === "disabled"} isSelf={isSelf} />
       </div>
 
@@ -115,7 +115,7 @@ export function MemberManagement({
   );
 }
 
-function PhotoCard({ memberId, avatarUrl, name }: { memberId: string; avatarUrl: string | null; name: string }) {
+function PhotoCard({ memberId, avatarUrl, name, jobTitle }: { memberId: string; avatarUrl: string | null; name: string; jobTitle: string | null }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [pending, start] = useTransition();
   const [msg, setMsg] = useState<string | null>(null);
@@ -126,6 +126,7 @@ function PhotoCard({ memberId, avatarUrl, name }: { memberId: string; avatarUrl:
       <div className="flex flex-col items-center text-center">
         <Avatar name={name} src={avatarUrl} size={96} />
         <div className="mt-2 text-base font-semibold text-graphite-900">{name}</div>
+        {jobTitle && <span className="mt-1 rounded-full bg-graphite-100 px-2 py-0.5 text-xs font-medium text-graphite-600">{jobTitle}</span>}
         <input
           ref={inputRef}
           type="file"

@@ -7,10 +7,20 @@ export function clientName(c: Pick<Client, "first_name" | "last_name" | "company
 }
 
 export function memberName(
-  m: Pick<Membership, "first_name" | "last_name" | "email">,
+  m: Partial<Pick<Membership, "first_name" | "last_name" | "email">>,
 ): string {
   const n = [m.first_name, m.last_name].filter(Boolean).join(" ").trim();
   return n || m.email || "Membre";
+}
+
+/** Poste affiché : le rôle de sécurité reste distinct de l'intitulé métier. */
+export function memberJobTitle(
+  m: Partial<Pick<Membership, "job_title" | "role">>,
+): string | null {
+  const title = m.job_title?.trim();
+  if (title) return title;
+  // Dans l'architecture actuelle, le rôle admin correspond au gérant de l'espace.
+  return m.role === "admin" ? "Gérant" : null;
 }
 
 export function initials(name: string): string {

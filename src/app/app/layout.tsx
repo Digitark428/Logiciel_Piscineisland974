@@ -4,7 +4,7 @@ import { signedUrl } from "@/lib/storage";
 import { AppShell } from "@/components/app/AppShell";
 import { AppSupportWidget } from "@/components/app/AppSupportWidget";
 import { NAV_ITEMS } from "@/components/app/nav";
-import { memberName } from "@/lib/utils/format";
+import { memberJobTitle, memberName } from "@/lib/utils/format";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const ctx = await requireContext();
@@ -40,7 +40,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         companyCode={ctx.workspace.company_code}
         userName={memberName(ctx.membership)}
         avatarUrl={avatarUrl}
-        roleLabel={ctx.isAdmin ? "Gérant" : "Membre"}
+        roleLabel={memberJobTitle(ctx.membership) ?? "Membre"}
         notifCount={count ?? 0}
       >
         {children}

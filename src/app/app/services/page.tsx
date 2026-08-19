@@ -2,8 +2,9 @@ import Link from "next/link";
 import { requirePermission, can } from "@/lib/auth/context";
 import { createClient } from "@/lib/supabase/server";
 import { signedUrls } from "@/lib/storage";
-import { PageHeader, Card, EmptyState, Badge, Avatar } from "@/components/ui";
-import { clientName, memberName, formatDate, formatTime, SERVICE_STATUS_LABELS } from "@/lib/utils/format";
+import { PageHeader, Card, EmptyState, Badge } from "@/components/ui";
+import { MemberIdentity } from "@/components/members/MemberIdentity";
+import { clientName, formatDate, formatTime, SERVICE_STATUS_LABELS } from "@/lib/utils/format";
 import { todayInReunion } from "@/lib/utils/date";
 
 const FILTERS = [
@@ -21,7 +22,7 @@ export default async function ServicesPage({ searchParams }: { searchParams: { f
 
   let query = supabase
     .from("services")
-    .select("id, code, scheduled_date, scheduled_time, status, service_type, client:clients(first_name,last_name,company_name), assignee:memberships!services_assigned_membership_id_fkey(first_name,last_name,email,photo_path)")
+    .select("id, code, scheduled_date, scheduled_time, status, service_type, client:clients(first_name,last_name,company_name), assignee:memberships!services_assigned_membership_id_fkey(first_name,last_name,email,role,job_title,photo_path)")
     .eq("workspace_id", ctx.workspace.id);
 
   if (filter === "today") query = query.eq("scheduled_date", today);
@@ -73,16 +74,13 @@ export default async function ServicesPage({ searchParams }: { searchParams: { f
                     <div className="truncate text-sm text-graphite-500">{s.service_type ?? "Prestation"} · {s.code}</div>
                   </div>
                   {s.assignee && (
-                    <div className="hidden items-center gap-2 sm:flex" title={memberName(s.assignee)}>
-                      <Avatar
-                        name={memberName(s.assignee)}
-                        size={30}
-                        src={s.assignee.photo_path ? avatarByPath.get(s.assignee.photo_path) : undefined}
-                      />
-                      <span className="max-w-[9rem] truncate text-sm font-medium text-graphite-700">
-                        {memberName(s.assignee)}
-                      </span>
-                    </div>
+                    <MemberIdentity
+                      member={s.assignee}
+                      avatarUrl={s.assignee.photo_path ? avatarByPath.get(s.assignee.photo_path) : undefined}
+                      avatarSize={30}
+                      className="hidden max-w-[13rem] sm:flex"
+                      nameClassName="text-sm text-graphite-700"
+                    />
                   )}
                   <Badge tone={s.status}>{SERVICE_STATUS_LABELS[s.status]}</Badge>
                 </Link>

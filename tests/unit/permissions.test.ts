@@ -19,6 +19,11 @@ describe("Permissions", () => {
   it("les clés de permission sont uniques", () => {
     expect(new Set(PERMISSION_KEYS).size).toBe(PERMISSION_KEYS.length);
   });
+
+  it("le feed interne est consultable et publiable par défaut", () => {
+    expect(DEFAULT_MEMBER_PERMISSIONS).toContain("community.view");
+    expect(DEFAULT_MEMBER_PERMISSIONS).toContain("community.publish");
+  });
 });
 
 // Réplique de la logique de `can()` (l'admin possède toutes les permissions).

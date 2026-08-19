@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
 import { can, getSessionContext } from "@/lib/auth/context";
 import { createClient } from "@/lib/supabase/server";
+import { signedUrls } from "@/lib/storage";
 
 export const dynamic = "force-dynamic";
+
+function firstRelation<T>(value: T | T[] | null | undefined): T | null {
+  return Array.isArray(value) ? value[0] ?? null : value ?? null;
+}
 
 /**
  * Détails d'une note, demandés uniquement à l'ouverture de sa fiche.
@@ -39,7 +44,7 @@ export async function GET(_request: Request, { params }: { params: { id: string 
       .order("executed_at"),
     supabase
       .from("team_note_comments")
-      .select("id, author_membership_id, author_label, content, created_at")
+      .select("id, author_membership_id, author_label, content, created_at, author:memberships!team_note_comments_author_membership_id_fkey(first_name,last_name,email,role,job_title,photo_path)")
       .eq("workspace_id", ctx.workspace.id)
       .eq("team_note_id", note.id)
       .order("created_at"),
@@ -49,11 +54,20 @@ export async function GET(_request: Request, { params }: { params: { id: string 
     return NextResponse.json({ error: "Lecture des interactions impossible." }, { status: 500 });
   }
 
+  const comments = (commentsRes.data ?? []).map((comment: any) => ({
+    ...comment,
+    author: firstRelation(comment.author),
+  }));
+  const avatarByPath = await signedUrls("avatars", comments.map((comment: any) => comment.author?.photo_path));
+
   return NextResponse.json(
     {
       reads: readsRes.data ?? [],
       executions: executionsRes.data ?? [],
-      comments: commentsRes.data ?? [],
+      comments: comments.map((comment: any) => ({
+        ...comment,
+        authorAvatarUrl: comment.author?.photo_path ? avatarByPath.get(comment.author.photo_path) ?? null : null,
+      })),
     },
     { headers: { "Cache-Control": "private, no-store" } },
   );

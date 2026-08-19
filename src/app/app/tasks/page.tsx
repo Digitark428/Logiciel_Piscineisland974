@@ -1,5 +1,6 @@
 import { requirePermission, can } from "@/lib/auth/context";
 import { createClient } from "@/lib/supabase/server";
+import { signedUrls } from "@/lib/storage";
 import { getMemberOptions } from "@/lib/db/queries";
 import { PageHeader, Card } from "@/components/ui";
 import { ActionForm } from "@/components/forms/ActionForm";
@@ -27,7 +28,7 @@ export default async function TasksPage() {
     supabase
       .from("team_notes")
       .select(
-        "id, content, created_at, author_membership_id, author:memberships!team_notes_author_membership_id_fkey(first_name,last_name,email), " +
+          "id, content, created_at, author_membership_id, author:memberships!team_notes_author_membership_id_fkey(id,first_name,last_name,email,role,job_title,photo_path), " +
           "reads:team_note_reads(membership_id,reader_label,read_at), " +
           "executions:team_note_executions(membership_id,executor_label,executed_at), " +
           "comments:team_note_comments(count)",
@@ -38,6 +39,8 @@ export default async function TasksPage() {
   ]);
   const tasks = tasksRes.data;
   const notes = notesRes.data;
+  const noteAuthor = (note: any) => Array.isArray(note.author) ? note.author[0] ?? null : note.author;
+  const noteAvatarByPath = await signedUrls("avatars", (notes ?? []).map((note: any) => noteAuthor(note)?.photo_path));
 
   const rows = (tasks ?? []).map((t: any) => ({
     id: t.id,
@@ -61,7 +64,8 @@ export default async function TasksPage() {
 
   const noteItems = (notes ?? []).map((n: any) => ({
     id: n.id,
-    author: n.author ? memberName(n.author) : "Membre",
+    author: noteAuthor(n) ?? { first_name: null, last_name: null, email: "Membre", role: null, job_title: null },
+    authorAvatarUrl: noteAuthor(n)?.photo_path ? noteAvatarByPath.get(noteAuthor(n).photo_path) ?? null : null,
     content: n.content,
     created_at: n.created_at,
     canDelete: ctx.isAdmin || n.author_membership_id === myId,

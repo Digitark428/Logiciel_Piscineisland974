@@ -38,6 +38,7 @@ const createSchema = z.object({
   password: z.string().min(8, "Mot de passe : 8 caractères minimum."),
   member_type: z.enum(["employe", "prestataire", "stagiaire", "alternant"]),
   role: z.enum(["admin", "member"]),
+  job_title: z.string().trim().max(80, "Poste trop long.").optional(),
 });
 
 export async function createMember(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
@@ -53,6 +54,7 @@ export async function createMember(_prev: ActionResult, formData: FormData): Pro
     password: formData.get("password"),
     member_type: formData.get("member_type") ?? "employe",
     role: formData.get("role") ?? "member",
+    job_title: String(formData.get("job_title") ?? ""),
   });
   if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? "Formulaire invalide.");
   const v = parsed.data;
@@ -90,6 +92,16 @@ export async function createMember(_prev: ActionResult, formData: FormData): Pro
     return fail("Impossible de créer le membre.");
   }
 
+  const jobTitle = v.job_title || null;
+  if (jobTitle) {
+    const { error: jobTitleError } = await admin
+      .from("memberships")
+      .update({ job_title: jobTitle })
+      .eq("id", membershipId)
+      .eq("workspace_id", ctx.workspace.id);
+    if (jobTitleError) return fail("Le compte est créé, mais son poste doit être renseigné depuis sa fiche.");
+  }
+
   await logActivity(ctx, { action: "create", entity_type: "member", entity_id: String(membershipId), summary: `Membre ajouté : ${v.first_name} ${v.last_name}` });
   await notify(ctx.workspace.id, { type: "member_added", title: "Nouveau membre", body: `${v.first_name} ${v.last_name} a rejoint l'équipe.`, entity_type: "member" });
 
@@ -103,6 +115,7 @@ const profileSchema = z.object({
   last_name: z.string().min(1),
   member_type: z.enum(["employe", "prestataire", "stagiaire", "alternant"]),
   role: z.enum(["admin", "member"]),
+  job_title: z.string().trim().max(80, "Poste trop long.").optional(),
 });
 
 export async function updateMemberProfile(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
@@ -117,6 +130,7 @@ export async function updateMemberProfile(_prev: ActionResult, formData: FormDat
     last_name: formData.get("last_name"),
     member_type: formData.get("member_type") ?? "employe",
     role: formData.get("role") ?? "member",
+    job_title: String(formData.get("job_title") ?? ""),
   });
   if (!parsed.success) return fail("Formulaire invalide.");
   const v = parsed.data;
@@ -131,7 +145,7 @@ export async function updateMemberProfile(_prev: ActionResult, formData: FormDat
   const admin = createAdminClient();
   const { error } = await admin
     .from("memberships")
-    .update({ first_name: v.first_name, last_name: v.last_name, member_type: v.member_type, role: v.role, job_title: str(formData.get("job_title")), phone: str(formData.get("phone")) })
+    .update({ first_name: v.first_name, last_name: v.last_name, member_type: v.member_type, role: v.role, job_title: v.job_title || null, phone: str(formData.get("phone")) })
     .eq("id", v.id)
     .eq("workspace_id", ctx.workspace.id);
   if (error) return fail("Enregistrement impossible.");

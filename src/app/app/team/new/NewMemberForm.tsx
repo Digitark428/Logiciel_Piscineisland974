@@ -39,6 +39,20 @@ export function NewMemberForm() {
             </select>
           </div>
           <div>
+            <label className="label" htmlFor="job_title">Poste</label>
+            <input id="job_title" name="job_title" list="job-title-options" maxLength={80} className="input" placeholder="Ex : Technicien" />
+            <datalist id="job-title-options">
+              <option value="Gérant" />
+              <option value="Technicien" />
+              <option value="Employé" />
+              <option value="Alternant" />
+              <option value="Comptable" />
+              <option value="Secrétaire" />
+              <option value="Responsable technique" />
+              <option value="Commercial" />
+            </datalist>
+          </div>
+          <div>
             <label className="label" htmlFor="role">Rôle</label>
             <select id="role" name="role" className="input" value={role} onChange={(e) => setRole(e.target.value as "admin" | "member")}>
               <option value="member">Membre de l'équipe</option>
