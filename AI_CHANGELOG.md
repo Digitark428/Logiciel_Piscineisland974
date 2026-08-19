@@ -2,6 +2,12 @@
 
 > Ajouter une entrée courte après chaque intervention significative. Ne pas y dupliquer la documentation durable de `PROJECT_CONTEXT.md`.
 
+## 2026-08-19 — Codex — Publication photo mobile « Entre nous »
+
+- **Tâche :** correction du formulaire de publication qui pouvait afficher une erreur JavaScript opaque après l’ajout d’une photo mobile.
+- **Cause et correctif :** l’action serveur ne dépend plus du constructeur global `File`, son retour est systématiquement normalisé et les images iPhone/Safari sont converties avec un repli compatible en JPEG, PNG ou WebP avant l’envoi.
+- **Vérification :** typecheck, build et 35 tests locaux validés ; les tests d’intégration Supabase restent conditionnels aux secrets locaux.
+
 ## 2026-08-19 — Codex — Fil interne « Entre nous » et fonctions d’équipe
 
 - **Tâche :** ajout du fil privé par entreprise (statuts, photos optimisées, réactions, commentaires, modération et pagination), nouveau menu dédié et renommage « Tâches & Notes » ; les fonctions sont maintenant saisissables à la création d’un membre et affichées avec son identité.

@@ -25,6 +25,19 @@ const REACTION_LABELS: Record<CommunityReactionKind, { emoji: string; label: str
   laugh: { emoji: "😂", label: "Mort de rire" },
 };
 
+const OUTPUT_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+const SOURCE_IMAGE_TYPES = new Set(["image/avif", "image/gif", "image/heic", "image/heif", "image/jpeg", "image/png", "image/webp"]);
+
+function isImageSource(file: File): boolean {
+  return SOURCE_IMAGE_TYPES.has(file.type.toLowerCase()) || /\.(avif|gif|heic|heif|jpe?g|png|webp)$/i.test(file.name);
+}
+
+function imageExtension(type: string): "jpg" | "png" | "webp" {
+  if (type === "image/png") return "png";
+  if (type === "image/webp") return "webp";
+  return "jpg";
+}
+
 export function CommunityFeed({
   initialItems,
   initialHasMore,
@@ -91,11 +104,13 @@ function PostComposer({ canPublish }: { canPublish: boolean }) {
 
   const pickImages = (event: React.ChangeEvent<HTMLInputElement>) => {
     const picked = Array.from(event.target.files ?? []);
-    const next = picked.slice(0, 4);
+    const imageFiles = picked.filter(isImageSource);
+    const next = imageFiles.slice(0, 4);
     previewUrls.forEach((url) => URL.revokeObjectURL(url));
     setFiles(next);
     setPreviewUrls(next.map((file) => URL.createObjectURL(file)));
-    if (picked.length > 4) setMessage("Seules les 4 premières photos ont été retenues.");
+    if (imageFiles.length !== picked.length) setMessage("Seuls les fichiers image peuvent être ajoutés.");
+    else if (imageFiles.length > 4) setMessage("Seules les 4 premières photos ont été retenues.");
   };
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
@@ -109,8 +124,8 @@ function PostComposer({ canPublish }: { canPublish: boolean }) {
         formData.set("content", content);
         optimized.forEach((file) => formData.append("images", file));
         const result = await createCommunityPost(formData);
-        if (!result.ok) {
-          setMessage(result.message ?? "Publication impossible.");
+        if (!result?.ok) {
+          setMessage(result?.message ?? "La publication n'a pas abouti. Réessayez dans quelques instants.");
           return;
         }
         setContent("");
@@ -149,7 +164,7 @@ function PostComposer({ canPublish }: { canPublish: boolean }) {
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-graphite-100 pt-3">
         <label className={`inline-flex cursor-pointer items-center gap-2 text-sm font-medium ${canPublish ? "text-pool-700 hover:text-pool-800" : "text-graphite-400"}`}>
           <span aria-hidden>▧</span> Ajouter des photos
-          <input type="file" accept="image/jpeg,image/png,image/webp" multiple className="sr-only" disabled={!canPublish || pending} onChange={pickImages} />
+          <input type="file" accept="image/*,.heic,.heif" multiple className="sr-only" disabled={!canPublish || pending} onChange={pickImages} />
         </label>
         {canPublish && (
           <button type="submit" className="btn-primary" disabled={pending || (!content.trim() && files.length === 0)}>
@@ -354,8 +369,8 @@ function CommunityPostCard({
 }
 
 async function optimizeImage(file: File): Promise<File> {
-  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) throw new Error("Utilisez une photo JPEG, PNG ou WebP.");
-  const image = await createImageBitmap(file);
+  if (!isImageSource(file)) throw new Error("Sélectionnez un fichier image.");
+  const image = await decodeImage(file);
   const largestSide = Math.max(image.width, image.height);
   const ratio = Math.min(1, 2048 / largestSide);
   const width = Math.max(1, Math.round(image.width * ratio));
@@ -365,11 +380,65 @@ async function optimizeImage(file: File): Promise<File> {
   canvas.height = height;
   const context = canvas.getContext("2d");
   if (!context) throw new Error("Votre navigateur ne peut pas optimiser cette photo.");
-  context.drawImage(image, 0, 0, width, height);
-  image.close();
-  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/webp", 0.84));
-  if (!blob) throw new Error("Impossible d'optimiser cette photo.");
+  try {
+    image.draw(context, width, height);
+  } finally {
+    image.close();
+  }
+  const blob = await compressedCanvasBlob(canvas);
   if (blob.size > 5 * 1024 * 1024) throw new Error("Une photo reste trop volumineuse après optimisation.");
   const name = file.name.replace(/\.[^.]+$/, "") || "photo";
-  return new File([blob], `${name}.webp`, { type: "image/webp" });
+  return new File([blob], `${name}.${imageExtension(blob.type)}`, { type: blob.type });
+}
+
+type DecodedImage = {
+  width: number;
+  height: number;
+  draw: (context: CanvasRenderingContext2D, width: number, height: number) => void;
+  close: () => void;
+};
+
+/** Safari ne prend pas toujours createImageBitmap en charge pour les photos HEIC. */
+async function decodeImage(file: File): Promise<DecodedImage> {
+  if (typeof createImageBitmap === "function") {
+    try {
+      const bitmap = await createImageBitmap(file);
+      return {
+        width: bitmap.width,
+        height: bitmap.height,
+        draw: (context, width, height) => context.drawImage(bitmap, 0, 0, width, height),
+        close: () => bitmap.close(),
+      };
+    } catch {
+      // Le repli Image est nécessaire pour certains appareils Apple.
+    }
+  }
+
+  const sourceUrl = URL.createObjectURL(file);
+  try {
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const candidate = new Image();
+      candidate.onload = () => resolve(candidate);
+      candidate.onerror = () => reject(new Error("Cette photo ne peut pas être lue. Exportez-la en JPEG si le problème persiste."));
+      candidate.src = sourceUrl;
+    });
+    return {
+      width: image.naturalWidth,
+      height: image.naturalHeight,
+      draw: (context, width, height) => context.drawImage(image, 0, 0, width, height),
+      close: () => URL.revokeObjectURL(sourceUrl),
+    };
+  } catch (error) {
+    URL.revokeObjectURL(sourceUrl);
+    throw error;
+  }
+}
+
+async function compressedCanvasBlob(canvas: HTMLCanvasElement): Promise<Blob> {
+  const toBlob = (type: string, quality: number) => new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, type, quality));
+  const webp = await toBlob("image/webp", 0.84);
+  if (webp && OUTPUT_IMAGE_TYPES.has(webp.type)) return webp;
+  const jpeg = await toBlob("image/jpeg", 0.86);
+  if (jpeg && OUTPUT_IMAGE_TYPES.has(jpeg.type)) return jpeg;
+  throw new Error("Impossible d'optimiser cette photo.");
 }

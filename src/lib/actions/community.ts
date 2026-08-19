@@ -34,8 +34,25 @@ function extensionFor(type: string): "png" | "jpg" | "webp" {
   return "jpg";
 }
 
+/** Ne dépend pas du constructeur global File, absent de certains runtimes Node. */
+function isUploadedFile(value: FormDataEntryValue): value is File {
+  return typeof value !== "string"
+    && typeof (value as { arrayBuffer?: unknown }).arrayBuffer === "function"
+    && typeof (value as { size?: unknown }).size === "number";
+}
+
 /** Crée un statut et, optionnellement, jusqu'à quatre photos privées optimisées côté navigateur. */
 export async function createCommunityPost(formData: FormData): Promise<ActionResult> {
+  try {
+    return await createCommunityPostImpl(formData);
+  } catch (error) {
+    // Un retour ActionResult évite une erreur cliente opaque si Storage ou le runtime échoue.
+    console.error("[community.create] publication failed", error instanceof Error ? error.message : String(error));
+    return fail("Impossible de publier pour le moment. Réessayez dans quelques instants.");
+  }
+}
+
+async function createCommunityPostImpl(formData: FormData): Promise<ActionResult> {
   const res = await actionContext();
   if ("error" in res) return res.error;
   const { ctx } = res;
@@ -44,7 +61,7 @@ export async function createCommunityPost(formData: FormData): Promise<ActionRes
   const parsed = contentSchema.safeParse(String(formData.get("content") ?? ""));
   if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? "Statut invalide.");
   const content = parsed.data || null;
-  const files = formData.getAll("images").filter((value): value is File => value instanceof File && value.size > 0);
+  const files = formData.getAll("images").filter((value): value is File => isUploadedFile(value) && value.size > 0);
   if (!content && files.length === 0) return fail("Ajoutez un statut ou au moins une photo.");
   if (files.length > 4) return fail("Vous pouvez ajouter jusqu'à 4 photos.");
 
