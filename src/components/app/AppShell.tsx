@@ -36,10 +36,7 @@ function NavigationLinks({
           return (
             <div
               key={item.href}
-              className={cn(
-                "leti-development-item flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-graphite-600",
-                tone === "aqua" ? "leti-development-item--aqua" : "leti-development-item--coral",
-              )}
+              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-graphite-600 transition hover:bg-graphite-100 hover:text-graphite-900"
               aria-label={`${item.label} — En développement`}
             >
               <Icon name={item.icon} size={19} />
@@ -235,7 +232,7 @@ export function AppShell({
               className="relative inline-flex h-10 w-10 shrink-0 overflow-visible btn-ghost p-2"
               aria-label={notifCount > 0 ? `Notifications (${notifCount > 99 ? "99+" : notifCount} non lues)` : "Notifications"}
             >
-              <span className={cn(notifCount > 0 && "leti-notification-bell")}><Icon name="bell" size={21} /></span>
+              <span className={cn("inline-flex h-8 w-8 items-center justify-center rounded-full", notifCount > 0 && "leti-notification-bell")}><Icon name="bell" size={21} /></span>
               {notifCount > 0 && (
                 <span className="absolute -right-1.5 -top-1.5 z-10 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-coral-500 px-1.5 text-[11px] font-bold leading-none text-graphite-900 ring-2 ring-white">
                   {notifCount > 99 ? "99+" : notifCount}

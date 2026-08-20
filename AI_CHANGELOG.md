@@ -2,6 +2,12 @@
 
 > Ajouter une entrée courte après chaque intervention significative. Ne pas y dupliquer la documentation durable de `PROJECT_CONTEXT.md`.
 
+## 2026-08-20 — Codex — Correctifs ciblés logo, menu et notifications
+
+- **Accueil :** le conteneur vertical du logo centre désormais explicitement le sigle officiel sur l’axe réel du mot-symbole ; contrôle navigateur mesuré à 0 px d’écart aux formats desktop et mobile.
+- **Menu et notifications :** les entrées Mes chantiers, Comptabilité et LETI IA reprennent un fond neutre avec la couleur réservée aux seuls badges ; le pulse de notification est limité à la bulle de cloche, actif uniquement si le compteur est non nul et désactivé avec `prefers-reduced-motion`.
+- **Vérification :** lint, typecheck, build et 35 tests unitaires validés ; accueil contrôlé localement à 1440 px et 375 px sans débordement ni erreur console.
+
 ## 2026-08-20 — Codex — Finitions visuelles premium LETI
 
 - **Design System :** ajout de tokens pastel centralisés (corail/aqua, surfaces glass, bordures et ombres) et de variantes partagées pour les cards, boutons, badges, états « En développement » et micro-animations compatibles avec `prefers-reduced-motion`.

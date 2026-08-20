@@ -31,7 +31,7 @@ export function Logo({
     <span
       className={cn(
         "inline-flex",
-        orientation === "vertical" ? "flex-col gap-3 sm:gap-4" : "items-center gap-1.5",
+        orientation === "vertical" ? "flex-col items-center gap-3 sm:gap-4" : "items-center gap-1.5",
         className,
       )}
       aria-label="LETI"

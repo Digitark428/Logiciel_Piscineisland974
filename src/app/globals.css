@@ -232,30 +232,15 @@ body {
   background: linear-gradient(90deg, transparent, rgba(var(--leti-pool-rgb), 0.52), transparent);
 }
 
-.leti-development-item {
-  border: 1px solid transparent;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.82), var(--leti-coral-soft-surface));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
-}
-
-.leti-development-item--coral {
-  border-color: rgba(var(--leti-coral-rgb), 0.2);
-}
-
-.leti-development-item--aqua {
-  border-color: rgba(var(--leti-aqua-rgb), 0.22);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.82), var(--leti-aqua-soft-surface));
-}
-
 .leti-development-badge {
-  border: 1px solid rgba(var(--leti-coral-rgb), 0.25);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.88), rgba(var(--leti-coral-rgb), 0.16));
+  border: 1px solid rgba(var(--leti-coral-rgb), 0.18);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(var(--leti-coral-rgb), 0.14));
   color: var(--leti-navy);
 }
 
 .leti-development-badge--aqua {
-  border-color: rgba(var(--leti-aqua-rgb), 0.29);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.88), rgba(var(--leti-aqua-rgb), 0.16));
+  border-color: rgba(var(--leti-aqua-rgb), 0.2);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(var(--leti-aqua-rgb), 0.14));
 }
 
 .leti-workspace-card {
@@ -296,8 +281,9 @@ body {
 
 .leti-notification-bell {
   display: inline-flex;
-  animation: leti-notification-breathe 5.5s ease-in-out infinite;
+  animation: leti-notification-breathe 6s ease-in-out infinite;
   transform-origin: center;
+  will-change: transform;
 }
 
 .leti-role-badge {
@@ -336,9 +322,8 @@ body {
 }
 
 @keyframes leti-notification-breathe {
-  0%, 68%, 100% { transform: scale(1); }
-  78% { transform: scale(1.055); }
-  88% { transform: scale(1); }
+  0%, 20%, 100% { transform: scale(1); }
+  10% { transform: scale(1.06); }
 }
 
 @keyframes leti-fade-in {
@@ -363,10 +348,13 @@ body {
   .leti-splash-symbol,
   .leti-splash-wordmark,
   .leti-logo-symbol--sidebar::after,
-  .leti-hero-slogan::after,
-  .leti-notification-bell {
+  .leti-hero-slogan::after {
     animation-duration: 1ms;
     animation-delay: 0ms;
+  }
+
+  .leti-notification-bell {
+    animation: none;
   }
 }
 
