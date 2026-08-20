@@ -16,16 +16,29 @@ export function Logo({
   className,
   showText = true,
   size = "nav",
+  orientation = "horizontal",
+  symbolEffect,
 }: {
   className?: string;
   showText?: boolean;
   size?: keyof typeof SIZES;
+  orientation?: "horizontal" | "vertical";
+  symbolEffect?: "hero" | "sidebar";
 }) {
   const dimensions = SIZES[size];
 
   return (
-    <span className={cn("inline-flex items-center gap-1.5", size === "hero" && "gap-3 sm:gap-4", className)} aria-label="LETI">
-      <img src="/leti/leti-symbol-transparent.png" alt="" className={cn(dimensions.symbol, "object-contain")} />
+    <span
+      className={cn(
+        "inline-flex",
+        orientation === "vertical" ? "flex-col gap-3 sm:gap-4" : "items-center gap-1.5",
+        className,
+      )}
+      aria-label="LETI"
+    >
+      <span className={cn("leti-logo-symbol", symbolEffect && `leti-logo-symbol--${symbolEffect}`)}>
+        <img src="/leti/leti-symbol-transparent.png" alt="" className={cn(dimensions.symbol, "object-contain")} />
+      </span>
       {showText && (
         <img src="/leti/leti-wordmark-transparent.png" alt="" className={cn(dimensions.wordmark, "object-contain")} />
       )}

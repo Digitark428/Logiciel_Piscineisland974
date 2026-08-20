@@ -7,13 +7,16 @@ export interface NavItem {
   perm?: PermissionKey; // permission requise pour l'afficher (admin voit tout)
   adminOnly?: boolean;
   development?: boolean;
+  developmentTone?: "coral" | "aqua";
+  description?: string;
 }
 
 export const NAV_ITEMS: NavItem[] = [
   { href: "/app", label: "Tableau de bord", icon: "home" },
   { href: "/app/services", label: "Mes entretiens", icon: "wrench", perm: "services.view" },
-  { href: "/app/chantiers", label: "Mes chantiers", icon: "wrench", development: true },
-  { href: "/app/comptabilite", label: "Gérer ma comptabilité", icon: "activity", development: true },
+  { href: "/app/chantiers", label: "Mes chantiers", icon: "wrench", development: true, developmentTone: "coral" },
+  { href: "/app/comptabilite", label: "Gérer ma comptabilité", icon: "activity", development: true, developmentTone: "coral" },
+  { href: "/app/leti-ia", label: "LETI IA", icon: "sparkles", development: true, developmentTone: "aqua", description: "Accéder à la puissance LETI" },
   { href: "/app/planning", label: "Planning", icon: "calendar", perm: "planning.view" },
   { href: "/app/tasks", label: "Tâches & Notes", icon: "check", perm: "tasks.view" },
   { href: "/app/community", label: "Entre nous", icon: "community", perm: "community.view" },

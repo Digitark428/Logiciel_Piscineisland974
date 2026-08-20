@@ -2,6 +2,13 @@
 
 > Ajouter une entrée courte après chaque intervention significative. Ne pas y dupliquer la documentation durable de `PROJECT_CONTEXT.md`.
 
+## 2026-08-20 — Codex — Finitions visuelles premium LETI
+
+- **Design System :** ajout de tokens pastel centralisés (corail/aqua, surfaces glass, bordures et ombres) et de variantes partagées pour les cards, boutons, badges, états « En développement » et micro-animations compatibles avec `prefers-reduced-motion`.
+- **Accueil et dashboard :** logo officiel composé verticalement, ombre diffuse du sigle, card de promesse avec flare discret et cards de tableau de bord plus légères ; aucun changement de route, données, actions ou autorisations.
+- **Shell et communauté :** sigle animé subtilement dans la sidebar, code entreprise copiable, annonces Mes chantiers / Comptabilité / LETI IA, launcher d'assistance pastel, pulse de notification conditionnel ; « Entre nous » reçoit un en-tête identité-rôle-date compact et des médias conservant leur ratio naturel.
+- **Vérification :** lint, typecheck, build et 35 tests unitaires validés ; accueil inspecté localement aux formats 1440 px et 375 px sans erreur console ni débordement.
+
 ## 2026-08-20 — Codex — Récupération Super Admin
 
 - **Authentification :** ajout d'un parcours de récupération par e-mail à usage unique pour le Super Admin : demande non énumérante, page de choix d'un nouveau mot de passe et redirection vers la console. Aucun mot de passe n'est généré, exposé ni conservé par l'application.

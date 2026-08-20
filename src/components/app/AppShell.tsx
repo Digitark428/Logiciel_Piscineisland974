@@ -9,6 +9,7 @@ import { Icon } from "./icons";
 import { signOut } from "@/lib/auth/actions";
 import type { NavItem } from "./nav";
 import { cn } from "@/lib/utils/cn";
+import { WorkspaceIdentity } from "./WorkspaceIdentity";
 
 function NavigationLinks({
   items,
@@ -31,12 +32,21 @@ function NavigationLinks({
         const active = item.href === "/app" ? pathname === "/app" : pathname.startsWith(item.href);
         const isPending = pendingHref === item.href;
         if (item.development) {
+          const tone = item.developmentTone === "aqua" ? "aqua" : "coral";
           return (
-            <div key={item.href} className="flex items-center gap-3 rounded-xl border-l-2 border-transparent px-3 py-2.5 text-sm font-medium text-graphite-500" aria-label={`${item.label} — En développement`}>
+            <div
+              key={item.href}
+              className={cn(
+                "leti-development-item flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-graphite-600",
+                tone === "aqua" ? "leti-development-item--aqua" : "leti-development-item--coral",
+              )}
+              aria-label={`${item.label} — En développement`}
+            >
               <Icon name={item.icon} size={19} />
               <span className="min-w-0 leading-tight">
                 <span className="block truncate">{item.label}</span>
-                <span className="mt-1 inline-flex rounded-full bg-graphite-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-graphite-500">En développement</span>
+                {item.description && <span className="mt-0.5 block truncate text-[11px] font-normal text-graphite-500">{item.description}</span>}
+                <span className={cn("leti-development-badge mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide", tone === "aqua" && "leti-development-badge--aqua")}>En développement</span>
               </span>
             </div>
           );
@@ -163,14 +173,11 @@ export function AppShell({
             onFocus={() => prefetch("/app")}
             onBlur={() => cancelPrefetch("/app")}
           >
-            <Logo />
+            <Logo symbolEffect="sidebar" />
           </Link>
         </div>
         <div className="px-5 pb-3">
-          <div className="rounded-xl border border-graphite-200 bg-graphite-50 px-3 py-2.5">
-            <div className="truncate text-sm font-semibold text-graphite-900">{workspaceName}</div>
-            <div className="mt-0.5 font-mono text-[11px] text-graphite-400">{companyCode}</div>
-          </div>
+          <WorkspaceIdentity name={workspaceName} companyCode={companyCode} />
         </div>
         <div className="flex-1 overflow-y-auto px-3 py-2">
           <NavigationLinks
@@ -190,14 +197,11 @@ export function AppShell({
           <div className="absolute inset-0 bg-graphite-950/25" onClick={() => setOpen(false)} />
           <aside className="absolute inset-y-0 left-0 flex w-72 max-w-[85%] flex-col bg-white shadow-float">
             <div className="flex h-[4.5rem] items-center justify-between px-5">
-              <Logo />
+              <Logo symbolEffect="sidebar" />
               <button onClick={() => setOpen(false)} className="btn-ghost p-2" aria-label="Fermer">✕</button>
             </div>
             <div className="px-5 pb-3">
-              <div className="rounded-xl border border-graphite-200 bg-graphite-50 px-3 py-2.5">
-                <div className="truncate text-sm font-semibold text-graphite-900">{workspaceName}</div>
-                <div className="font-mono text-xs text-graphite-400">{companyCode}</div>
-              </div>
+              <WorkspaceIdentity name={workspaceName} companyCode={companyCode} />
             </div>
             <div className="flex-1 overflow-y-auto px-3 py-2">
               <NavigationLinks
@@ -231,7 +235,7 @@ export function AppShell({
               className="relative inline-flex h-10 w-10 shrink-0 overflow-visible btn-ghost p-2"
               aria-label={notifCount > 0 ? `Notifications (${notifCount > 99 ? "99+" : notifCount} non lues)` : "Notifications"}
             >
-              <Icon name="bell" size={21} />
+              <span className={cn(notifCount > 0 && "leti-notification-bell")}><Icon name="bell" size={21} /></span>
               {notifCount > 0 && (
                 <span className="absolute -right-1.5 -top-1.5 z-10 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-coral-500 px-1.5 text-[11px] font-bold leading-none text-graphite-900 ring-2 ring-white">
                   {notifCount > 99 ? "99+" : notifCount}

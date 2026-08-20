@@ -30,7 +30,7 @@ export function DeferredAppSupportWidget() {
       onTouchStart={preloadSupportWidget}
       aria-label="Ouvrir l'aide et les retours"
       aria-haspopup="dialog"
-      className="fixed bottom-5 right-5 z-30 flex items-center gap-2 rounded-full bg-pool-600/90 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-pool-600/20 backdrop-blur transition hover:bg-pool-700 active:scale-95"
+      className="leti-support-launcher fixed bottom-5 right-5 z-30 flex items-center gap-2 rounded-full px-4 py-3 text-sm font-semibold backdrop-blur transition active:scale-95"
       style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
     >
       <span aria-hidden="true" className="text-base leading-none">💬</span>

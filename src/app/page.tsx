@@ -6,13 +6,13 @@ export default function HomePage() {
     <div className="flex min-h-screen flex-col bg-graphite-50">
       <main className="flex flex-1 items-center justify-center px-5 py-12 sm:py-16">
         <section className="flex w-full max-w-3xl flex-col items-center text-center">
-          <Logo size="hero" className="mb-8 justify-center" />
-          <p className="leti-eyebrow mb-5 inline-flex items-center rounded-full border border-white/75 bg-white/55 px-3 py-1.5 text-pool-800 shadow-sm backdrop-blur-sm">
-            Logiciel pour pisciniste
-          </p>
-          <h1 className="mx-auto max-w-3xl text-4xl font-semibold tracking-[-0.045em] text-graphite-900 sm:text-6xl">
-            SIMPLE MAIS PUISSANT
-          </h1>
+          <Logo size="hero" orientation="vertical" symbolEffect="hero" className="mb-7 justify-center" />
+          <div className="leti-hero-slogan w-full max-w-xl px-5 py-5 sm:px-8 sm:py-6">
+            <p className="leti-eyebrow text-pool-800">Logiciel pour piscinistes</p>
+            <h1 className="mt-2 text-3xl font-semibold tracking-[-0.045em] text-graphite-900 sm:text-5xl">
+              SIMPLE ET PUISSANT
+            </h1>
+          </div>
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-graphite-500">
             Clients, piscines, interventions, planning et équipe : tout ce dont vous avez besoin pour
             travailler plus efficacement, depuis un seul outil.

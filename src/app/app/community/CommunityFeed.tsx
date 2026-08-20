@@ -76,7 +76,7 @@ export function CommunityFeed({
   };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-5">
+    <div className="mx-auto max-w-3xl space-y-6">
       <PostComposer canPublish={canPublish} />
       {posts.length === 0 ? (
         <div className="card px-6 py-14 text-center">
@@ -294,25 +294,36 @@ function CommunityPostCard({
   };
 
   return (
-    <article className="card overflow-hidden p-0">
+    <article className="community-post-card card p-0">
       <div className="p-4 sm:p-5">
         <div className="flex items-start justify-between gap-3">
-          <MemberIdentity member={post.author} avatarUrl={post.authorAvatarUrl} avatarSize={42} />
-          <div className="flex items-start gap-2">
-            <time className="pt-1 text-right text-xs text-graphite-400" title={formatDateTime(post.createdAt)}>{formatRelative(post.createdAt)}</time>
-            {post.canDelete && (
-              <button type="button" disabled={pending} onClick={remove} className="btn-ghost -mr-2 -mt-1 p-2 text-graphite-400 hover:text-red-500" aria-label="Supprimer la publication">✕</button>
-            )}
-          </div>
+          <MemberIdentity
+            member={post.author}
+            avatarUrl={post.authorAvatarUrl}
+            avatarSize={42}
+            variant="feed"
+            roleTone={post.author.role === "admin" ? "coral" : "aqua"}
+            meta={<time title={formatDateTime(post.createdAt)}>{formatRelative(post.createdAt)}</time>}
+          />
+          {post.canDelete && (
+            <button type="button" disabled={pending} onClick={remove} className="btn-ghost -mr-2 -mt-1 shrink-0 p-2 text-graphite-400 hover:text-red-500" aria-label="Supprimer la publication">✕</button>
+          )}
         </div>
         {post.content && <p className="mt-4 whitespace-pre-wrap text-sm leading-6 text-graphite-800">{post.content}</p>}
       </div>
 
       {post.media.length > 0 && (
-        <div className={`grid gap-0.5 bg-graphite-100 ${post.media.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
+        <div className={`grid gap-2 px-4 pb-4 sm:px-5 sm:pb-5 ${post.media.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
           {post.media.map((media, index) => media.url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img key={media.id} src={media.url} alt={`Photo de la publication ${index + 1}`} className={`w-full object-cover ${post.media.length === 1 ? "max-h-[32rem]" : "aspect-square"}`} />
+            <figure key={media.id} className="community-media-frame">
+              {/* La hauteur suit le ratio de la photo : aucun visage n'est recadré par défaut. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={media.url}
+                alt={`Photo de la publication ${index + 1}`}
+                className={`h-auto w-full object-contain ${post.media.length === 1 ? "max-h-[min(38rem,68vh)]" : "max-h-80"}`}
+              />
+            </figure>
           ) : null)}
         </div>
       )}

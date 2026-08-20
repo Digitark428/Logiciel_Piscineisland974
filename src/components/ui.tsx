@@ -134,7 +134,7 @@ export function StatCard({
     amber: "text-amber-600",
   };
   const inner = (
-    <div className="card p-5 transition hover:border-pool-200 hover:shadow-float">
+    <div className="card card--stat p-5 transition hover:border-pool-200 hover:shadow-float">
       <div className="text-sm font-medium text-graphite-500">{label}</div>
       <div className={cn("mt-1 text-3xl font-bold tracking-tight", tones[tone])}>{value}</div>
       {hint && <div className="mt-1 text-xs text-graphite-400">{hint}</div>}
