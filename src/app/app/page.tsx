@@ -5,6 +5,8 @@ import { Card, StatCard, Badge, EmptyState, PageHeader } from "@/components/ui";
 import { clientName, formatDate, formatTime, SERVICE_STATUS_LABELS } from "@/lib/utils/format";
 import { todayInReunion } from "@/lib/utils/date";
 import { FinancialCarousel } from "@/components/app/FinancialCarousel";
+import { addCalendarDays } from "@/lib/services/recurrence";
+import { getMaintenanceOccurrences, occurrenceHref, type MaintenanceOccurrence } from "@/lib/services/queries";
 
 export default async function DashboardPage() {
   const ctx = await requireContext();
@@ -14,18 +16,15 @@ export default async function DashboardPage() {
   const baseSel =
     "id, code, scheduled_date, scheduled_time, status, service_type, client:clients(first_name,last_name,company_name)";
 
-  // Si membre non-admin : ne montrer que ses prestations.
-  const scopeMine = !ctx.isAdmin;
+  const scopeMine = !(ctx.isAdmin || can(ctx, "services.edit"));
   const applyScope = (q: any): any =>
     scopeMine ? q.eq("assigned_membership_id", ctx.membership.id) : q;
 
-  const [todayRes, upcomingRes, doneCountRes, inProgressRes, tasksRes, activityRes, financialRes] = await Promise.all([
-    applyScope(
-      supabase.from("services").select(baseSel).eq("workspace_id", ctx.workspace.id).eq("scheduled_date", today).order("scheduled_time"),
-    ) as Promise<{ data: any[] | null }>,
-    applyScope(
-      supabase.from("services").select(baseSel).eq("workspace_id", ctx.workspace.id).gt("scheduled_date", today).neq("status", "cancelled").order("scheduled_date").limit(6),
-    ) as Promise<{ data: any[] | null }>,
+  const upcomingEnd = addCalendarDays(today, 56) ?? today;
+  const occurrenceScope = scopeMine ? ctx.membership.id : undefined;
+  const [todayServices, upcomingOccurrences, doneCountRes, inProgressRes, tasksRes, activityRes, financialRes] = await Promise.all([
+    getMaintenanceOccurrences(supabase, { workspaceId: ctx.workspace.id, start: today, end: today, assignedMembershipId: occurrenceScope }),
+    getMaintenanceOccurrences(supabase, { workspaceId: ctx.workspace.id, start: addCalendarDays(today, 1) ?? today, end: upcomingEnd, assignedMembershipId: occurrenceScope }),
     applyScope(
       supabase.from("services").select("id", { count: "exact", head: true }).eq("workspace_id", ctx.workspace.id).eq("status", "completed"),
     ) as Promise<{ count: number | null }>,
@@ -41,14 +40,13 @@ export default async function DashboardPage() {
       : Promise.resolve({ data: null }),
   ]);
 
-  const todayServices = todayRes.data ?? [];
-  const upcoming = upcomingRes.data ?? [];
+  const upcoming = upcomingOccurrences.filter((occurrence) => occurrence.status !== "cancelled");
   const inProgress = inProgressRes.data ?? [];
   const tasks = tasksRes.data ?? [];
   const activity = activityRes.data ?? [];
   const financialMetrics = financialRes.data as { recurring_cents: number; one_off_cents: number } | null;
 
-  const cn2 = (s: any) => clientName(s.client ?? {});
+  const cn2 = (service: MaintenanceOccurrence) => clientName(service.client);
 
   return (
     <div>
@@ -59,7 +57,7 @@ export default async function DashboardPage() {
       />
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard label="Aujourd'hui" value={todayServices.length} hint="prestations" href="/app/planning" />
+        <StatCard label="Aujourd'hui" value={todayServices.length} hint="entretiens" href="/app/planning" />
         <StatCard label="À venir" value={upcoming.length} hint="prochaines" tone="graphite" href="/app/services" />
         <StatCard label="En cours" value={inProgress.length} hint="en intervention" tone="amber" />
         <StatCard label="Terminées" value={doneCountRes.count ?? 0} hint="au total" tone="emerald" />
@@ -78,20 +76,20 @@ export default async function DashboardPage() {
         <div className="lg:col-span-2 space-y-6">
           <Card>
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-graphite-900">Prestations du jour</h2>
+              <h2 className="text-lg font-semibold text-graphite-900">Entretiens du jour</h2>
               <Link href="/app/planning" className="text-sm font-medium text-pool-600 hover:text-pool-700">Planning →</Link>
             </div>
             {todayServices.length === 0 ? (
-              <p className="py-6 text-center text-sm text-graphite-400">Aucune prestation prévue aujourd'hui.</p>
+              <p className="py-6 text-center text-sm text-graphite-400">Aucun entretien prévu aujourd'hui.</p>
             ) : (
               <ul className="divide-y divide-graphite-100">
-                {todayServices.map((s: any) => (
-                  <li key={s.id}>
-                    <Link href={`/app/services/${s.id}`} className="flex items-center gap-3 py-3 transition hover:bg-graphite-50 -mx-2 px-2 rounded-lg">
-                      <div className="w-14 text-sm font-semibold text-graphite-700">{formatTime(s.scheduled_time) || "—"}</div>
+                {todayServices.map((s) => (
+                  <li key={s.key}>
+                    <Link href={occurrenceHref(s)} className="flex items-center gap-3 py-3 transition hover:bg-graphite-50 -mx-2 px-2 rounded-lg">
+                      {s.scheduledTime && <div className="w-14 text-sm font-semibold text-graphite-700">{formatTime(s.scheduledTime)}</div>}
                       <div className="flex-1 min-w-0">
                         <div className="truncate font-medium text-graphite-900">{cn2(s)}</div>
-                        <div className="truncate text-sm text-graphite-500">{s.service_type ?? "Prestation"}</div>
+                        <div className="truncate text-sm text-graphite-500">{s.serviceType}</div>
                       </div>
                       <Badge tone={s.status}>{SERVICE_STATUS_LABELS[s.status]}</Badge>
                     </Link>
@@ -103,14 +101,14 @@ export default async function DashboardPage() {
 
           {upcoming.length > 0 && (
             <Card>
-              <h2 className="mb-4 text-lg font-semibold text-graphite-900">Prochaines prestations</h2>
+              <h2 className="mb-4 text-lg font-semibold text-graphite-900">Prochains entretiens</h2>
               <ul className="divide-y divide-graphite-100">
-                {upcoming.map((s: any) => (
-                  <li key={s.id}>
-                    <Link href={`/app/services/${s.id}`} className="flex items-center gap-3 py-3 -mx-2 px-2 rounded-lg hover:bg-graphite-50">
-                      <div className="w-28 text-sm text-graphite-500">{formatDate(s.scheduled_date)}</div>
+                {upcoming.slice(0, 6).map((s) => (
+                  <li key={s.key}>
+                    <Link href={occurrenceHref(s)} className="flex items-center gap-3 py-3 -mx-2 px-2 rounded-lg hover:bg-graphite-50">
+                      <div className="w-28 text-sm text-graphite-500">{formatDate(s.scheduledDate)}</div>
                       <div className="flex-1 min-w-0 truncate font-medium text-graphite-900">{cn2(s)}</div>
-                      <div className="hidden truncate text-sm text-graphite-400 sm:block">{s.service_type}</div>
+                      <div className="hidden truncate text-sm text-graphite-400 sm:block">{s.serviceType}</div>
                     </Link>
                   </li>
                 ))}

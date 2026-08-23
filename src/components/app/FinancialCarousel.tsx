@@ -21,7 +21,7 @@ export function FinancialCarousel({ recurringCents, oneOffCents }: FinancialCaro
       detail: "Revenus mensuels récurrents",
     },
     {
-      title: "Prestations ponctuelles",
+      title: "Entretiens ponctuels",
       value: formatMoneyCents(oneOffCents),
       suffix: "ce mois-ci",
       detail: "Chiffre d’affaires estimé",

@@ -8,6 +8,9 @@ import { AssistanceWidget, type WidgetConversation } from "./AssistanceWidget";
 import { clientName, formatDate, formatMoney, SERVICE_STATUS_LABELS, INVOICE_STATUS_LABELS } from "@/lib/utils/format";
 import { todayInReunion } from "@/lib/utils/date";
 import type { SupportCategory, SupportStatus } from "@/lib/db/types";
+import { addCalendarDays } from "@/lib/services/recurrence";
+import { getMaintenanceOccurrences } from "@/lib/services/queries";
+import { serviceTypeLabel } from "@/lib/services/constants";
 
 export default async function PortalPage({ params }: { params: { token: string } }) {
   const token = params.token;
@@ -43,16 +46,17 @@ export default async function PortalPage({ params }: { params: { token: string }
   }
 
   // ---- Données du client (portée stricte à ce client) ----
-  const [{ data: pools }, { data: services }, { data: invoices }, { data: workspace }] = await Promise.all([
+  const today = todayInReunion();
+  const [{ data: pools }, { data: services }, upcomingOccurrences, { data: invoices }, { data: workspace }] = await Promise.all([
     admin.from("pools").select("id, name, pool_type, water_treatment").eq("client_id", client!.id).eq("workspace_id", client!.workspace_id),
     admin.from("services").select("id, code, scheduled_date, status, service_type").eq("client_id", client!.id).eq("workspace_id", client!.workspace_id).order("scheduled_date", { ascending: false }).limit(20),
+    getMaintenanceOccurrences(admin, { workspaceId: client!.workspace_id, clientId: client!.id, start: today, end: addCalendarDays(today, 56) ?? today }),
     admin.from("invoices").select("id, number, status, total, issue_date").eq("client_id", client!.id).eq("workspace_id", client!.workspace_id).order("issue_date", { ascending: false }),
     admin.from("workspaces").select("name, phone, email").eq("id", client!.workspace_id).maybeSingle(),
   ]);
 
   const name = clientName(client!);
-  const today = todayInReunion();
-  const upcoming = (services ?? []).filter((s) => s.scheduled_date >= today && s.status !== "cancelled");
+  const upcoming = upcomingOccurrences.filter((occurrence) => occurrence.status !== "cancelled");
   const past = (services ?? []).filter((s) => s.scheduled_date < today || s.status === "completed");
   const closeAction = closePortal.bind(null, token);
 
@@ -104,7 +108,7 @@ export default async function PortalPage({ params }: { params: { token: string }
   const assistanceServices = (services ?? []).slice(0, 15).map((s) => ({
     id: s.id,
     code: (s as { code?: string }).code ?? "",
-    label: `${(s as { code?: string }).code ?? ""} · ${s.service_type ?? "Intervention"} · ${formatDate(s.scheduled_date)}`.trim(),
+    label: `${(s as { code?: string }).code ?? ""} · ${serviceTypeLabel(s.service_type)} · ${formatDate(s.scheduled_date)}`.trim(),
   }));
 
   return (
@@ -130,17 +134,23 @@ export default async function PortalPage({ params }: { params: { token: string }
           ) : (
             <ul className="divide-y divide-graphite-100">
               {upcoming.map((s) => (
-                <li key={s.id}>
-                  <a href={`/portal/${token}/service/${s.id}`} className="-mx-2 flex items-center justify-between rounded-lg px-2 py-3 hover:bg-graphite-50">
+                <li key={s.key}>
+                  {s.id ? <a href={`/portal/${token}/service/${s.id}`} className="-mx-2 flex items-center justify-between rounded-lg px-2 py-3 hover:bg-graphite-50">
                     <div>
-                      <div className="font-medium text-graphite-900">{s.service_type ?? "Intervention"}</div>
-                      <div className="text-sm text-graphite-500">{formatDate(s.scheduled_date)}</div>
+                      <div className="font-medium text-graphite-900">{s.serviceType}</div>
+                      <div className="text-sm text-graphite-500">{formatDate(s.scheduledDate)}</div>
                     </div>
                     <span className="flex items-center gap-2">
                       <span className="badge bg-pool-50 text-pool-700">{SERVICE_STATUS_LABELS[s.status]}</span>
                       <span className="text-graphite-300">›</span>
                     </span>
-                  </a>
+                  </a> : <div className="-mx-2 flex items-center justify-between rounded-lg px-2 py-3">
+                    <div>
+                      <div className="font-medium text-graphite-900">{s.serviceType}</div>
+                      <div className="text-sm text-graphite-500">{formatDate(s.scheduledDate)} · passage hebdomadaire</div>
+                    </div>
+                    <span className="badge bg-pool-50 text-pool-700">{SERVICE_STATUS_LABELS[s.status]}</span>
+                  </div>}
                 </li>
               ))}
             </ul>
@@ -168,7 +178,7 @@ export default async function PortalPage({ params }: { params: { token: string }
               {past.slice(0, 10).map((s) => (
                 <li key={s.id}>
                   <a href={`/portal/${token}/service/${s.id}`} className="-mx-2 flex items-center justify-between rounded-lg px-2 py-2.5 text-sm hover:bg-graphite-50">
-                    <span className="text-graphite-700">{formatDate(s.scheduled_date)} · {s.service_type ?? "Intervention"}</span>
+                    <span className="text-graphite-700">{formatDate(s.scheduled_date)} · {serviceTypeLabel(s.service_type)}</span>
                     <span className="badge bg-emerald-50 text-emerald-700">{SERVICE_STATUS_LABELS[s.status]}</span>
                   </a>
                 </li>

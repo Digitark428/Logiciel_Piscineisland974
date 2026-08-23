@@ -5,10 +5,11 @@ import { createClient } from "@/lib/supabase/server";
 import { signedUrls } from "@/lib/storage";
 import { Card, Badge, Avatar } from "@/components/ui";
 import { MemberIdentity } from "@/components/members/MemberIdentity";
-import { StatusActions, TasksChecklist, ReportForm, GoThereButton } from "./ServiceControls";
+import { ExceptionForm, StatusActions, TasksChecklist, ReportForm, GoThereButton } from "./ServiceControls";
 import { clientName, formatDate, formatTime, formatDuration, SERVICE_STATUS_LABELS } from "@/lib/utils/format";
 import { formatMoneyCents } from "@/lib/utils/money";
 import type { ServiceTask } from "@/lib/db/types";
+import { serviceTypeLabel } from "@/lib/services/constants";
 
 export default async function ServiceDetailPage({ params }: { params: { id: string } }) {
   const ctx = await requirePermission("services.view");
@@ -17,7 +18,7 @@ export default async function ServiceDetailPage({ params }: { params: { id: stri
   const [serviceRes, tasksRes, clientNotesRes] = await Promise.all([
     supabase
       .from("services")
-      .select("id, code, service_type, scheduled_date, scheduled_time, status, assigned_membership_id, kind, series_id, contract_document_id, invoice_document_id, report, completed_at, duration_min, notes, client:clients(id,first_name,last_name,company_name,phone,address_line1,postal_code,city,latitude,longitude,access_info), pool:pools(name,address_line1,postal_code,city,latitude,longitude), assignee:memberships!services_assigned_membership_id_fkey(first_name,last_name,email,role,job_title,photo_path)")
+      .select("id, code, service_type, occurrence_date, scheduled_date, scheduled_time, status, assigned_membership_id, kind, series_id, contract_document_id, invoice_document_id, report, completed_at, duration_min, notes, series:service_series(recurrence_kind,notes), client:clients(id,first_name,last_name,company_name,phone,address_line1,postal_code,city,latitude,longitude,access_info), pool:pools(name,address_line1,postal_code,city,latitude,longitude), assignee:memberships!services_assigned_membership_id_fkey(first_name,last_name,email,role,job_title,photo_path)")
       .eq("id", params.id)
       .eq("workspace_id", ctx.workspace.id)
       .maybeSingle(),
@@ -48,6 +49,8 @@ export default async function ServiceDetailPage({ params }: { params: { id: stri
   const client = (service as any).client;
   const pool = (service as any).pool;
   const assignee = (service as any).assignee;
+  const series = Array.isArray((service as any).series) ? (service as any).series[0] : (service as any).series;
+  const occurrence = { serviceId: service.id, seriesId: service.series_id ?? undefined, occurrenceDate: service.occurrence_date ?? undefined };
 
   // Finance et documents ne dépendent que de la prestation principale : ils
   // partent ensemble dès qu'elle est connue, plutôt qu'en cascade.
@@ -102,7 +105,7 @@ export default async function ServiceDetailPage({ params }: { params: { id: stri
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold tracking-tight text-graphite-900">{service.service_type ?? "Prestation"}</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-graphite-900">{serviceTypeLabel(service.service_type)}</h1>
             <Badge tone={service.status}>{SERVICE_STATUS_LABELS[service.status]}</Badge>
           </div>
           <p className="mt-1 text-sm text-graphite-500">
@@ -110,7 +113,9 @@ export default async function ServiceDetailPage({ params }: { params: { id: stri
           </p>
         </div>
         {canEdit && (
-          <Link href={`/app/services/${service.id}/edit`} className="btn-secondary">Modifier</Link>
+          <Link href={series?.recurrence_kind === "weekly_contract" ? `/app/services/contracts/${service.series_id}` : `/app/services/${service.id}/edit`} className="btn-secondary">
+            {series?.recurrence_kind === "weekly_contract" ? "Modifier le contrat" : "Modifier"}
+          </Link>
         )}
       </div>
 
@@ -159,7 +164,7 @@ export default async function ServiceDetailPage({ params }: { params: { id: stri
           <Card>
             <h2 className="mb-4 text-lg font-semibold text-graphite-900">Compte-rendu</h2>
             {canComplete ? (
-              <ReportForm serviceId={service.id} report={service.report} />
+              <ReportForm occurrence={occurrence} report={service.report} notes={service.notes} />
             ) : (
               <p className="whitespace-pre-wrap text-sm text-graphite-700">{service.report || "—"}</p>
             )}
@@ -169,11 +174,18 @@ export default async function ServiceDetailPage({ params }: { params: { id: stri
         <div className="space-y-6">
           <Card>
             <h2 className="mb-4 text-base font-semibold text-graphite-900">Statut</h2>
-            <StatusActions serviceId={service.id} status={service.status} canComplete={canComplete} />
+            <StatusActions occurrence={occurrence} status={service.status} canComplete={canComplete} canEdit={canEdit} />
             {service.completed_at && (
               <p className="mt-3 text-xs text-graphite-400">Terminée le {formatDate(service.completed_at)}</p>
             )}
           </Card>
+
+          {canEdit && service.kind === "recurring" && service.occurrence_date && series?.recurrence_kind === "weekly_contract" && (
+            <Card>
+              <h2 className="mb-3 text-base font-semibold text-graphite-900">Exception de cette semaine</h2>
+              <ExceptionForm occurrence={occurrence} scheduledDate={service.scheduled_date} />
+            </Card>
+          )}
 
           <Card>
             <h2 className="mb-3 text-base font-semibold text-graphite-900">Suivi</h2>
@@ -222,17 +234,29 @@ export default async function ServiceDetailPage({ params }: { params: { id: stri
               </div>
               <div>
                 <dt className="text-xs uppercase tracking-wide text-graphite-400">Type</dt>
-                <dd className="mt-0.5 text-graphite-800">{service.kind === "recurring" ? "Récurrente" : "Unique"}</dd>
+                <dd className="mt-0.5 text-graphite-800">{service.kind === "recurring" ? "Passage récurrent" : "Entretien ponctuel"}</dd>
               </div>
+              {service.series_id && series?.recurrence_kind === "weekly_contract" && (
+                <div>
+                  <dt className="text-xs uppercase tracking-wide text-graphite-400">Contrat d'entretien</dt>
+                  <dd className="mt-0.5"><Link href={`/app/services/contracts/${service.series_id}`} className="text-pool-700 hover:underline">Voir le contrat</Link></dd>
+                </div>
+              )}
               {service.duration_min && (
                 <div>
                   <dt className="text-xs uppercase tracking-wide text-graphite-400">Durée estimée</dt>
                   <dd className="mt-0.5 text-graphite-800">{formatDuration(service.duration_min)}</dd>
                 </div>
               )}
-              {service.notes && (
+              {series?.notes && (
                 <div>
-                  <dt className="text-xs uppercase tracking-wide text-graphite-400">Commentaires</dt>
+                  <dt className="text-xs uppercase tracking-wide text-graphite-400">Commentaire général du contrat</dt>
+                  <dd className="mt-0.5 whitespace-pre-wrap text-graphite-800">{series.notes}</dd>
+                </div>
+              )}
+              {service.notes && !canComplete && (
+                <div>
+                  <dt className="text-xs uppercase tracking-wide text-graphite-400">Commentaire de ce passage</dt>
                   <dd className="mt-0.5 whitespace-pre-wrap text-graphite-800">{service.notes}</dd>
                 </div>
               )}

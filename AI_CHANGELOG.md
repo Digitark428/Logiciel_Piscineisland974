@@ -2,6 +2,14 @@
 
 > Ajouter une entrée courte après chaque intervention significative. Ne pas y dupliquer la documentation durable de `PROJECT_CONTEXT.md`.
 
+## 2026-08-23 — Codex — Contrats d'entretien hebdomadaires paresseux
+
+- **Métier :** « Mes entretiens » devient une vraie vue semaine sans limite de navigation, avec création distincte d'un contrat hebdomadaire ou d'un entretien ponctuel. Le contrat ne demande ni piscine, ni heure, ni durée ; les statuts, commentaires, comptes-rendus et déplacements restent propres à chaque passage.
+- **Architecture :** les contrats `weekly_contract` vivent dans `service_series` et leurs occurrences sont calculées à la lecture pour la période demandée. Une ligne `services` est matérialisée uniquement lors d'une interaction ; `occurrence_date` garde la date nominale et `scheduled_date` l'éventuelle exception. Les anciennes séries restent `legacy` et leurs 8 passages de production n'ont pas été réécrits.
+- **Écrans liés :** planning, carte quotidienne, dashboard financier, recherche/filtres, fiche client, portail, sauvegardes, notifications et Super Admin utilisent le nouveau modèle. Les montants mensuels restent dans `service_financials`, invisibles aux techniciens.
+- **Sécurité :** migrations `weekly_maintenance_contracts`, `allow_assigned_occurrence_comments`, `fix_service_completion_guard_invoker_detection` et `lock_recurring_occurrence_identity` appliquées en production (dernier ledger `20260823074205`). Le technicien assigné peut commenter et réaliser son passage, mais pas modifier le planning ou l'identité nominale ; les fonctions de garde ne sont pas exécutables par API.
+- **Vérification :** lint, typecheck, build et 40 tests unitaires validés. Des transactions de production annulées ont vérifié les contraintes de récurrence, l'unicité, la finance mensuelle sans occurrence et le garde-fou technicien ; les compteurs métier sont restés inchangés.
+
 ## 2026-08-23 — Codex — Audit et optimisations de performance LETI
 
 - **P0 :** préparation de l'exécution Vercel à Paris (`cdg1`) au plus près de Supabase `eu-west-3` ; le middleware valide désormais les JWT ES256 localement avec `getClaims`, tandis qu'une unique vérification distante `getUser` reste conservée côté serveur pour détecter immédiatement une session révoquée.

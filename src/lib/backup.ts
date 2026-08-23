@@ -6,7 +6,7 @@ const EXPORT_COLUMNS: Record<string, string> = {
   workspaces: "id, company_code, name, address_line1, address_line2, postal_code, city, country, phone, email, siret, vat_number, legal_form, legal_info, settings, status, plan, trial_ends_at, created_at, updated_at",
   memberships: "id, workspace_id, user_id, role, member_type, status, first_name, last_name, email, phone, photo_path, job_title, professional_info, created_at, updated_at",
   clients: "id, workspace_id, first_name, last_name, company_name, phone, email, address_line1, address_line2, postal_code, city, country, status, created_at, updated_at",
-  pools: "*", service_series: "*", services: "*", service_tasks: "*", tasks: "*", contracts: "*", invoices: "*", invoice_lines: "*",
+  pools: "*", service_series: "*", services: "*", service_financials: "*", service_tasks: "*", service_client_notes: "*", tasks: "*", contracts: "*", invoices: "*", invoice_lines: "*",
   documents: "id, workspace_id, name, storage_path, mime_type, size_bytes, entity_type, entity_id, category, uploaded_by, created_at",
   notifications: "*", activity_logs: "*",
 };

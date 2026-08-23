@@ -38,6 +38,12 @@
 
 **Raison :** `services` et `service_series` peuvent être consultés par des membres opérationnels. Cette séparation empêche toute lecture ou modification financière par un employé et évite de dupliquer le revenu mensuel sur les occurrences techniques d'un contrat.
 
+## Contrats d'entretien hebdomadaires
+
+**Décision :** un contrat hebdomadaire est conservé comme règle unique `weekly_contract` dans `service_series`. Ses passages sont calculés pour la période affichée et ne deviennent des lignes `services` que lorsqu'un utilisateur enregistre un statut, un commentaire, un compte-rendu ou une exception. `occurrence_date` conserve la date nominale ; `scheduled_date` porte un éventuel déplacement.
+
+**Raison :** éviter la création arbitraire de 52 occurrences, permettre une navigation sans limite de semaine, conserver les exceptions et l'historique sans modifier rétroactivement le contrat ni les anciennes séries `legacy`.
+
 ## Mode démo
 
 **Décision :** le mode démo reste retiré et ne doit pas être réintroduit.

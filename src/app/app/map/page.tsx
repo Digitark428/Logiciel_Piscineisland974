@@ -1,119 +1,93 @@
-import { requirePermission, can } from "@/lib/auth/context";
+import Link from "next/link";
+import { can, requirePermission } from "@/lib/auth/context";
+import { getMaintenanceOccurrences, occurrenceHref } from "@/lib/services/queries";
 import { createClient } from "@/lib/supabase/server";
-import { clientName, memberName, formatDate, formatTime } from "@/lib/utils/format";
+import { clientName, formatDate, formatTime, memberName } from "@/lib/utils/format";
+import { addCalendarDays } from "@/lib/services/recurrence";
+import { todayInReunion } from "@/lib/utils/date";
 import { PageHeader } from "@/components/ui";
 import { ServiceMap, type MapPoint, type MapService } from "./ServiceMap";
 
 export const dynamic = "force-dynamic";
 
-export default async function MapPage() {
+export default async function MapPage({ searchParams }: { searchParams: { date?: string } }) {
   const ctx = await requirePermission("map.view");
   const supabase = createClient();
-
-  // Un admin (ou un membre pouvant éditer les prestations) voit tout le workspace ;
-  // un employé/prestataire ne voit que les prestations qui lui sont assignées.
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(searchParams.date ?? "") ? searchParams.date! : todayInReunion();
   const seesAll = ctx.isAdmin || can(ctx, "services.edit");
-
-  let query = supabase
-    .from("services")
-    .select(
-      "id, code, service_type, scheduled_date, scheduled_time, status, assigned_membership_id, " +
-        "client_id, " +
-        "client:clients(first_name,last_name,company_name,address_line1,postal_code,city,latitude,longitude), " +
-        "pool:pools(name,address_line1,postal_code,city,latitude,longitude), " +
-        "assignee:memberships!services_assigned_membership_id_fkey(first_name,last_name,email)"
-    )
-    .eq("workspace_id", ctx.workspace.id)
-    .neq("status", "cancelled");
-
-  if (!seesAll) {
-    query = query.eq("assigned_membership_id", ctx.membership.id);
-  }
-
-  const { data: services } = await query;
+  const occurrences = await getMaintenanceOccurrences(supabase, {
+    workspaceId: ctx.workspace.id,
+    start: date,
+    end: date,
+    assignedMembershipId: seesAll ? undefined : ctx.membership.id,
+  });
 
   const pointByAddress = new Map<string, MapPoint>();
   const assigneeMap = new Map<string, string>();
-
-  for (const s of (services ?? []) as any[]) {
-    const pool = s.pool;
-    const client = s.client;
-    // La piscine peut avoir sa propre localisation ; sinon on prend celle du client.
-    const lat = pool?.latitude ?? client?.latitude ?? null;
-    const lng = pool?.longitude ?? client?.longitude ?? null;
-    if (lat === null || lng === null) continue; // pas encore géocodé → non affiché
-
-    const address =
-      [pool?.address_line1, pool?.postal_code, pool?.city].filter(Boolean).join(", ") ||
-      [client?.address_line1, client?.postal_code, client?.city].filter(Boolean).join(", ");
-
-    const assignee = s.assignee ? memberName(s.assignee) : "";
-    if (s.assigned_membership_id && assignee) {
-      assigneeMap.set(s.assigned_membership_id, assignee);
-    }
-
+  for (const occurrence of occurrences) {
+    const location = occurrence.pool ?? occurrence.client;
+    const lat = location.latitude;
+    const lng = location.longitude;
+    if (lat === null || lng === null) continue;
+    const address = [location.address_line1, location.postal_code, location.city].filter(Boolean).join(", ");
+    const assignee = occurrence.assignee ? memberName(occurrence.assignee) : "";
+    if (occurrence.assignedMembershipId && assignee) assigneeMap.set(occurrence.assignedMembershipId, assignee);
     const service: MapService = {
-      id: s.id,
-      code: s.code,
-      serviceType: s.service_type ?? "Prestation",
-      date: formatDate(s.scheduled_date),
-      time: formatTime(s.scheduled_time),
-      sortKey: `${s.scheduled_date} ${s.scheduled_time ?? ""}`,
-      status: s.status,
-      assigneeId: s.assigned_membership_id,
+      id: occurrence.key,
+      href: occurrenceHref(occurrence),
+      code: occurrence.code ?? "",
+      serviceType: occurrence.serviceType,
+      date: formatDate(occurrence.scheduledDate),
+      time: occurrence.scheduledTime ? formatTime(occurrence.scheduledTime) : "",
+      sortKey: `${occurrence.scheduledDate} ${occurrence.scheduledTime ?? ""}`,
+      status: occurrence.status,
+      assigneeId: occurrence.assignedMembershipId,
       assignee,
     };
-    // Un point représente une adresse/client. Les prestations liées partagent
-    // donc le même marqueur, y compris lorsqu'elles sont passées ou à venir.
-    const pointKey = [s.client_id, Number(lat).toFixed(6), Number(lng).toFixed(6), address].join(":");
+    const pointKey = [occurrence.client.id, Number(lat).toFixed(6), Number(lng).toFixed(6), address].join(":");
     const existing = pointByAddress.get(pointKey);
-    if (existing) {
-      existing.services.push(service);
-    } else {
-      pointByAddress.set(pointKey, {
-        id: pointKey,
-        lat: Number(lat),
-        lng: Number(lng),
-        client: clientName(client ?? {}),
-        address,
-        services: [service],
-      });
-    }
+    if (existing) existing.services.push(service);
+    else pointByAddress.set(pointKey, {
+      id: pointKey,
+      lat: Number(lat),
+      lng: Number(lng),
+      client: clientName(occurrence.client),
+      address,
+      services: [service],
+    });
   }
 
   const points = Array.from(pointByAddress.values()).map((point) => ({
     ...point,
-    services: [...point.services].sort((a, b) => a.sortKey.localeCompare(b.sortKey)),
+    services: [...point.services].sort((left, right) => left.sortKey.localeCompare(right.sortKey)),
   }));
   const assignees = Array.from(assigneeMap.entries()).map(([id, name]) => ({ id, name }));
   const geocodedCount = points.reduce((count, point) => count + point.services.length, 0);
-  const totalCount = (services ?? []).length;
+  const previous = addCalendarDays(date, -1) ?? date;
+  const next = addCalendarDays(date, 1) ?? date;
 
   return (
     <div>
       <PageHeader
-        title="Carte des prestations"
-        description="Visualisez géographiquement vos clients et leurs différentes prestations."
-        subtitle={seesAll ? "Toutes les prestations géolocalisées de votre entreprise." : "Vos prestations géolocalisées."}
+        title="Carte des entretiens"
+        description="Visualisez les passages du jour et lancez directement votre itinéraire."
+        subtitle={seesAll ? "Tous les entretiens géolocalisés de votre entreprise." : "Vos entretiens géolocalisés."}
       />
+      <div className="mb-5 flex flex-wrap items-center gap-2">
+        <Link href={`/app/map?date=${previous}`} className="btn-secondary px-3" aria-label="Jour précédent">←</Link>
+        <Link href="/app/map" className="btn-secondary">Aujourd'hui</Link>
+        <Link href={`/app/map?date=${next}`} className="btn-secondary px-3" aria-label="Jour suivant">→</Link>
+        <h2 className="ml-2 font-semibold text-graphite-800">{formatDate(date)}</h2>
+      </div>
 
       {geocodedCount === 0 ? (
         <div className="card p-8 text-center">
-          <p className="text-graphite-700">Aucune prestation localisée pour le moment.</p>
-          <p className="mt-2 text-sm text-graphite-500">
-            Les prestations apparaissent ici dès que l'adresse de leur client (ou de la piscine) est
-            renseignée via l'autocomplétion d'adresse — les coordonnées GPS sont alors enregistrées
-            automatiquement.
-          </p>
+          <p className="text-graphite-700">Aucun entretien localisé ce jour.</p>
+          <p className="mt-2 text-sm text-graphite-500">Les entretiens apparaissent dès que l'adresse du client ou de la piscine possède des coordonnées GPS.</p>
         </div>
       ) : (
         <>
-          {totalCount > geocodedCount && (
-            <p className="mb-3 text-xs text-amber-600">
-              {totalCount - geocodedCount} prestation(s) non affichée(s) : adresse client sans
-              coordonnées. Ouvrez la fiche client et re-sélectionnez l'adresse pour la localiser.
-            </p>
-          )}
+          {occurrences.length > geocodedCount && <p className="mb-3 text-xs text-amber-600">{occurrences.length - geocodedCount} entretien(s) non affiché(s) : adresse sans coordonnées.</p>}
           <ServiceMap points={points} assignees={assignees} showAssigneeFilter={seesAll} />
         </>
       )}

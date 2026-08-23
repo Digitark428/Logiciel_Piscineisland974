@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { portalCookieName, verifyPortalSession } from "@/lib/portal";
 import { clientName, memberJobTitle, memberName, initials, formatDate, formatDate as fd, SERVICE_STATUS_LABELS } from "@/lib/utils/format";
+import { serviceTypeLabel } from "@/lib/services/constants";
 import { PortalServiceNote } from "./PortalServiceNote";
 import { Logo } from "@/components/Logo";
 
@@ -119,7 +120,7 @@ export default async function PortalServicePage({ params }: { params: { token: s
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <div className="text-xs uppercase tracking-wide text-graphite-400">Type de prestation</div>
-              <h2 className="text-xl font-bold text-graphite-900">{service.service_type ?? "Intervention"}</h2>
+              <h2 className="text-xl font-bold text-graphite-900">{serviceTypeLabel(service.service_type)}</h2>
             </div>
             <span className="badge bg-pool-50 text-pool-700">{SERVICE_STATUS_LABELS[service.status]}</span>
           </div>

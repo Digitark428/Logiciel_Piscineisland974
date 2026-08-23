@@ -351,7 +351,7 @@ function Compose({
 
       {services.length > 0 && category !== "suggestion" && (
         <div className="mt-3">
-          <label className="mb-1 block text-xs font-medium text-graphite-600">Prestation concernée (facultatif)</label>
+          <label className="mb-1 block text-xs font-medium text-graphite-600">Entretien concerné (facultatif)</label>
           <select value={serviceId} onChange={(e) => setServiceId(e.target.value)} className="input">
             <option value="">— Aucune —</option>
             {services.map((s) => (

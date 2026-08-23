@@ -104,10 +104,11 @@ export const MEMBER_TYPE_LABELS: Record<string, string> = {
 };
 
 export const SERVICE_STATUS_LABELS: Record<string, string> = {
-  planned: "Planifiée",
+  planned: "À faire",
   in_progress: "En cours",
-  completed: "Terminée",
-  cancelled: "Annulée",
+  completed: "Terminé",
+  postponed: "Reporté",
+  cancelled: "Annulé",
 };
 
 export const INVOICE_STATUS_LABELS: Record<string, string> = {

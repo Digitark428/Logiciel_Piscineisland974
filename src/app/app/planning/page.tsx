@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Card, PageHeader } from "@/components/ui";
 import { clientName, formatTime } from "@/lib/utils/format";
 import { dateOnlyToUtcDate } from "@/lib/utils/date";
+import { getMaintenanceOccurrences, occurrenceHref, type MaintenanceOccurrence } from "@/lib/services/queries";
 import {
   type PlanningView, parseAnchor, rangeFor, navFor, toISO,
   addDays, startOfWeek, startOfMonth, weekdayShort, monthName, periodLabel,
@@ -13,6 +14,7 @@ const STATUS_DOT: Record<string, string> = {
   planned: "bg-pool-400",
   in_progress: "bg-amber-400",
   completed: "bg-emerald-400",
+  postponed: "bg-coral-400",
   cancelled: "bg-graphite-300",
 };
 
@@ -24,22 +26,20 @@ export default async function PlanningPage({ searchParams }: { searchParams: { v
   const anchor = parseAnchor(searchParams.date);
   const { start, end } = rangeFor(view, anchor);
 
-  let query = supabase
-    .from("services")
-    .select("id, scheduled_date, scheduled_time, status, service_type, client:clients(first_name,last_name,company_name)")
-    .eq("workspace_id", ctx.workspace.id)
-    .gte("scheduled_date", toISO(start))
-    .lte("scheduled_date", toISO(end))
-    .order("scheduled_time");
-  if (!ctx.isAdmin) query = query.eq("assigned_membership_id", ctx.membership.id);
-  const { data: services } = await query;
+  const seesAll = ctx.isAdmin || can(ctx, "services.edit");
+  const services = await getMaintenanceOccurrences(supabase, {
+    workspaceId: ctx.workspace.id,
+    start: toISO(start),
+    end: toISO(end),
+    assignedMembershipId: seesAll ? undefined : ctx.membership.id,
+  });
 
   // Regroupe par date
-  const byDate = new Map<string, any[]>();
-  for (const s of services ?? []) {
-    const arr = byDate.get(s.scheduled_date) ?? [];
+  const byDate = new Map<string, MaintenanceOccurrence[]>();
+  for (const s of services) {
+    const arr = byDate.get(s.scheduledDate) ?? [];
     arr.push(s);
-    byDate.set(s.scheduled_date, arr);
+    byDate.set(s.scheduledDate, arr);
   }
 
   const link = (v: PlanningView, d: Date) => `/app/planning?view=${v}&date=${toISO(d)}`;
@@ -50,7 +50,7 @@ export default async function PlanningPage({ searchParams }: { searchParams: { v
     <div>
       <PageHeader
         title="Planning"
-        description="Retrouvez l'ensemble des interventions et prestations programmées de votre équipe."
+        description="Retrouvez l'ensemble des entretiens programmés de votre équipe."
       />
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
@@ -71,7 +71,10 @@ export default async function PlanningPage({ searchParams }: { searchParams: { v
 
       {can(ctx, "services.create") && (
         <div className="mb-4">
-          <Link href="/app/services/new" className="btn-primary">+ Nouvelle prestation</Link>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/app/services/new?kind=contract" className="btn-primary">+ Nouveau contrat</Link>
+            <Link href="/app/services/new?kind=one_off" className="btn-secondary">+ Entretien ponctuel</Link>
+          </div>
         </div>
       )}
 
@@ -83,29 +86,29 @@ export default async function PlanningPage({ searchParams }: { searchParams: { v
   );
 }
 
-function ServiceRow({ s }: { s: any }) {
+function ServiceRow({ s }: { s: MaintenanceOccurrence }) {
   return (
-    <Link href={`/app/services/${s.id}`} className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-graphite-50">
+    <Link href={occurrenceHref(s)} className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-graphite-50">
       <span className={`h-2 w-2 shrink-0 rounded-full ${STATUS_DOT[s.status]}`} />
-      <span className="w-12 shrink-0 text-xs text-graphite-400">{formatTime(s.scheduled_time)}</span>
+      {s.scheduledTime && <span className="w-12 shrink-0 text-xs text-graphite-400">{formatTime(s.scheduledTime)}</span>}
       <span className="truncate text-graphite-800">{clientName(s.client ?? {})}</span>
     </Link>
   );
 }
 
-function DayView({ services }: { services: any[] }) {
+function DayView({ services }: { services: MaintenanceOccurrence[] }) {
   return (
     <Card>
       {services.length === 0 ? (
-        <p className="py-8 text-center text-sm text-graphite-400">Aucune prestation ce jour.</p>
+        <p className="py-8 text-center text-sm text-graphite-400">Aucun entretien ce jour.</p>
       ) : (
-        <div className="space-y-1">{services.map((s) => <ServiceRow key={s.id} s={s} />)}</div>
+        <div className="space-y-1">{services.map((s) => <ServiceRow key={s.key} s={s} />)}</div>
       )}
     </Card>
   );
 }
 
-function WeekView({ start, byDate }: { start: Date; byDate: Map<string, any[]> }) {
+function WeekView({ start, byDate }: { start: Date; byDate: Map<string, MaintenanceOccurrence[]> }) {
   const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
   const today = toISO(new Date());
   return (
@@ -120,7 +123,7 @@ function WeekView({ start, byDate }: { start: Date; byDate: Map<string, any[]> }
               <span className="text-lg font-bold text-graphite-800">{d.getUTCDate()}</span>
             </div>
             <div className="space-y-1">
-              {list.length === 0 ? <span className="text-xs text-graphite-300">—</span> : list.map((s) => <ServiceRow key={s.id} s={s} />)}
+              {list.length === 0 ? <span className="text-xs text-graphite-300">—</span> : list.map((s) => <ServiceRow key={s.key} s={s} />)}
             </div>
           </div>
         );
@@ -129,7 +132,7 @@ function WeekView({ start, byDate }: { start: Date; byDate: Map<string, any[]> }
   );
 }
 
-function MonthView({ anchor, byDate }: { anchor: Date; byDate: Map<string, any[]> }) {
+function MonthView({ anchor, byDate }: { anchor: Date; byDate: Map<string, MaintenanceOccurrence[]> }) {
   const first = startOfMonth(anchor);
   const gridStart = startOfWeek(first);
   const cells = Array.from({ length: 42 }, (_, i) => addDays(gridStart, i));
@@ -150,7 +153,7 @@ function MonthView({ anchor, byDate }: { anchor: Date; byDate: Map<string, any[]
               <div className={`text-xs font-semibold ${inMonth ? "text-graphite-700" : "text-graphite-300"}`}>{d.getUTCDate()}</div>
               <div className="mt-1 space-y-0.5">
                 {list.slice(0, 3).map((s) => (
-                  <div key={s.id} className="flex items-center gap-1">
+                  <div key={s.key} className="flex items-center gap-1">
                     <span className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT[s.status]}`} />
                     <span className="truncate text-[11px] text-graphite-600">{clientName(s.client ?? {})}</span>
                   </div>
@@ -165,7 +168,7 @@ function MonthView({ anchor, byDate }: { anchor: Date; byDate: Map<string, any[]
   );
 }
 
-function YearView({ year, byDate }: { year: number; byDate: Map<string, any[]> }) {
+function YearView({ year, byDate }: { year: number; byDate: Map<string, MaintenanceOccurrence[]> }) {
   const counts = Array.from({ length: 12 }, () => 0);
   for (const [iso, list] of byDate) {
     const month = dateOnlyToUtcDate(iso)?.getUTCMonth();
@@ -178,7 +181,7 @@ function YearView({ year, byDate }: { year: number; byDate: Map<string, any[]> }
           className="card p-5 transition hover:shadow-float">
           <div className="text-sm font-medium text-graphite-500">{monthName(i)}</div>
           <div className="mt-1 text-3xl font-bold text-pool-600">{c}</div>
-          <div className="text-xs text-graphite-400">prestation(s)</div>
+          <div className="text-xs text-graphite-400">entretien(s)</div>
         </Link>
       ))}
     </div>

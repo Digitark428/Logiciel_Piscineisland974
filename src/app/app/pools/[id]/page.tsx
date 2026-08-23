@@ -58,13 +58,13 @@ export default async function PoolDetailPage({ params }: { params: { id: string 
 
         <Card>
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-base font-semibold text-graphite-900">Prestations</h2>
+            <h2 className="text-base font-semibold text-graphite-900">Entretiens ponctuels</h2>
             {can(ctx, "services.create") && client && (
-              <Link href={`/app/services/new?client=${client.id}&pool=${pool.id}`} className="text-sm font-medium text-pool-600">+ Nouvelle</Link>
+              <Link href={`/app/services/new?kind=one_off&client=${client.id}&pool=${pool.id}`} className="text-sm font-medium text-pool-600">+ Entretien ponctuel</Link>
             )}
           </div>
           {!services || services.length === 0 ? (
-            <p className="text-sm text-graphite-400">Aucune prestation.</p>
+            <p className="text-sm text-graphite-400">Aucun entretien ponctuel.</p>
           ) : (
             <ul className="space-y-2 text-sm">
               {services.map((s) => (

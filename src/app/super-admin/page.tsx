@@ -15,10 +15,12 @@ export default async function SuperAdminDashboard() {
   const admin = createAdminClient();
   const supportAttention = await getSupportAttentionCount();
 
-  const [{ data: workspaces }, wsCount, userCount, { data: recent }] = await Promise.all([
+  const [{ data: workspaces }, wsCount, userCount, contractCount, recordedServiceCount, { data: recent }] = await Promise.all([
     admin.from("workspaces").select("id, name, company_code, status, city, created_at").order("created_at", { ascending: false }),
     admin.from("workspaces").select("id", { count: "exact", head: true }),
     admin.from("memberships").select("id", { count: "exact", head: true }),
+    admin.from("service_series").select("id", { count: "exact", head: true }).eq("recurrence_kind", "weekly_contract"),
+    admin.from("services").select("id", { count: "exact", head: true }),
     admin.from("activity_logs").select("id, action, summary, actor_label, created_at, workspace_id").order("created_at", { ascending: false }).limit(15),
   ]);
 
@@ -44,10 +46,12 @@ export default async function SuperAdminDashboard() {
       </header>
 
       <main className="mx-auto max-w-6xl px-5 py-8">
-        <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-3">
+        <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
           <Stat label="Espaces" value={wsCount.count ?? 0} />
           <Stat label="Espaces actifs" value={active} />
           <Stat label="Utilisateurs" value={userCount.count ?? 0} />
+          <Stat label="Contrats entretien" value={contractCount.count ?? 0} />
+          <Stat label="Passages enregistrés" value={recordedServiceCount.count ?? 0} />
         </div>
 
         <h2 className="leti-eyebrow mb-3">Espaces</h2>

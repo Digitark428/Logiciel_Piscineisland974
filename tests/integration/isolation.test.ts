@@ -17,8 +17,8 @@ const READY = Boolean(URL && ANON && SERVICE);
 const admin = READY ? createClient(URL!, SERVICE!, { auth: { persistSession: false } }) : null;
 
 const rnd = Math.random().toString(36).slice(2, 8);
-const A = { email: `iso-a-${rnd}@example.test`, password: "Password123!", userId: "", workspaceId: "", clientId: "", membershipId: "", poolId: "", serviceId: "", cancelledServiceId: "", seriesId: "", recurringServiceId: "", financialId: "", employeeEmail: `iso-member-${rnd}@example.test`, employeeUserId: "", employeeMembershipId: "", noteId: "", communityPostId: "" };
-const B = { email: `iso-b-${rnd}@example.test`, password: "Password123!", userId: "", workspaceId: "", clientId: "", membershipId: "", poolId: "", serviceId: "", cancelledServiceId: "", seriesId: "", recurringServiceId: "", financialId: "", employeeEmail: "", employeeUserId: "", employeeMembershipId: "", noteId: "", communityPostId: "" };
+const A = { email: `iso-a-${rnd}@example.test`, password: "Password123!", userId: "", workspaceId: "", clientId: "", membershipId: "", poolId: "", serviceId: "", cancelledServiceId: "", seriesId: "", weeklySeriesId: "", recurringServiceId: "", financialId: "", documentId: "", employeeEmail: `iso-member-${rnd}@example.test`, employeeUserId: "", employeeMembershipId: "", noteId: "", communityPostId: "" };
+const B = { email: `iso-b-${rnd}@example.test`, password: "Password123!", userId: "", workspaceId: "", clientId: "", membershipId: "", poolId: "", serviceId: "", cancelledServiceId: "", seriesId: "", weeklySeriesId: "", recurringServiceId: "", financialId: "", documentId: "", employeeEmail: "", employeeUserId: "", employeeMembershipId: "", noteId: "", communityPostId: "" };
 
 async function setupTenant(t: typeof A, name: string) {
   const { data: created } = await admin!.auth.admin.createUser({ email: t.email, password: t.password, email_confirm: true });
@@ -33,6 +33,11 @@ async function setupTenant(t: typeof A, name: string) {
   t.clientId = client!.id;
   const { data: pool } = await admin!.from("pools").insert({ workspace_id: t.workspaceId, client_id: t.clientId, name: "Pool" }).select("id").single();
   t.poolId = pool!.id;
+  const { data: document } = await admin!.from("documents")
+    .insert({ workspace_id: t.workspaceId, entity_type: "client", entity_id: t.clientId, category: "contract", name: "Contrat", storage_path: `${t.workspaceId}/contract.pdf` })
+    .select("id")
+    .single();
+  t.documentId = document!.id;
   const { data: service } = await admin!.from("services").insert({ workspace_id: t.workspaceId, client_id: t.clientId, pool_id: t.poolId, assigned_membership_id: t.membershipId, scheduled_date: "2026-08-17" }).select("id").single();
   t.serviceId = service!.id;
   const { data: financial } = await admin!.from("service_financials")
@@ -59,11 +64,30 @@ async function setupTenant(t: typeof A, name: string) {
     assigned_membership_id: t.membershipId,
     series_id: t.seriesId,
     kind: "recurring",
+    occurrence_date: `2026-08-${day}`,
     scheduled_date: `2026-08-${day}`,
   }))).select("id");
   t.recurringServiceId = recurringServices![0].id;
   await admin!.from("service_financials")
     .insert({ workspace_id: t.workspaceId, client_id: t.clientId, financial_kind: "monthly_contract", service_series_id: t.seriesId, amount_cents: 20000 });
+  const { data: weeklySeries } = await admin!.from("service_series")
+    .insert({
+      workspace_id: t.workspaceId,
+      client_id: t.clientId,
+      service_type: "pool_maintenance",
+      mode: "frequency",
+      frequency: "weekly",
+      recurrence_kind: "weekly_contract",
+      recurrence_weekday: 1,
+      starts_on: "2026-08-03",
+      assigned_membership_id: t.membershipId,
+      status: "active",
+    })
+    .select("id")
+    .single();
+  t.weeklySeriesId = weeklySeries!.id;
+  await admin!.from("service_financials")
+    .insert({ workspace_id: t.workspaceId, client_id: t.clientId, financial_kind: "monthly_contract", service_series_id: t.weeklySeriesId, amount_cents: 30000 });
   const { data: note } = await admin!.from("team_notes")
     .insert({ workspace_id: t.workspaceId, author_membership_id: t.membershipId, content: `Note privée ${name}` })
     .select("id")
@@ -91,9 +115,10 @@ describe.skipIf(!READY)("Isolation multi-tenant (RLS)", () => {
       p_first: "Employé",
       p_last: "TenantA",
       p_email: A.employeeEmail,
-      p_permission_keys: ["clients.view", "services.view", "services.create", "services.edit", "services.complete"],
+      p_permission_keys: ["clients.view", "services.view", "services.complete"],
     });
     A.employeeMembershipId = membershipId!;
+    await admin!.from("services").update({ assigned_membership_id: A.employeeMembershipId }).eq("id", A.recurringServiceId);
   }, 30000);
 
   afterAll(async () => {
@@ -148,6 +173,12 @@ describe.skipIf(!READY)("Isolation multi-tenant (RLS)", () => {
     const badTask = await admin!.from("service_tasks").insert({ workspace_id: A.workspaceId, service_id: B.serviceId, label: "Intrus" });
     expect(badTask.error).toBeTruthy();
 
+    const badSeriesDocument = await admin!.from("service_series").update({ contract_document_id: B.documentId }).eq("id", A.weeklySeriesId);
+    expect(badSeriesDocument.error).toBeTruthy();
+
+    const rewrittenOccurrence = await admin!.from("services").update({ occurrence_date: "2026-09-30" }).eq("id", A.recurringServiceId);
+    expect(rewrittenOccurrence.error).toBeTruthy();
+
     const badFinancial = await admin!.from("service_financials")
       .insert({ workspace_id: A.workspaceId, client_id: A.clientId, financial_kind: "one_off", service_id: B.serviceId, amount_cents: 1 });
     expect(badFinancial.error).toBeTruthy();
@@ -172,8 +203,9 @@ describe.skipIf(!READY)("Isolation multi-tenant (RLS)", () => {
     const metrics = await asA.rpc("financial_dashboard_metrics", { p_workspace_id: A.workspaceId, p_month: "2026-08-01" }).single();
     expect(metrics.error).toBeNull();
     const metricValues = metrics.data as { recurring_cents: number; one_off_cents: number } | null;
-    // Les quatre passages récurrents ne comptent qu'une fois : 200 € / mois.
-    expect(metricValues?.recurring_cents).toBe(20000);
+    // Les quatre passages historiques ne comptent qu'une fois (200 €), et le
+    // contrat hebdomadaire paresseux compte aussi sans occurrence créée (300 €).
+    expect(metricValues?.recurring_cents).toBe(50000);
     // La prestation annulée à 180 € est exclue.
     expect(metricValues?.one_off_cents).toBe(90000);
   });
@@ -197,6 +229,25 @@ describe.skipIf(!READY)("Isolation multi-tenant (RLS)", () => {
     expect((service.data as any)?.service_financials ?? []).toHaveLength(0);
     expect((client.data as any)?.service_financials ?? []).toHaveLength(0);
     expect(metrics.data ?? []).toHaveLength(0);
+  });
+
+  it("un technicien assigné peut commenter son passage sans modifier le planning", async () => {
+    const asEmployee = createClient(URL!, ANON!, { auth: { persistSession: false } });
+    await asEmployee.auth.signInWithPassword({ email: A.employeeEmail, password: A.password });
+
+    const comment = await asEmployee.from("services")
+      .update({ notes: "Commentaire du passage" })
+      .eq("id", A.recurringServiceId)
+      .select("notes")
+      .single();
+    expect(comment.error).toBeNull();
+    expect(comment.data?.notes).toBe("Commentaire du passage");
+
+    const planning = await asEmployee.from("services")
+      .update({ scheduled_date: "2026-09-01" })
+      .eq("id", A.recurringServiceId)
+      .select("scheduled_date");
+    expect(planning.error).toBeTruthy();
   });
 
   it("un admin ne peut pas lire les données financières d'un autre workspace", async () => {

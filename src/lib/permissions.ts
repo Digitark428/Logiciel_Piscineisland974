@@ -52,14 +52,14 @@ export const PERMISSION_GROUPS: {
     ],
   },
   {
-    label: "Prestations",
+    label: "Entretiens",
     items: [
-      { key: "services.view", label: "Consulter les prestations" },
-      { key: "services.create", label: "Créer des prestations" },
-      { key: "services.edit", label: "Modifier des prestations" },
-      { key: "services.complete", label: "Réaliser / terminer une prestation" },
+      { key: "services.view", label: "Consulter les entretiens" },
+      { key: "services.create", label: "Créer des entretiens" },
+      { key: "services.edit", label: "Modifier les entretiens" },
+      { key: "services.complete", label: "Réaliser / terminer un entretien" },
       { key: "planning.view", label: "Consulter le planning" },
-      { key: "map.view", label: "Voir la carte des prestations" },
+      { key: "map.view", label: "Voir la carte des entretiens" },
     ],
   },
   {

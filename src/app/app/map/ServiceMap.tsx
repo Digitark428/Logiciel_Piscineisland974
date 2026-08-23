@@ -15,12 +15,13 @@ export interface MapPoint {
 
 export interface MapService {
   id: string;
+  href: string;
   code: string;
   serviceType: string;
   date: string;
   time: string;
   sortKey: string;
-  status: "planned" | "in_progress" | "completed" | "cancelled";
+  status: "planned" | "in_progress" | "completed" | "postponed" | "cancelled";
   assigneeId: string | null;
   assignee: string;
 }
@@ -37,13 +38,15 @@ const STATUS_COLORS: Record<MapService["status"], string> = {
   planned: "#2563eb", // bleu piscine
   in_progress: "#f59e0b", // ambre
   completed: "#10b981", // vert
+  postponed: "#f97360", // corail
   cancelled: "#9ca3af", // gris
 };
 
 const STATUS_LABELS: Record<MapService["status"], string> = {
-  planned: "Planifiée",
+  planned: "À faire",
   in_progress: "En cours",
-  completed: "Terminée",
+  completed: "Terminé",
+  postponed: "Reporté",
   cancelled: "Annulée",
 };
 
@@ -73,7 +76,7 @@ function popupHtml(p: MapPoint): string {
   const services = p.services.map((service) => {
     const when = [service.date, service.time].filter(Boolean).join(" à ");
     return `
-      <a href="/app/services/${service.id}" style="display:block;margin-top:6px;border:1px solid #e5e7eb;border-radius:8px;padding:7px 8px;text-decoration:none">
+      <a href="${esc(service.href)}" style="display:block;margin-top:6px;border:1px solid #e5e7eb;border-radius:8px;padding:7px 8px;text-decoration:none">
         <div style="font-size:12px;font-weight:600;color:#111827">${esc(service.serviceType)}</div>
         <div style="font-size:11px;color:#6b7280;margin-top:2px">${esc(STATUS_LABELS[service.status])}${when ? ` · ${esc(when)}` : ""}${service.code ? ` · ${esc(service.code)}` : ""}</div>
       </a>`;
@@ -82,7 +85,7 @@ function popupHtml(p: MapPoint): string {
     <div style="min-width:210px;max-width:280px">
       <div style="font-weight:600;color:#111827">${esc(p.client)}</div>
       ${p.address ? `<div style="font-size:12px;color:#6b7280;margin-top:2px">${esc(p.address)}</div>` : ""}
-      <div style="margin-top:9px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">Prestations (${p.services.length})</div>
+      <div style="margin-top:9px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">Entretiens (${p.services.length})</div>
       ${services}
       <div style="display:flex;gap:6px;margin-top:8px">
         <a href="${wazeUrl}" target="_blank" rel="noopener noreferrer"
@@ -113,6 +116,7 @@ function matchesFilters(
 function markerStatus(services: MapService[]): MapService["status"] {
   return services.find((service) => service.status === "in_progress")?.status
     ?? services.find((service) => service.status === "planned")?.status
+    ?? services.find((service) => service.status === "postponed")?.status
     ?? services.find((service) => service.status === "completed")?.status
     ?? "cancelled";
 }
@@ -226,15 +230,17 @@ export function ServiceMap({
           <option value="all">Toutes</option>
           <option value="planned">Planifiées</option>
           <option value="in_progress">En cours</option>
+          <option value="postponed">Reportés</option>
           <option value="completed">Terminées</option>
+          <option value="cancelled">Annulées</option>
         </select>
         <span className="text-sm text-graphite-500">
-          {filtered.length} point{filtered.length > 1 ? "s" : ""} · {visibleServiceCount} prestation{visibleServiceCount > 1 ? "s" : ""}
+          {filtered.length} point{filtered.length > 1 ? "s" : ""} · {visibleServiceCount} entretien{visibleServiceCount > 1 ? "s" : ""}
         </span>
       </div>
 
       <div className="flex flex-wrap gap-4 text-xs text-graphite-600">
-        {(["planned", "in_progress", "completed"] as const).map((s) => (
+        {(["planned", "in_progress", "postponed", "completed"] as const).map((s) => (
           <span key={s} className="inline-flex items-center gap-1.5">
             <span
               className="inline-block h-3 w-3 rounded-full border-2 border-white"

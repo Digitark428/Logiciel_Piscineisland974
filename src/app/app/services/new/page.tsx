@@ -5,8 +5,9 @@ import { getClientOptions, getPoolOptions, getMemberOptions, getClientDocumentOp
 import { PageHeader } from "@/components/ui";
 import { ServiceForm } from "../ServiceForm";
 
-export default async function NewServicePage({ searchParams }: { searchParams: { client?: string; pool?: string } }) {
+export default async function NewServicePage({ searchParams }: { searchParams: { client?: string; pool?: string; kind?: string } }) {
   const ctx = await requirePermission("services.create");
+  const kind = searchParams.kind === "one_off" ? "one_off" : "contract";
   const supabase = createClient();
   const [clients, pools, members, documents] = await Promise.all([
     getClientOptions(supabase, ctx.workspace.id),
@@ -17,8 +18,11 @@ export default async function NewServicePage({ searchParams }: { searchParams: {
   return (
     <div className="mx-auto max-w-3xl">
       <Link href="/app/services" className="mb-4 inline-block text-sm text-graphite-500 hover:text-graphite-700">← Mes entretiens</Link>
-      <PageHeader title="Nouvelle prestation" subtitle="Ponctuelle, récurrente ou avec dates saisies manuellement." />
-      <ServiceForm clients={clients} pools={pools} members={members} documents={documents} defaultClientId={searchParams.client} defaultPoolId={searchParams.pool} isAdmin={ctx.isAdmin} />
+      <PageHeader
+        title={kind === "contract" ? "Nouveau contrat" : "Entretien ponctuel"}
+        subtitle={kind === "contract" ? "Planifiez un passage récurrent chaque semaine." : "Planifiez une intervention à une date précise."}
+      />
+      <ServiceForm kind={kind} clients={clients} pools={pools} members={members} documents={documents} defaultClientId={searchParams.client} defaultPoolId={searchParams.pool} isAdmin={ctx.isAdmin} />
     </div>
   );
 }

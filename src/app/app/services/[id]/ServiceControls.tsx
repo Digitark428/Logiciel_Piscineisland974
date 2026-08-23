@@ -4,37 +4,66 @@ import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ActionForm } from "@/components/forms/ActionForm";
 import { SubmitButton } from "@/components/forms/SubmitButton";
-import { setServiceStatus, toggleServiceTask, saveServiceReport } from "@/lib/actions/services";
-import type { ServiceTask } from "@/lib/db/types";
+import { saveServiceReport, setServiceStatus, setWeeklyOccurrenceStatus, toggleServiceTask, updateOccurrenceException } from "@/lib/actions/services";
+import type { ServiceStatus, ServiceTask } from "@/lib/db/types";
+
+export interface OccurrenceActionRef {
+  serviceId?: string;
+  seriesId?: string;
+  occurrenceDate?: string;
+}
 
 export function StatusActions({
-  serviceId,
+  occurrence,
   status,
   canComplete,
+  canEdit = false,
 }: {
-  serviceId: string;
-  status: string;
+  occurrence: OccurrenceActionRef;
+  status: ServiceStatus;
   canComplete: boolean;
+  canEdit?: boolean;
 }) {
   const [pending, start] = useTransition();
   const router = useRouter();
   if (!canComplete) return null;
 
-  const run = (s: "completed" | "planned") =>
+  const run = (nextStatus: ServiceStatus) =>
     start(async () => {
-      await setServiceStatus(serviceId, s);
-      router.refresh();
+      try {
+        const result = occurrence.serviceId
+          ? await setServiceStatus(occurrence.serviceId, nextStatus)
+          : await setWeeklyOccurrenceStatus(occurrence.seriesId!, occurrence.occurrenceDate!, nextStatus);
+        const materializedId = result.data?.serviceId;
+        if (result.ok && typeof materializedId === "string" && !occurrence.serviceId) {
+          router.replace(`/app/services/${materializedId}`);
+          return;
+        }
+        if (!result.ok) window.alert(result.message ?? "Action impossible.");
+        router.refresh();
+      } catch {
+        window.alert("Action impossible. Vérifiez votre connexion puis réessayez.");
+      }
     });
 
   return (
     <div className="flex flex-wrap gap-2">
-      {(status === "planned" || status === "in_progress") && (
-        <button disabled={pending} onClick={() => run("completed")} className="btn-primary bg-emerald-600 hover:bg-emerald-700">
-          ✓ Terminer la prestation
+      {status === "planned" && (
+        <button type="button" disabled={pending} onClick={() => run("in_progress")} className="btn-secondary">Démarrer</button>
+      )}
+      {(status === "planned" || status === "in_progress" || status === "postponed") && (
+        <button type="button" disabled={pending} onClick={() => run("completed")} className="btn-primary bg-emerald-600 hover:bg-emerald-700">
+          ✓ Terminer l'entretien
         </button>
       )}
       {status === "completed" && (
-        <button disabled={pending} onClick={() => run("planned")} className="btn-secondary">Rouvrir la prestation</button>
+        <button type="button" disabled={pending} onClick={() => run("planned")} className="btn-secondary">Rouvrir l'entretien</button>
+      )}
+      {canEdit && status !== "cancelled" && status !== "completed" && (
+        <button type="button" disabled={pending} onClick={() => run("cancelled")} className="btn-secondary text-red-700">Annuler ce passage</button>
+      )}
+      {canEdit && status === "cancelled" && (
+        <button type="button" disabled={pending} onClick={() => run("planned")} className="btn-secondary">Rétablir le passage</button>
       )}
     </div>
   );
@@ -97,14 +126,33 @@ export function TasksChecklist({
   );
 }
 
-export function ReportForm({ serviceId, report }: { serviceId: string; report: string | null }) {
+export function ReportForm({ occurrence, report, notes }: { occurrence: OccurrenceActionRef; report: string | null; notes?: string | null }) {
   return (
     <ActionForm action={saveServiceReport} successMessage="Compte-rendu enregistré.">
-      <input type="hidden" name="id" value={serviceId} />
-      <textarea name="report" rows={4} className="input" defaultValue={report ?? ""} placeholder="Observations, produits utilisés, remarques…" />
+      {occurrence.serviceId && <input type="hidden" name="id" value={occurrence.serviceId} />}
+      {occurrence.seriesId && <input type="hidden" name="series_id" value={occurrence.seriesId} />}
+      {occurrence.occurrenceDate && <input type="hidden" name="occurrence_date" value={occurrence.occurrenceDate} />}
+      <label className="label" htmlFor="occurrence-notes">Commentaire de ce passage</label>
+      <textarea id="occurrence-notes" name="notes" rows={3} className="input" defaultValue={notes ?? ""} placeholder="Remarque propre à cette semaine…" />
+      <label className="label mt-4" htmlFor="occurrence-report">Compte-rendu</label>
+      <textarea id="occurrence-report" name="report" rows={4} className="input" defaultValue={report ?? ""} placeholder="Observations, produits utilisés, remarques…" />
       <div className="mt-3 flex justify-end">
         <SubmitButton>Enregistrer le compte-rendu</SubmitButton>
       </div>
+    </ActionForm>
+  );
+}
+
+export function ExceptionForm({ occurrence, scheduledDate }: { occurrence: OccurrenceActionRef; scheduledDate: string }) {
+  return (
+    <ActionForm action={updateOccurrenceException} successMessage="Passage mis à jour.">
+      {occurrence.serviceId && <input type="hidden" name="id" value={occurrence.serviceId} />}
+      {occurrence.seriesId && <input type="hidden" name="series_id" value={occurrence.seriesId} />}
+      {occurrence.occurrenceDate && <input type="hidden" name="occurrence_date" value={occurrence.occurrenceDate} />}
+      <label className="label" htmlFor="exception-date">Date exceptionnelle</label>
+      <input id="exception-date" name="scheduled_date" type="date" required className="input" defaultValue={scheduledDate} />
+      <p className="mt-1 text-xs text-graphite-400">Ce déplacement ne modifie pas le jour hebdomadaire du contrat.</p>
+      <div className="mt-3 flex justify-end"><SubmitButton>Enregistrer l'exception</SubmitButton></div>
     </ActionForm>
   );
 }

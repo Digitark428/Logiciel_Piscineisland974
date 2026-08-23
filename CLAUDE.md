@@ -75,7 +75,7 @@ Next.js 14 (App Router) · TypeScript strict · Supabase (Postgres + Auth + Stor
 suppression d'un projet/déploiement, changement d'une cible d'infra). Là on prévient d'abord.
 
 ## 5. Migrations base de données — RÈGLE IMPORTANTE
-- Les migrations sont des fichiers **numérotés** dans `supabase/migrations/` (`0001` … actuellement `0025`).
+- Les migrations sont des fichiers **numérotés** dans `supabase/migrations/` ; la dernière appliquée est `20260823074205_lock_recurring_occurrence_identity` (fichier local `20260823074139_lock_recurring_occurrence_identity.sql`).
   - `0014` (assistance app users) avait été appliquée en base sans être commitée : fichier restauré.
   - `0015` documents.category + liens prestation↔contrat/facture ; `0016` champs d'accès client structurés ;
     `0017` confidentialité des tâches + table `team_notes` ; `0018` `service_client_notes` (notes portail client) ;
@@ -100,6 +100,7 @@ suppression d'un projet/déploiement, changement d'une cible d'infra). Là on pr
 - Permissions granulaires : `src/lib/permissions.ts` (doit rester synchro avec la fonction SQL `permission_keys()`).
 - Server Actions par domaine dans `src/lib/actions/`. Retour standard `ActionResult` + `ActionForm`.
 - Notifications = **in-app uniquement** (pas de Resend/email en V1).
+- Contrats d'entretien : une règle `weekly_contract` vit dans `service_series`; les passages sont calculés à la lecture et matérialisés dans `services` seulement lors d'un statut, commentaire, compte-rendu ou déplacement. `occurrence_date` reste nominale et `scheduled_date` porte l'exception.
 
 ### ⭐ Évolutions majeures (série de modifications, migrations 0015→0021)
 - **Mode démo SUPPRIMÉ** : plus de route `/demo`, bouton, `seed_demo_data`, `is_demo`, ni `resetDemo`/`enterDemo`.
@@ -165,7 +166,7 @@ suppression d'un projet/déploiement, changement d'une cible d'infra). Là on pr
 - `npm run bootstrap` : (re)crée Super Admin + workspace démo (nécessite les variables `.env`).
 
 ## 9. État actuel
-V1 complète, **déployée et fonctionnelle** en production. Base Supabase créée, dernière migration appliquée `20260823063815_optimize_rls_auth_initplans`,
+V1 complète, **déployée et fonctionnelle** en production. Base Supabase créée, dernière migration appliquée `20260823074205_lock_recurring_occurrence_identity`,
 sécurisée, avec Super Admin. **Mode démo entièrement retiré** (code + base). Reste (optionnel) :
 changer le mot de passe Super Admin, supprimer l'ancien projet Vercel `piscineisland-logiciel` + sa base,
 retirer les variables `DEMO_*` de Vercel, brancher un domaine perso.

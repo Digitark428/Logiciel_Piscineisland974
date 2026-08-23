@@ -13,13 +13,14 @@ import {
   SERVICE_STATUS_LABELS,
 } from "@/lib/utils/format";
 import { formatMoneyCents } from "@/lib/utils/money";
+import { serviceTypeLabel, weekdayLabel } from "@/lib/services/constants";
 
 export default async function ClientDetailPage({ params }: { params: { id: string } }) {
   const ctx = await requirePermission("clients.view");
   const supabase = createClient();
 
   const canViewDocs = can(ctx, "documents.view");
-  const [clientRes, poolsRes, servicesRes, docsRes, financialsRes] = await Promise.all([
+  const [clientRes, poolsRes, contractsRes, servicesRes, docsRes, financialsRes] = await Promise.all([
     supabase
       .from("clients")
       .select("id, first_name, last_name, company_name, phone, email, address_line1, address_line2, postal_code, city, status, access_portal_code, access_code, access_details, notes, portal_token, portal_enabled, private_code_hash")
@@ -27,21 +28,24 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
       .eq("workspace_id", ctx.workspace.id)
       .maybeSingle(),
     supabase.from("pools").select("id, name, pool_type, city, water_treatment").eq("client_id", params.id).eq("workspace_id", ctx.workspace.id),
-    supabase.from("services").select("id, code, scheduled_date, status, service_type").eq("client_id", params.id).eq("workspace_id", ctx.workspace.id).order("scheduled_date", { ascending: false }).limit(10),
+    supabase.from("service_series").select("id,service_type,recurrence_weekday,starts_on,ends_on,status,assigned_membership_id,assignee:memberships!service_series_assigned_membership_id_fkey(first_name,last_name,email,role,job_title,photo_path)").eq("client_id", params.id).eq("workspace_id", ctx.workspace.id).eq("recurrence_kind", "weekly_contract").order("created_at", { ascending: false }),
+    supabase.from("services").select("id,code,kind,occurrence_date,scheduled_date,status,service_type,notes,report").eq("client_id", params.id).eq("workspace_id", ctx.workspace.id).order("scheduled_date", { ascending: false }).limit(30),
     canViewDocs
       ? supabase.from("documents").select("id, name, size_bytes, created_at, storage_path, category").eq("workspace_id", ctx.workspace.id).eq("entity_type", "client").eq("entity_id", params.id).order("created_at", { ascending: false })
       : Promise.resolve({ data: [] as any[] }),
     ctx.isAdmin
-      ? supabase.from("service_financials").select("id, financial_kind, amount_cents, service:services(status)").eq("workspace_id", ctx.workspace.id).eq("client_id", params.id)
+      ? supabase.from("service_financials").select("id,financial_kind,amount_cents,service_series_id,service:services(status)").eq("workspace_id", ctx.workspace.id).eq("client_id", params.id)
       : Promise.resolve({ data: [] as any[] }),
   ]);
   const client = clientRes.data;
   if (!client) notFound();
 
   const pools = poolsRes.data ?? [];
+  const maintenanceContracts = contractsRes.data ?? [];
   const services = servicesRes.data ?? [];
   const financials = (financialsRes.data ?? []) as any[];
-  const contracts = financials.filter((financial) => financial.financial_kind === "monthly_contract");
+  const contractFinancials = financials.filter((financial) => financial.financial_kind === "monthly_contract");
+  const amountByContract = new Map(contractFinancials.map((financial) => [financial.service_series_id, Number(financial.amount_cents)]));
   const oneOffCents = financials
     .filter((financial) => financial.financial_kind === "one_off" && financial.service?.status !== "cancelled")
     .reduce((total, financial) => total + Number(financial.amount_cents ?? 0), 0);
@@ -140,23 +144,55 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
             )}
           </Card>
 
-          {/* Prestations */}
           <Card>
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-graphite-900">Prestations</h2>
+              <h2 className="text-lg font-semibold text-graphite-900">Contrats d'entretien</h2>
+              {can(ctx, "services.create") && <Link href={`/app/services/new?kind=contract&client=${client.id}`} className="text-sm font-medium text-pool-600 hover:text-pool-700">+ Nouveau contrat</Link>}
+            </div>
+            {maintenanceContracts.length === 0 ? (
+              <p className="py-4 text-center text-sm text-graphite-400">Aucun contrat d'entretien hebdomadaire.</p>
+            ) : (
+              <ul className="divide-y divide-graphite-100">
+                {maintenanceContracts.map((contract) => {
+                  const assignee = Array.isArray((contract as any).assignee) ? (contract as any).assignee[0] : (contract as any).assignee;
+                  const amount = amountByContract.get(contract.id);
+                  return (
+                    <li key={contract.id}>
+                      <Link href={`/app/services/contracts/${contract.id}`} className="flex flex-wrap items-center justify-between gap-3 -mx-2 rounded-lg px-2 py-3 hover:bg-graphite-50">
+                        <div>
+                          <div className="font-medium text-graphite-900">{serviceTypeLabel(contract.service_type)} · chaque {weekdayLabel(contract.recurrence_weekday).toLocaleLowerCase("fr")}</div>
+                          <div className="mt-0.5 text-sm text-graphite-500">Depuis le {formatDate(contract.starts_on)}{contract.ends_on ? ` · jusqu'au ${formatDate(contract.ends_on)}` : ""}{assignee ? ` · ${[assignee.first_name, assignee.last_name].filter(Boolean).join(" ") || assignee.email}` : ""}</div>
+                          {ctx.isAdmin && amount !== undefined && <div className="mt-1 text-xs font-semibold text-graphite-700">{formatMoneyCents(amount)} / mois</div>}
+                        </div>
+                        <Badge tone={contract.status}>{contract.status === "active" ? "Actif" : contract.status === "paused" ? "Suspendu" : "Terminé"}</Badge>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </Card>
+
+          {/* Historique des entretiens réellement enregistrés */}
+          <Card>
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-graphite-900">Historique des entretiens</h2>
               {can(ctx, "services.create") && (
-                <Link href={`/app/services/new?client=${client.id}`} className="text-sm font-medium text-pool-600 hover:text-pool-700">+ Nouvelle</Link>
+                <Link href={`/app/services/new?kind=one_off&client=${client.id}`} className="text-sm font-medium text-pool-600 hover:text-pool-700">+ Entretien ponctuel</Link>
               )}
             </div>
             {services.length === 0 ? (
-              <p className="py-4 text-center text-sm text-graphite-400">Aucune prestation.</p>
+              <p className="py-4 text-center text-sm text-graphite-400">Aucun passage réalisé, commenté ou modifié.</p>
             ) : (
               <ul className="divide-y divide-graphite-100">
                 {services.map((s) => (
                   <li key={s.id}>
                     <Link href={`/app/services/${s.id}`} className="flex items-center gap-3 py-3 hover:bg-graphite-50 -mx-2 px-2 rounded-lg">
                       <div className="w-28 text-sm text-graphite-500">{formatDate(s.scheduled_date)}</div>
-                      <div className="flex-1 truncate font-medium text-graphite-900">{s.service_type ?? "Prestation"}</div>
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate font-medium text-graphite-900">{serviceTypeLabel(s.service_type)}</div>
+                        {(s.notes || s.report) && <div className="truncate text-xs text-graphite-400">{s.notes || s.report}</div>}
+                      </div>
                       <Badge tone={s.status}>{SERVICE_STATUS_LABELS[s.status]}</Badge>
                     </Link>
                   </li>
@@ -208,7 +244,7 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
             <Card>
               <h2 className="mb-3 text-base font-semibold text-graphite-900">Synthèse financière</h2>
               <dl className="space-y-3 text-sm">
-                {contracts.map((contract) => (
+                {contractFinancials.map((contract) => (
                   <div key={contract.id}>
                     <dt className="text-xs uppercase tracking-wide text-graphite-400">Contrat entretien</dt>
                     <dd className="mt-0.5 font-semibold text-graphite-900">{formatMoneyCents(Number(contract.amount_cents))} / mois</dd>
