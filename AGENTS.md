@@ -62,7 +62,7 @@ Un push sur la branche de production déclenche le déploiement Vercel. Vérifie
 - Notifications : in-app uniquement en V1 (pas d’e-mail/Resend).
 
 ## Base de données et migrations
-- Les migrations sont dans `supabase/migrations/` ; la dernière migration appliquée est `20260819065159_community_feed_indexes`.
+- Les migrations sont dans `supabase/migrations/` ; la dernière migration appliquée est `20260823063815_optimize_rls_auth_initplans` (fichier local `20260823062839_optimize_rls_auth_initplans.sql`).
 - Toute évolution de schéma doit créer une nouvelle migration numérotée : ne jamais modifier une migration existante.
 - Appliquer les migrations à la bonne base Supabase, vérifier concrètement le résultat (tables, colonnes, fonctions) et lancer les contrôles de sécurité/performance.
 - Après application, committer la migration afin de maintenir le dépôt et la base synchronisés.

@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, useState, useTransition } from "react";
+import { type FormEvent, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useFormState } from "react-dom";
 import { setTaskStatus, deleteTask } from "@/lib/actions/tasks";
@@ -30,7 +30,10 @@ interface TaskItem {
 export function TaskRow({ task, canToggle, canDelete }: { task: TaskItem; canToggle: boolean; canDelete: boolean }) {
   const [pending, start] = useTransition();
   const router = useRouter();
-  const done = task.status === "done";
+  const serverDone = task.status === "done";
+  const [done, setDone] = useState(serverDone);
+
+  useEffect(() => setDone(serverDone), [serverDone]);
 
   return (
     <li className="flex items-start gap-3 py-3">
@@ -38,7 +41,22 @@ export function TaskRow({ task, canToggle, canDelete }: { task: TaskItem; canTog
         type="checkbox"
         checked={done}
         disabled={!canToggle || pending}
-        onChange={() => start(async () => { await setTaskStatus(task.id, done ? "todo" : "done"); router.refresh(); })}
+        onChange={(event) => {
+          const nextDone = event.currentTarget.checked;
+          setDone(nextDone);
+          start(async () => {
+            try {
+              const result = await setTaskStatus(task.id, nextDone ? "done" : "todo");
+              if (!result.ok) {
+                setDone(!nextDone);
+                window.alert(result.message ?? "Action impossible.");
+              }
+            } catch {
+              setDone(!nextDone);
+              window.alert("Action impossible. Vérifiez votre connexion puis réessayez.");
+            }
+          });
+        }}
         className="mt-0.5 h-5 w-5 rounded border-graphite-300 text-pool-600"
       />
       <div className="min-w-0 flex-1">

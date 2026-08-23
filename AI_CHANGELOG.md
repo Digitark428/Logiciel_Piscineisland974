@@ -2,6 +2,14 @@
 
 > Ajouter une entrée courte après chaque intervention significative. Ne pas y dupliquer la documentation durable de `PROJECT_CONTEXT.md`.
 
+## 2026-08-23 — Codex — Audit et optimisations de performance LETI
+
+- **P0 :** préparation de l'exécution Vercel à Paris (`cdg1`) au plus près de Supabase `eu-west-3` ; le middleware valide désormais les JWT ES256 localement avec `getClaims`, tandis qu'une unique vérification distante `getUser` reste conservée côté serveur pour détecter immédiatement une session révoquée.
+- **Navigation et données :** prefetch sur intention desktop et tactile mobile avec expiration, requêtes indépendantes des fiches client/entretien parallélisées, sélections Supabase resserrées et URLs Storage de consultation signées en lot.
+- **Interactions :** cases des tâches générales et d'entretien mises à jour immédiatement, avec rollback et message en cas d'échec serveur.
+- **RLS :** migration non destructive `20260823062839_optimize_rls_auth_initplans` appliquée en production (ledger Supabase `20260823063815`) pour évaluer `auth.uid()` une fois par requête dans 14 policies, sans changer leurs rôles ni prédicats métier ; l'advisor `auth_rls_initplan` est revenu à zéro.
+- **Vérification :** lint, typecheck, build et 35 tests validés ; accueil, connexion et redirection privée contrôlés à 375 px et 1440 px sans débordement, overlay ni erreur console avec la configuration Supabase publique. Les advisors après migration ne remontent aucune nouvelle alerte ; la publication est déclenchée par le push de ce changement sur la branche de production.
+
 ## 2026-08-20 — Codex — Correctifs ciblés logo, menu et notifications
 
 - **Accueil :** le conteneur vertical du logo centre désormais explicitement le sigle officiel sur l’axe réel du mot-symbole ; contrôle navigateur mesuré à 0 px d’écart aux formats desktop et mobile.

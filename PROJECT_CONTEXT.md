@@ -13,7 +13,7 @@ LETI est le nom visible du SaaS de gestion destiné aux piscinistes, principalem
 - Les routes sont dans `src/app/`; les composants réutilisables dans `src/components/`.
 - Les actions serveur sont organisées par domaine dans `src/lib/actions/` et retournent le format `ActionResult`.
 - Les clients Supabase sont dans `src/lib/supabase/`; `admin.ts` utilise le service role côté serveur uniquement.
-- Les migrations SQL sont numérotées dans `supabase/migrations/` ; la dernière migration appliquée est `20260819065159_community_feed_indexes`.
+- Les migrations SQL sont numérotées dans `supabase/migrations/` ; la dernière migration appliquée est `20260823063815_optimize_rls_auth_initplans` (fichier local `20260823062839_optimize_rls_auth_initplans.sql`).
 - La V1 est exploitée uniquement à La Réunion : toute date métier sans heure (`YYYY-MM-DD`) doit être calculée dans le fuseau `Indian/Reunion` via `src/lib/utils/date.ts`, jamais avec `toISOString().slice(0, 10)`.
 
 ## Données, sécurité et autorisations
@@ -39,7 +39,7 @@ LETI est le nom visible du SaaS de gestion destiné aux piscinistes, principalem
 ## Intégrations et cibles autorisées
 
 - GitHub : `Digitark428/Logiciel_Piscineisland974`, branche de production `claude/piscine-island-saas-cvvhln`.
-- Vercel : `logiciel-piscineisland974-eu7f`, équipe `digitark428's projects` (`team_TpnBJ601cRvSklF9aTLzCa3R`).
+- Vercel : `logiciel-piscineisland974-eu7f`, équipe `digitark428's projects` (`team_TpnBJ601cRvSklF9aTLzCa3R`), Functions principales en région `cdg1`.
 - Production : https://logiciel-piscineisland974-eu7f.vercel.app
 - Supabase : projet `Piscine Island`, ref `umrjrpbritekqcfqkhxz`, région `eu-west-3`.
 - Ne jamais utiliser l'ancien projet Vercel `piscineisland-logiciel` ni une éventuelle base Supabase associée.

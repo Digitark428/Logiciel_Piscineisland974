@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requirePermission, can } from "@/lib/auth/context";
 import { createClient } from "@/lib/supabase/server";
-import { signedUrl, signedDownloadUrl } from "@/lib/storage";
+import { signedDownloadUrl, signedUrls } from "@/lib/storage";
 import { Card, Badge, Avatar } from "@/components/ui";
 import { ClientPortalCard } from "./ClientPortalCard";
 import { ArchiveButton, DeleteClientButton } from "./ClientActions";
@@ -18,25 +18,25 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
   const ctx = await requirePermission("clients.view");
   const supabase = createClient();
 
-  const { data: client } = await supabase
-    .from("clients")
-    .select("*")
-    .eq("id", params.id)
-    .eq("workspace_id", ctx.workspace.id)
-    .maybeSingle();
-  if (!client) notFound();
-
   const canViewDocs = can(ctx, "documents.view");
-  const [poolsRes, servicesRes, docsRes, financialsRes] = await Promise.all([
-    supabase.from("pools").select("id, name, pool_type, city, water_treatment").eq("client_id", client.id).eq("workspace_id", ctx.workspace.id),
-    supabase.from("services").select("id, code, scheduled_date, status, service_type").eq("client_id", client.id).eq("workspace_id", ctx.workspace.id).order("scheduled_date", { ascending: false }).limit(10),
+  const [clientRes, poolsRes, servicesRes, docsRes, financialsRes] = await Promise.all([
+    supabase
+      .from("clients")
+      .select("id, first_name, last_name, company_name, phone, email, address_line1, address_line2, postal_code, city, status, access_portal_code, access_code, access_details, notes, portal_token, portal_enabled, private_code_hash")
+      .eq("id", params.id)
+      .eq("workspace_id", ctx.workspace.id)
+      .maybeSingle(),
+    supabase.from("pools").select("id, name, pool_type, city, water_treatment").eq("client_id", params.id).eq("workspace_id", ctx.workspace.id),
+    supabase.from("services").select("id, code, scheduled_date, status, service_type").eq("client_id", params.id).eq("workspace_id", ctx.workspace.id).order("scheduled_date", { ascending: false }).limit(10),
     canViewDocs
-      ? supabase.from("documents").select("id, name, size_bytes, created_at, storage_path, category").eq("workspace_id", ctx.workspace.id).eq("entity_type", "client").eq("entity_id", client.id).order("created_at", { ascending: false })
+      ? supabase.from("documents").select("id, name, size_bytes, created_at, storage_path, category").eq("workspace_id", ctx.workspace.id).eq("entity_type", "client").eq("entity_id", params.id).order("created_at", { ascending: false })
       : Promise.resolve({ data: [] as any[] }),
     ctx.isAdmin
-      ? supabase.from("service_financials").select("id, financial_kind, amount_cents, service:services(status)").eq("workspace_id", ctx.workspace.id).eq("client_id", client.id)
+      ? supabase.from("service_financials").select("id, financial_kind, amount_cents, service:services(status)").eq("workspace_id", ctx.workspace.id).eq("client_id", params.id)
       : Promise.resolve({ data: [] as any[] }),
   ]);
+  const client = clientRes.data;
+  if (!client) notFound();
 
   const pools = poolsRes.data ?? [];
   const services = servicesRes.data ?? [];
@@ -53,16 +53,20 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
 
   // Documents du client (factures / contrats / autres), avec URLs signées consultation + téléchargement.
   const docRows = (docsRes.data ?? []) as any[];
-  const signedDocs: (FileEntry & { category: string })[] = await Promise.all(
-    docRows.map(async (d) => ({
+  const [viewUrls, downloadUrls] = await Promise.all([
+    signedUrls("documents", docRows.map((document) => document.storage_path)),
+    Promise.all(docRows.map((document) => signedDownloadUrl("documents", document.storage_path, document.name))),
+  ]);
+  const signedDocs: (FileEntry & { category: string })[] = docRows.map(
+    (d, index) => ({
       id: d.id,
       name: d.name,
       size_bytes: d.size_bytes,
       created_at: d.created_at,
       category: d.category ?? "other",
-      viewUrl: await signedUrl("documents", d.storage_path),
-      downloadUrl: await signedDownloadUrl("documents", d.storage_path, d.name),
-    })),
+      viewUrl: viewUrls.get(d.storage_path) ?? null,
+      downloadUrl: downloadUrls[index],
+    }),
   );
   const invoiceDocs = signedDocs.filter((d) => d.category === "invoice");
   const contractDocs = signedDocs.filter((d) => d.category === "contract");

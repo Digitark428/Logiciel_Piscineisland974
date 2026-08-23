@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requirePermission, can } from "@/lib/auth/context";
 import { createClient } from "@/lib/supabase/server";
-import { signedUrl } from "@/lib/storage";
+import { signedUrls } from "@/lib/storage";
 import { Card, Badge, Avatar } from "@/components/ui";
 import { MemberIdentity } from "@/components/members/MemberIdentity";
 import { StatusActions, TasksChecklist, ReportForm, GoThereButton } from "./ServiceControls";
@@ -14,12 +14,27 @@ export default async function ServiceDetailPage({ params }: { params: { id: stri
   const ctx = await requirePermission("services.view");
   const supabase = createClient();
 
-  const { data: service } = await supabase
-    .from("services")
-    .select("*, client:clients(*), pool:pools(*), assignee:memberships!services_assigned_membership_id_fkey(first_name,last_name,email,role,job_title,photo_path)")
-    .eq("id", params.id)
-    .eq("workspace_id", ctx.workspace.id)
-    .maybeSingle();
+  const [serviceRes, tasksRes, clientNotesRes] = await Promise.all([
+    supabase
+      .from("services")
+      .select("id, code, service_type, scheduled_date, scheduled_time, status, assigned_membership_id, kind, series_id, contract_document_id, invoice_document_id, report, completed_at, duration_min, notes, client:clients(id,first_name,last_name,company_name,phone,address_line1,postal_code,city,latitude,longitude,access_info), pool:pools(name,address_line1,postal_code,city,latitude,longitude), assignee:memberships!services_assigned_membership_id_fkey(first_name,last_name,email,role,job_title,photo_path)")
+      .eq("id", params.id)
+      .eq("workspace_id", ctx.workspace.id)
+      .maybeSingle(),
+    supabase
+      .from("service_tasks")
+      .select("id, workspace_id, service_id, label, done, position, created_at")
+      .eq("service_id", params.id)
+      .eq("workspace_id", ctx.workspace.id)
+      .order("position"),
+    supabase
+      .from("service_client_notes")
+      .select("id, content, is_important, created_at")
+      .eq("service_id", params.id)
+      .eq("workspace_id", ctx.workspace.id)
+      .order("created_at", { ascending: false }),
+  ]);
+  const service = serviceRes.data;
   if (!service) notFound();
 
   // Un membre ne voit que ses prestations assignées.
@@ -27,19 +42,17 @@ export default async function ServiceDetailPage({ params }: { params: { id: stri
     notFound();
   }
 
-  const [tasksRes, clientNotesRes, financialRes] = await Promise.all([
-    supabase
-      .from("service_tasks")
-      .select("*")
-      .eq("service_id", service.id)
-      .eq("workspace_id", ctx.workspace.id)
-      .order("position"),
-    supabase
-      .from("service_client_notes")
-      .select("id, content, is_important, created_at")
-      .eq("service_id", service.id)
-      .eq("workspace_id", ctx.workspace.id)
-      .order("created_at", { ascending: false }),
+  const tasks = tasksRes.data;
+  const clientNotes = clientNotesRes.data;
+
+  const client = (service as any).client;
+  const pool = (service as any).pool;
+  const assignee = (service as any).assignee;
+
+  // Finance et documents ne dépendent que de la prestation principale : ils
+  // partent ensemble dès qu'elle est connue, plutôt qu'en cascade.
+  const linkedIds = [service.contract_document_id, service.invoice_document_id].filter(Boolean) as string[];
+  const [financialRes, linkedDocsRes] = await Promise.all([
     ctx.isAdmin
       ? supabase
         .from("service_financials")
@@ -48,30 +61,27 @@ export default async function ServiceDetailPage({ params }: { params: { id: stri
         .eq(service.kind === "recurring" ? "service_series_id" : "service_id", service.kind === "recurring" ? service.series_id ?? "" : service.id)
         .maybeSingle()
       : Promise.resolve({ data: null }),
+    linkedIds.length > 0
+      ? supabase
+        .from("documents")
+        .select("id, name, storage_path")
+        .in("id", linkedIds)
+        .eq("workspace_id", ctx.workspace.id)
+      : Promise.resolve({ data: [] as any[] }),
   ]);
-  const tasks = tasksRes.data;
-  const clientNotes = clientNotesRes.data;
   const financialAmountCents = financialRes.data?.amount_cents ?? null;
 
-  const client = (service as any).client;
-  const pool = (service as any).pool;
-  const assignee = (service as any).assignee;
-
-  // Documents liés (contrat / facture) — noms + URL signée de consultation.
-  const linkedIds = [service.contract_document_id, service.invoice_document_id].filter(Boolean) as string[];
+  // Documents liés (contrat / facture) — noms + URLs signées en un seul lot.
   let contractDoc: { name: string; url: string | null } | null = null;
   let invoiceDoc: { name: string; url: string | null } | null = null;
   if (linkedIds.length > 0) {
-    const { data: linkedDocs } = await supabase
-      .from("documents")
-      .select("id, name, storage_path")
-      .in("id", linkedIds)
-      .eq("workspace_id", ctx.workspace.id);
+    const linkedDocs = linkedDocsRes.data;
     const byId = new Map((linkedDocs ?? []).map((d: any) => [d.id, d]));
+    const urlByPath = await signedUrls("documents", (linkedDocs ?? []).map((document: any) => document.storage_path));
     const cd = service.contract_document_id ? byId.get(service.contract_document_id) : null;
     const idoc = service.invoice_document_id ? byId.get(service.invoice_document_id) : null;
-    if (cd) contractDoc = { name: cd.name, url: await signedUrl("documents", cd.storage_path) };
-    if (idoc) invoiceDoc = { name: idoc.name, url: await signedUrl("documents", idoc.storage_path) };
+    if (cd) contractDoc = { name: cd.name, url: urlByPath.get(cd.storage_path) ?? null };
+    if (idoc) invoiceDoc = { name: idoc.name, url: urlByPath.get(idoc.storage_path) ?? null };
   }
 
   const address =

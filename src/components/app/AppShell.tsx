@@ -22,7 +22,7 @@ function NavigationLinks({
   items: NavItem[];
   pathname: string;
   onNavigate: (href: string, event: MouseEvent<HTMLAnchorElement>) => void;
-  onPrefetch: (href: string) => void;
+  onPrefetch: (href: string, immediate?: boolean) => void;
   onCancelPrefetch: (href: string) => void;
   pendingHref: string | null;
 }) {
@@ -59,6 +59,7 @@ function NavigationLinks({
             onClick={(event) => onNavigate(item.href, event)}
             onPointerEnter={() => onPrefetch(item.href)}
             onPointerLeave={() => onCancelPrefetch(item.href)}
+            onTouchStart={() => onPrefetch(item.href, true)}
             onFocus={() => onPrefetch(item.href)}
             onBlur={() => onCancelPrefetch(item.href)}
             aria-current={active ? "page" : undefined}
@@ -102,7 +103,7 @@ export function AppShell({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pendingHref, setPendingHref] = useState<string | null>(null);
-  const prefetchedRoutes = useRef(new Set<string>());
+  const prefetchedRoutes = useRef(new Map<string, number>());
   const queuedPrefetch = useRef<string | null>(null);
   const prefetchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const closeMenu = useCallback(() => setOpen(false), []);
@@ -119,8 +120,28 @@ export function AppShell({
     }
   }, []);
 
-  const prefetch = useCallback((href: string) => {
-    if (href === pathname || prefetchedRoutes.current.has(href)) return;
+  const prefetch = useCallback((href: string, immediate = false) => {
+    if (href === pathname) return;
+
+    const prefetchedAt = prefetchedRoutes.current.get(href);
+    if (prefetchedAt && Date.now() - prefetchedAt < 30_000) return;
+
+    const runPrefetch = (nextHref: string) => {
+      prefetchedRoutes.current.set(nextHref, Date.now());
+      router.prefetch(nextHref);
+    };
+
+    // Sur mobile, le touchstart laisse au routeur le temps de démarrer la
+    // préparation avant que le navigateur ne déclenche le clic.
+    if (immediate) {
+      queuedPrefetch.current = null;
+      if (prefetchTimer.current) {
+        clearTimeout(prefetchTimer.current);
+        prefetchTimer.current = null;
+      }
+      runPrefetch(href);
+      return;
+    }
 
     queuedPrefetch.current = href;
     if (prefetchTimer.current) clearTimeout(prefetchTimer.current);
@@ -129,10 +150,11 @@ export function AppShell({
       const nextHref = queuedPrefetch.current;
       queuedPrefetch.current = null;
       prefetchTimer.current = null;
-      if (!nextHref || prefetchedRoutes.current.has(nextHref)) return;
+      if (!nextHref) return;
 
-      prefetchedRoutes.current.add(nextHref);
-      router.prefetch(nextHref);
+      const lastPrefetchedAt = prefetchedRoutes.current.get(nextHref);
+      if (lastPrefetchedAt && Date.now() - lastPrefetchedAt < 30_000) return;
+      runPrefetch(nextHref);
     }, 120);
   }, [pathname, router]);
 
@@ -140,6 +162,9 @@ export function AppShell({
     // La navigation Next.js est déjà concurrente via Link ; cet état ne sert qu'à
     // donner un retour visuel immédiatement après le clic, avant le rendu suivant.
     setPendingHref(null);
+    // Une route visitée pourra être préparée à nouveau lors d'un prochain
+    // retour, notamment après une invalidation déclenchée par une mutation.
+    prefetchedRoutes.current.delete(pathname);
   }, [pathname]);
 
   useEffect(() => () => {
@@ -167,6 +192,7 @@ export function AppShell({
             onClick={(event) => navigate("/app", event)}
             onPointerEnter={() => prefetch("/app")}
             onPointerLeave={() => cancelPrefetch("/app")}
+            onTouchStart={() => prefetch("/app", true)}
             onFocus={() => prefetch("/app")}
             onBlur={() => cancelPrefetch("/app")}
           >
@@ -227,6 +253,7 @@ export function AppShell({
               onClick={(event) => navigate("/app/notifications", event)}
               onPointerEnter={() => prefetch("/app/notifications")}
               onPointerLeave={() => cancelPrefetch("/app/notifications")}
+              onTouchStart={() => prefetch("/app/notifications", true)}
               onFocus={() => prefetch("/app/notifications")}
               onBlur={() => cancelPrefetch("/app/notifications")}
               className="relative inline-flex h-10 w-10 shrink-0 overflow-visible btn-ghost p-2"

@@ -165,7 +165,7 @@ suppression d'un projet/déploiement, changement d'une cible d'infra). Là on pr
 - `npm run bootstrap` : (re)crée Super Admin + workspace démo (nécessite les variables `.env`).
 
 ## 9. État actuel
-V1 complète, **déployée et fonctionnelle** en production. Base Supabase créée, migrée (0001→0021),
+V1 complète, **déployée et fonctionnelle** en production. Base Supabase créée, dernière migration appliquée `20260823063815_optimize_rls_auth_initplans`,
 sécurisée, avec Super Admin. **Mode démo entièrement retiré** (code + base). Reste (optionnel) :
 changer le mot de passe Super Admin, supprimer l'ancien projet Vercel `piscineisland-logiciel` + sa base,
 retirer les variables `DEMO_*` de Vercel, brancher un domaine perso.

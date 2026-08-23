@@ -37,9 +37,11 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Valide localement la signature ES256 et l'expiration du JWT via le JWKS
+  // Supabase mis en cache. La vérification distante getUser() reste effectuée
+  // une seule fois dans le contexte serveur des routes privées afin de conserver
+  // la détection immédiate des sessions révoquées.
+  const { data: claimsData } = await supabase.auth.getClaims();
 
   const path = request.nextUrl.pathname;
 
@@ -52,7 +54,7 @@ export async function updateSession(request: NextRequest) {
     !path.startsWith("/super-admin/login") &&
     !path.startsWith("/super-admin/reset-password");
 
-  if ((isAppRoute || isSuperAdminApp) && !user) {
+  if ((isAppRoute || isSuperAdminApp) && !claimsData?.claims.sub) {
     const url = request.nextUrl.clone();
     url.pathname = isSuperAdminApp ? "/super-admin/login" : "/login";
     url.searchParams.set("redirect", path);

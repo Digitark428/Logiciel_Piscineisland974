@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ActionForm } from "@/components/forms/ActionForm";
 import { SubmitButton } from "@/components/forms/SubmitButton";
@@ -49,8 +49,14 @@ export function TasksChecklist({
   tasks: ServiceTask[];
   editable: boolean;
 }) {
-  const router = useRouter();
   const [pendingId, setPendingId] = useState<string | null>(null);
+  const [doneById, setDoneById] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(tasks.map((task) => [task.id, task.done])),
+  );
+
+  useEffect(() => {
+    setDoneById(Object.fromEntries(tasks.map((task) => [task.id, task.done])));
+  }, [tasks]);
 
   if (tasks.length === 0) return <p className="text-sm text-graphite-400">Aucune tâche.</p>;
 
@@ -61,17 +67,29 @@ export function TasksChecklist({
           <label className="flex cursor-pointer items-center gap-3 rounded-lg bg-graphite-50 px-3 py-2.5">
             <input
               type="checkbox"
-              checked={t.done}
+              checked={doneById[t.id] ?? t.done}
               disabled={!editable || pendingId === t.id}
               onChange={async (e) => {
+                const nextDone = e.currentTarget.checked;
+                const previousDone = doneById[t.id] ?? t.done;
+                setDoneById((current) => ({ ...current, [t.id]: nextDone }));
                 setPendingId(t.id);
-                await toggleServiceTask(t.id, serviceId, e.target.checked);
-                setPendingId(null);
-                router.refresh();
+                try {
+                  const result = await toggleServiceTask(t.id, serviceId, nextDone);
+                  if (!result.ok) {
+                    setDoneById((current) => ({ ...current, [t.id]: previousDone }));
+                    window.alert(result.message ?? "Action impossible.");
+                  }
+                } catch {
+                  setDoneById((current) => ({ ...current, [t.id]: previousDone }));
+                  window.alert("Action impossible. Vérifiez votre connexion puis réessayez.");
+                } finally {
+                  setPendingId(null);
+                }
               }}
               className="h-5 w-5 rounded border-graphite-300 text-pool-600"
             />
-            <span className={t.done ? "text-graphite-400 line-through" : "text-graphite-800"}>{t.label}</span>
+            <span className={(doneById[t.id] ?? t.done) ? "text-graphite-400 line-through" : "text-graphite-800"}>{t.label}</span>
           </label>
         </li>
       ))}

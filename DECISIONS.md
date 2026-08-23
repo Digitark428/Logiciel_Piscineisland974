@@ -49,3 +49,15 @@
 **Décision :** les changements publiés utilisent exclusivement la branche GitHub `claude/piscine-island-saas-cvvhln`, le projet Vercel `logiciel-piscineisland974-eu7f` et le projet Supabase `umrjrpbritekqcfqkhxz`.
 
 **Raison :** les anciens projets `piscineisland-logiciel` et leur base éventuelle sont obsolètes.
+
+## Proximité Vercel et Supabase
+
+**Décision :** les Functions principales Vercel s'exécutent en région `cdg1`, au plus près de Supabase `eu-west-3`.
+
+**Raison :** les lectures authentifiées font plusieurs appels serveur vers Supabase ; éviter un aller-retour transatlantique réduit directement la latence de navigation sans modifier la logique métier.
+
+## Validation des sessions dans le middleware
+
+**Décision :** le middleware valide localement la signature et l'expiration du JWT ES256 avec `getClaims`, tandis qu'au moins une vérification distante `getUser` reste conservée dans le contexte serveur authentifié.
+
+**Raison :** supprimer l'appel Auth redondant du middleware accélère chaque navigation privée, tout en conservant la détection immédiate d'une session révoquée avant l'accès aux données métier.
