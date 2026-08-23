@@ -50,6 +50,12 @@
 
 **Raison :** la migration `0019_remove_demo.sql` a supprimé cette mécanique de l'état actuel du projet.
 
+## Galerie de la communauté
+
+**Décision :** la galerie `/app/community/gallery` est une vue des lignes `community_post_media` existantes ; elle ne copie ni le fichier Storage ni ses métadonnées et régénère uniquement des URLs privées signées.
+
+**Raison :** conserver une source unique par photo, éviter les incohérences de suppression et maintenir l'isolation du bucket privé par entreprise.
+
 ## Cibles de production
 
 **Décision :** les changements publiés utilisent exclusivement la branche GitHub `claude/piscine-island-saas-cvvhln`, le projet Vercel `logiciel-piscineisland974-eu7f` et le projet Supabase `umrjrpbritekqcfqkhxz`.

@@ -7,7 +7,13 @@ import { actionContext, logActivity } from "@/lib/actions/helpers";
 import { fail, ok, type ActionResult } from "@/lib/actions/result";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { COMMUNITY_MORE_POSTS, getCommunityFeedPage } from "@/lib/community";
+import {
+  COMMUNITY_GALLERY_MORE_POSTS,
+  COMMUNITY_MORE_POSTS,
+  getCommunityFeedPage,
+  getCommunityGalleryPage,
+} from "@/lib/community";
+import { normalizeCommunitySearch } from "@/lib/community-search";
 import {
   COMMUNITY_REACTIONS,
   type CommunityCursor,
@@ -115,6 +121,7 @@ async function createCommunityPostImpl(formData: FormData): Promise<ActionResult
     summary: "Publication ajoutée dans Entre nous",
   });
   revalidatePath("/app/community");
+  revalidatePath("/app/community/gallery");
   return ok("Publication ajoutée.");
 }
 
@@ -150,6 +157,7 @@ export async function deleteCommunityPost(id: string): Promise<ActionResult> {
   if (paths.length > 0) await admin.storage.from("community-media").remove(paths);
   await logActivity(ctx, { action: "delete", entity_type: "community_post", entity_id: id, summary: "Publication supprimée dans Entre nous" });
   revalidatePath("/app/community");
+  revalidatePath("/app/community/gallery");
   return ok("Publication supprimée.");
 }
 
@@ -236,7 +244,7 @@ export async function deleteCommunityComment(id: string): Promise<ActionResult> 
   return ok("Commentaire supprimé.");
 }
 
-export async function loadMoreCommunityPosts(cursor: CommunityCursor) {
+export async function loadMoreCommunityPosts(cursor: CommunityCursor, rawSearch?: string) {
   const res = await actionContext();
   if ("error" in res) return { ok: false as const, message: res.error.message ?? "Session expirée." };
   const { ctx } = res;
@@ -245,9 +253,24 @@ export async function loadMoreCommunityPosts(cursor: CommunityCursor) {
   if (!parsed.success) return { ok: false as const, message: "Curseur invalide." };
 
   try {
-    const page = await getCommunityFeedPage(ctx, COMMUNITY_MORE_POSTS, parsed.data);
+    const page = await getCommunityFeedPage(ctx, COMMUNITY_MORE_POSTS, parsed.data, normalizeCommunitySearch(rawSearch));
     return { ok: true as const, ...page };
   } catch {
     return { ok: false as const, message: "Impossible de charger davantage de publications." };
+  }
+}
+
+export async function loadMoreCommunityGallery(cursor: CommunityCursor, rawSearch?: string) {
+  const res = await actionContext();
+  if ("error" in res) return { ok: false as const, message: res.error.message ?? "Session expirée." };
+  const { ctx } = res;
+  if (!can(ctx, "community.view")) return { ok: false as const, message: "Accès refusé." };
+  const parsed = cursorSchema.safeParse(cursor);
+  if (!parsed.success) return { ok: false as const, message: "Curseur invalide." };
+  try {
+    const page = await getCommunityGalleryPage(ctx, COMMUNITY_GALLERY_MORE_POSTS, parsed.data, normalizeCommunitySearch(rawSearch));
+    return { ok: true as const, ...page };
+  } catch {
+    return { ok: false as const, message: "Impossible de charger davantage de photos." };
   }
 }

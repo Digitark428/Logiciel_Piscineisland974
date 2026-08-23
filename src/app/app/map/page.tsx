@@ -2,11 +2,12 @@ import Link from "next/link";
 import { can, requirePermission } from "@/lib/auth/context";
 import { getMaintenanceOccurrences, occurrenceHref } from "@/lib/services/queries";
 import { createClient } from "@/lib/supabase/server";
-import { clientName, formatDate, formatTime, memberName } from "@/lib/utils/format";
+import { clientName, formatDate, formatTime, memberJobTitle, memberName } from "@/lib/utils/format";
 import { addCalendarDays } from "@/lib/services/recurrence";
 import { todayInReunion } from "@/lib/utils/date";
 import { PageHeader } from "@/components/ui";
 import { ServiceMap, type MapPoint, type MapService } from "./ServiceMap";
+import { signedUrls } from "@/lib/storage";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,7 @@ export default async function MapPage({ searchParams }: { searchParams: { date?:
     end: date,
     assignedMembershipId: seesAll ? undefined : ctx.membership.id,
   });
+  const avatarByPath = await signedUrls("avatars", occurrences.map((occurrence) => occurrence.assignee?.photo_path));
 
   const pointByAddress = new Map<string, MapPoint>();
   const assigneeMap = new Map<string, string>();
@@ -36,6 +38,7 @@ export default async function MapPage({ searchParams }: { searchParams: { date?:
       id: occurrence.key,
       href: occurrenceHref(occurrence),
       code: occurrence.code ?? "",
+      client: clientName(occurrence.client),
       serviceType: occurrence.serviceType,
       date: formatDate(occurrence.scheduledDate),
       time: occurrence.scheduledTime ? formatTime(occurrence.scheduledTime) : "",
@@ -43,8 +46,14 @@ export default async function MapPage({ searchParams }: { searchParams: { date?:
       status: occurrence.status,
       assigneeId: occurrence.assignedMembershipId,
       assignee,
+      assigneeShortName: occurrence.assignee?.first_name ?? assignee,
+      assigneeJobTitle: occurrence.assignee ? memberJobTitle({
+        job_title: occurrence.assignee.job_title,
+        role: occurrence.assignee.role === "admin" ? "admin" : "member",
+      }) ?? "" : "",
+      assigneeAvatarUrl: occurrence.assignee?.photo_path ? avatarByPath.get(occurrence.assignee.photo_path) ?? null : null,
     };
-    const pointKey = [occurrence.client.id, Number(lat).toFixed(6), Number(lng).toFixed(6), address].join(":");
+    const pointKey = [Number(lat).toFixed(6), Number(lng).toFixed(6), address.toLocaleLowerCase("fr")].join(":");
     const existing = pointByAddress.get(pointKey);
     if (existing) existing.services.push(service);
     else pointByAddress.set(pointKey, {
@@ -57,10 +66,14 @@ export default async function MapPage({ searchParams }: { searchParams: { date?:
     });
   }
 
-  const points = Array.from(pointByAddress.values()).map((point) => ({
-    ...point,
-    services: [...point.services].sort((left, right) => left.sortKey.localeCompare(right.sortKey)),
-  }));
+  const points = Array.from(pointByAddress.values()).map((point) => {
+    const clientNames = new Set(point.services.map((service) => service.client));
+    return {
+      ...point,
+      client: clientNames.size === 1 ? point.services[0].client : `${clientNames.size} clients`,
+      services: [...point.services].sort((left, right) => left.sortKey.localeCompare(right.sortKey)),
+    };
+  });
   const assignees = Array.from(assigneeMap.entries()).map(([id, name]) => ({ id, name }));
   const geocodedCount = points.reduce((count, point) => count + point.services.length, 0);
   const previous = addCalendarDays(date, -1) ?? date;

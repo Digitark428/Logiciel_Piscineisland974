@@ -52,6 +52,22 @@ export default async function PlanningPage({ searchParams }: { searchParams: { v
         title="Planning"
         description="Retrouvez l'ensemble des entretiens programmés de votre équipe."
       />
+      <fieldset className="card mb-5 p-4">
+        <legend className="px-1 text-sm font-semibold text-graphite-800">Type de prestation</legend>
+        <div className="grid gap-2 sm:grid-cols-3">
+          <button type="button" aria-pressed="true" className="min-h-11 rounded-xl border border-pool-300 bg-pool-50 px-3 py-2 text-left text-sm font-semibold text-graphite-900">
+            Entretien
+          </button>
+          {(["Chantier", "Dépannage"] as const).map((label) => (
+            <button key={label} type="button" disabled className="min-h-11 cursor-not-allowed rounded-xl border border-graphite-100 bg-white px-3 py-2 text-left text-sm text-graphite-500 opacity-80">
+              <span className="flex flex-wrap items-center justify-between gap-2">
+                <span>{label}</span>
+                <span className="leti-development-badge inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide">En développement</span>
+              </span>
+            </button>
+          ))}
+        </div>
+      </fieldset>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Link href={link(view, prev)} className="btn-secondary px-3">‹</Link>
@@ -68,15 +84,6 @@ export default async function PlanningPage({ searchParams }: { searchParams: { v
           ))}
         </div>
       </div>
-
-      {can(ctx, "services.create") && (
-        <div className="mb-4">
-          <div className="flex flex-wrap gap-2">
-            <Link href="/app/services/new?kind=contract" className="btn-primary">+ Nouveau contrat</Link>
-            <Link href="/app/services/new?kind=one_off" className="btn-secondary">+ Entretien ponctuel</Link>
-          </div>
-        </div>
-      )}
 
       {view === "day" && <DayView services={byDate.get(toISO(anchor)) ?? []} />}
       {view === "week" && <WeekView start={startOfWeek(anchor)} byDate={byDate} />}

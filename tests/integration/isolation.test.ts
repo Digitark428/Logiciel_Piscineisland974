@@ -101,6 +101,12 @@ async function setupTenant(t: typeof A, name: string) {
     .select("id")
     .single();
   t.communityPostId = communityPost!.id;
+  await admin!.from("community_post_media").insert({
+    workspace_id: t.workspaceId,
+    post_id: t.communityPostId,
+    storage_path: `${t.workspaceId}/posts/${t.communityPostId}/0.webp`,
+    position: 0,
+  });
 }
 
 describe.skipIf(!READY)("Isolation multi-tenant (RLS)", () => {
@@ -115,7 +121,7 @@ describe.skipIf(!READY)("Isolation multi-tenant (RLS)", () => {
       p_first: "Employé",
       p_last: "TenantA",
       p_email: A.employeeEmail,
-      p_permission_keys: ["clients.view", "services.view", "services.complete"],
+      p_permission_keys: ["clients.view", "services.view", "services.complete", "tasks.view"],
     });
     A.employeeMembershipId = membershipId!;
     await admin!.from("services").update({ assigned_membership_id: A.employeeMembershipId }).eq("id", A.recurringServiceId);
@@ -172,6 +178,15 @@ describe.skipIf(!READY)("Isolation multi-tenant (RLS)", () => {
 
     const badTask = await admin!.from("service_tasks").insert({ workspace_id: A.workspaceId, service_id: B.serviceId, label: "Intrus" });
     expect(badTask.error).toBeTruthy();
+
+    const badAssignedTask = await admin!.from("tasks").insert({
+      workspace_id: A.workspaceId,
+      created_by: A.membershipId,
+      assigned_membership_id: B.membershipId,
+      category: "professional",
+      title: "Intrusion inter-workspace",
+    });
+    expect(badAssignedTask.error).toBeTruthy();
 
     const badSeriesDocument = await admin!.from("service_series").update({ contract_document_id: B.documentId }).eq("id", A.weeklySeriesId);
     expect(badSeriesDocument.error).toBeTruthy();
@@ -262,6 +277,40 @@ describe.skipIf(!READY)("Isolation multi-tenant (RLS)", () => {
     expect(metrics.data ?? []).toHaveLength(0);
   });
 
+  it("préserve la confidentialité des to-do personnelles et leurs priorités", async () => {
+    const asA = createClient(URL!, ANON!, { auth: { persistSession: false } });
+    const asEmployee = createClient(URL!, ANON!, { auth: { persistSession: false } });
+    await Promise.all([
+      asA.auth.signInWithPassword({ email: A.email, password: A.password }),
+      asEmployee.auth.signInWithPassword({ email: A.employeeEmail, password: A.password }),
+    ]);
+
+    const employeeTask = await asEmployee.from("tasks").insert({
+      workspace_id: A.workspaceId,
+      created_by: A.employeeMembershipId,
+      category: "personal",
+      title: "To-do strictement privée",
+      priority: "very_urgent",
+      due_date: "2026-08-25",
+      due_time: "07:30",
+    }).select("id,priority,due_time").single();
+    expect(employeeTask.error).toBeNull();
+    expect(employeeTask.data?.priority).toBe("very_urgent");
+    expect(employeeTask.data?.due_time).toBe("07:30:00");
+
+    const adminRead = await asA.from("tasks").select("id").eq("id", employeeTask.data!.id);
+    expect(adminRead.data ?? []).toHaveLength(0);
+
+    const invalidPriority = await asEmployee.from("tasks").insert({
+      workspace_id: A.workspaceId,
+      created_by: A.employeeMembershipId,
+      category: "personal",
+      title: "Priorité invalide",
+      priority: "un jour peut-être",
+    });
+    expect(invalidPriority.error).toBeTruthy();
+  });
+
   it("les interactions de notes restent isolées et l'auteur est dérivé du compte connecté", async () => {
     const asA = createClient(URL!, ANON!, { auth: { persistSession: false } });
     await asA.auth.signInWithPassword({ email: A.email, password: A.password });
@@ -314,6 +363,16 @@ describe.skipIf(!READY)("Isolation multi-tenant (RLS)", () => {
 
     const hidden = await asA.from("community_posts").select("id").eq("workspace_id", B.workspaceId);
     expect(hidden.data ?? []).toHaveLength(0);
+
+    const search = await asA.from("community_posts").select("id,content").eq("workspace_id", A.workspaceId).ilike("content", "%TenantA%");
+    expect(search.error).toBeNull();
+    expect(search.data?.map((post) => post.id)).toContain(A.communityPostId);
+    expect(search.data?.map((post) => post.id)).not.toContain(B.communityPostId);
+
+    const gallery = await asA.from("community_post_media").select("post_id").eq("workspace_id", A.workspaceId);
+    expect(gallery.error).toBeNull();
+    expect(gallery.data?.map((media) => media.post_id)).toContain(A.communityPostId);
+    expect(gallery.data?.map((media) => media.post_id)).not.toContain(B.communityPostId);
 
     const directIntrusion = await asA.from("community_post_comments")
       .insert({ workspace_id: B.workspaceId, post_id: B.communityPostId, author_membership_id: B.membershipId, content: "Intrusion" });

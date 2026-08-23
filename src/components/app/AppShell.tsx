@@ -7,7 +7,7 @@ import { Logo } from "@/components/Logo";
 import { Avatar } from "@/components/ui";
 import { Icon } from "./icons";
 import { signOut } from "@/lib/auth/actions";
-import type { NavItem } from "./nav";
+import { isNavGroup, type NavEntry, type NavItem } from "./nav";
 import { cn } from "@/lib/utils/cn";
 import { WorkspaceIdentity } from "./WorkspaceIdentity";
 
@@ -19,61 +19,98 @@ function NavigationLinks({
   onCancelPrefetch,
   pendingHref,
 }: {
-  items: NavItem[];
+  items: NavEntry[];
   pathname: string;
   onNavigate: (href: string, event: MouseEvent<HTMLAnchorElement>) => void;
   onPrefetch: (href: string, immediate?: boolean) => void;
   onCancelPrefetch: (href: string) => void;
   pendingHref: string | null;
 }) {
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(() => Object.fromEntries(
+    items.filter(isNavGroup).map((group) => [group.key, group.children.some((item) => pathname.startsWith(item.href))]),
+  ));
+
+  useEffect(() => {
+    setExpandedGroups((current) => {
+      const next = { ...current };
+      for (const entry of items) {
+        if (isNavGroup(entry) && entry.children.some((item) => pathname.startsWith(item.href))) next[entry.key] = true;
+      }
+      return next;
+    });
+  }, [items, pathname]);
+
+  const renderItem = (item: NavItem, nested = false) => {
+    const active = item.href === "/app" ? pathname === "/app" : pathname === item.href || pathname.startsWith(`${item.href}/`);
+    const isPending = pendingHref === item.href;
+    if (item.development) {
+      const tone = item.developmentTone === "aqua" ? "aqua" : "coral";
+      return (
+        <div
+          key={item.href}
+          className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-graphite-600 transition hover:bg-graphite-100 hover:text-graphite-900"
+          aria-label={`${item.label} — En développement`}
+        >
+          <Icon name={item.icon} size={19} />
+          <span className="min-w-0 leading-tight">
+            <span className="block truncate">{item.label}</span>
+            {item.description && <span className="mt-0.5 block truncate text-[11px] font-normal text-graphite-500">{item.description}</span>}
+            <span className={cn("leti-development-badge mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide", tone === "aqua" && "leti-development-badge--aqua")}>En développement</span>
+          </span>
+        </div>
+      );
+    }
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        prefetch={false}
+        onClick={(event) => onNavigate(item.href, event)}
+        onPointerEnter={() => onPrefetch(item.href)}
+        onPointerLeave={() => onCancelPrefetch(item.href)}
+        onTouchStart={() => onPrefetch(item.href, true)}
+        onFocus={() => onPrefetch(item.href)}
+        onBlur={() => onCancelPrefetch(item.href)}
+        aria-current={active ? "page" : undefined}
+        className={cn(
+          "flex min-h-11 items-center gap-3 rounded-xl border-l-2 border-transparent px-3 py-2.5 text-sm font-medium transition",
+          nested && "ml-3 pl-4 text-[13px]",
+          (active && !pendingHref) || isPending
+            ? "border-coral-500 bg-pool-50 text-graphite-900"
+            : "text-graphite-600 hover:bg-graphite-100 hover:text-graphite-900",
+          isPending && "opacity-80",
+        )}
+      >
+        <Icon name={item.icon} size={nested ? 17 : 19} />
+        {item.label}
+      </Link>
+    );
+  };
+
   return (
     <nav className="space-y-1.5">
-      {items.map((item) => {
-        const active = item.href === "/app" ? pathname === "/app" : pathname.startsWith(item.href);
-        const isPending = pendingHref === item.href;
-        if (item.development) {
-          const tone = item.developmentTone === "aqua" ? "aqua" : "coral";
-          return (
-            <div
-              key={item.href}
-              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-graphite-600 transition hover:bg-graphite-100 hover:text-graphite-900"
-              aria-label={`${item.label} — En développement`}
-            >
-              <Icon name={item.icon} size={19} />
-              <span className="min-w-0 leading-tight">
-                <span className="block truncate">{item.label}</span>
-                {item.description && <span className="mt-0.5 block truncate text-[11px] font-normal text-graphite-500">{item.description}</span>}
-                <span className={cn("leti-development-badge mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide", tone === "aqua" && "leti-development-badge--aqua")}>En développement</span>
-              </span>
-            </div>
-          );
-        }
+      {items.map((entry) => {
+        if (!isNavGroup(entry)) return renderItem(entry);
+        const expanded = expandedGroups[entry.key] ?? false;
+        const active = entry.children.some((item) => pathname === item.href || pathname.startsWith(`${item.href}/`));
         return (
-          <Link
-            key={item.href}
-            href={item.href}
-            // Les préchargements automatiques de tous les liens visibles provoquaient
-            // une rafale de requêtes au chargement. Une intention de navigation claire
-            // (survol ou focus maintenu) suffit pour préparer la destination utile.
-            prefetch={false}
-            onClick={(event) => onNavigate(item.href, event)}
-            onPointerEnter={() => onPrefetch(item.href)}
-            onPointerLeave={() => onCancelPrefetch(item.href)}
-            onTouchStart={() => onPrefetch(item.href, true)}
-            onFocus={() => onPrefetch(item.href)}
-            onBlur={() => onCancelPrefetch(item.href)}
-            aria-current={active ? "page" : undefined}
-            className={cn(
-              "flex items-center gap-3 rounded-xl border-l-2 border-transparent px-3 py-2.5 text-sm font-medium transition",
-              (active && !pendingHref) || isPending
-                ? "border-coral-500 bg-pool-50 text-graphite-900"
-                : "text-graphite-600 hover:bg-graphite-100 hover:text-graphite-900",
-              isPending && "opacity-80",
-            )}
-          >
-            <Icon name={item.icon} size={19} />
-            {item.label}
-          </Link>
+          <div key={entry.key}>
+            <button
+              type="button"
+              onClick={() => setExpandedGroups((current) => ({ ...current, [entry.key]: !expanded }))}
+              aria-expanded={expanded}
+              aria-controls={`nav-group-${entry.key}`}
+              className={cn(
+                "flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition",
+                active ? "bg-graphite-50 text-graphite-900" : "text-graphite-600 hover:bg-graphite-100 hover:text-graphite-900",
+              )}
+            >
+              <Icon name={entry.icon} size={19} />
+              <span className="min-w-0 flex-1 truncate">{entry.label}</span>
+              <span aria-hidden className={cn("text-xs transition-transform", expanded && "rotate-180")}>⌄</span>
+            </button>
+            {expanded && <div id={`nav-group-${entry.key}`} className="mt-1 space-y-1">{entry.children.map((item) => renderItem(item, true))}</div>}
+          </div>
         );
       })}
     </nav>
@@ -90,7 +127,7 @@ export function AppShell({
   notifCount,
   children,
 }: {
-  items: NavItem[];
+  items: NavEntry[];
   workspaceName: string;
   companyCode: string;
   userName: string;

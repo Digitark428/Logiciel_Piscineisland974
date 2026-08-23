@@ -13,7 +13,7 @@ LETI est le nom visible du SaaS de gestion destiné aux piscinistes, principalem
 - Les routes sont dans `src/app/`; les composants réutilisables dans `src/components/`.
 - Les actions serveur sont organisées par domaine dans `src/lib/actions/` et retournent le format `ActionResult`.
 - Les clients Supabase sont dans `src/lib/supabase/`; `admin.ts` utilise le service role côté serveur uniquement.
-- Les migrations SQL sont numérotées dans `supabase/migrations/` ; la dernière migration appliquée est `20260823074205_lock_recurring_occurrence_identity` (fichier local `20260823074139_lock_recurring_occurrence_identity.sql`).
+- Les migrations SQL sont numérotées dans `supabase/migrations/` ; la dernière migration appliquée est `20260823183746_task_creator_index_order` (fichier local `20260823183735_task_creator_index_order.sql`).
 - La V1 est exploitée uniquement à La Réunion : toute date métier sans heure (`YYYY-MM-DD`) doit être calculée dans le fuseau `Indian/Reunion` via `src/lib/utils/date.ts`, jamais avec `toISOString().slice(0, 10)`.
 
 ## Données, sécurité et autorisations
@@ -28,9 +28,12 @@ LETI est le nom visible du SaaS de gestion destiné aux piscinistes, principalem
 ## Fonctionnalités actuellement présentes
 
 - Gestion des clients, piscines, contrats d'entretien hebdomadaires, entretiens ponctuels, planning, équipe, tâches, documents, sauvegardes, notifications internes et journal d'activité. Les revenus restent réservés au gérant : montant par entretien ponctuel, montant mensuel unique par contrat et synthèse financière admin-only du tableau de bord.
+- « Tâches & Notes » est organisé en trois routes : `/app/tasks/personal`, `/app/tasks/assign` et `/app/tasks/notes`. Les to-do personnelles restent invisibles aux autres membres, y compris au gérant, et portent une priorité obligatoire (`very_urgent`, `urgent`, `not_urgent`) ainsi qu'une date et une heure facultatives.
 - Les contrats hebdomadaires sont des règles durables dans `service_series` ; leurs passages futurs sont calculés à la lecture. Une ligne `services` n'est créée que lors d'un statut, commentaire, compte-rendu ou déplacement, avec `occurrence_date` immuable comme date nominale et `scheduled_date` comme éventuelle exception. Les anciennes séries restent `legacy` et leur historique n'est pas réécrit.
 - Les notes d'équipe disposent d'interactions append-only isolées par entreprise : lectures, exécutions et commentaires (`team_note_reads`, `team_note_executions`, `team_note_comments`), avec contrôle RLS et trigger d'intégrité tenant.
-- « Entre nous » est le fil interne privé d'une entreprise : publications texte/photos, réactions, commentaires et pagination par curseur. Les contenus et médias sont isolés par `workspace_id`, RLS et un trigger d'intégrité tenant ; le bucket `community-media` reste privé.
+- « Entre nous » est le fil interne privé d'une entreprise : publications texte/photos, hashtags cliquables, recherche serveur, réactions, commentaires et pagination par curseur. La galerie `/app/community/gallery` lit les médias existants sans les dupliquer et signe leurs URLs privées par lot. Les contenus et médias sont isolés par `workspace_id`, RLS et un trigger d'intégrité tenant ; le bucket `community-media` reste privé.
+- La carte quotidienne représente les techniciens par photo ou initiales, conserve un repère neutre pour les passages non assignés et empile les identités lorsque plusieurs intervenants partagent une adresse.
+- La navigation principale possède deux groupes repliables, « Tâches & Notes » et « Gestion » ; les fonctions futures Chantiers, Dépannages, Comptabilité et LETI IA restent non interactives et marquées « En développement » juste avant Paramètres.
 - La fonction d'équipe (`memberships.job_title`) est distincte du rôle de sécurité (`admin` / `member`) et affichée avec l'identité du membre, avec le repli « Gérant » pour les administrateurs sans fonction renseignée.
 - Portail client sous `/portal/[token]`, avec consultations d'interventions, notes client et assistance intégrée. L'assistance des utilisateurs de l'application est un volet flottant distinct, disponible uniquement dans `/app` ; le Super Admin distingue les deux origines.
 - Super Admin séparé sous `/super-admin`.

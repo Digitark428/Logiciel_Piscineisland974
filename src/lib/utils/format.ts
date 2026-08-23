@@ -6,6 +6,28 @@ export function clientName(c: Pick<Client, "first_name" | "last_name" | "company
   return n || "Client sans nom";
 }
 
+function personNameCase(value: string): string {
+  return value
+    .trim()
+    .toLocaleLowerCase("fr-FR")
+    .replace(/(^|[\s'’\-])([\p{L}])/gu, (_match, separator: string, letter: string) => `${separator}${letter.toLocaleUpperCase("fr-FR")}`);
+}
+
+/** Nom opérationnel très lisible, sans jamais modifier la donnée stockée. */
+export function operationalClientName(
+  c: Pick<Client, "first_name" | "last_name" | "company_name">,
+): string {
+  const firstName = c.first_name?.trim();
+  const lastName = c.last_name?.trim();
+  if (firstName || lastName) {
+    return [
+      firstName ? personNameCase(firstName) : null,
+      lastName ? lastName.toLocaleUpperCase("fr-FR") : null,
+    ].filter(Boolean).join(" ");
+  }
+  return c.company_name?.trim() || "Client sans nom";
+}
+
 export function memberName(
   m: Partial<Pick<Membership, "first_name" | "last_name" | "email">>,
 ): string {
@@ -42,6 +64,19 @@ export function formatDate(iso: string | null | undefined): string {
   const d = new Date(iso.length <= 10 ? iso + "T00:00:00" : iso);
   if (Number.isNaN(d.getTime())) return "—";
   return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+export function formatDateWithWeekday(iso: string | null | undefined): string {
+  if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return "—";
+  const date = new Date(`${iso}T00:00:00.000Z`);
+  if (Number.isNaN(date.getTime())) return "—";
+  const value = new Intl.DateTimeFormat("fr-FR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    timeZone: "UTC",
+  }).format(date);
+  return value.charAt(0).toLocaleUpperCase("fr-FR") + value.slice(1);
 }
 
 export function formatDateTime(iso: string | null | undefined): string {

@@ -2,6 +2,14 @@
 
 > Ajouter une entrée courte après chaque intervention significative. Ne pas y dupliquer la documentation durable de `PROJECT_CONTEXT.md`.
 
+## 2026-08-23 — Codex — Mise à jour fonctionnelle et ergonomique LETI
+
+- **Pilotage et entretiens :** tableau de bord recentré sur les passages du jour, nom opérationnel `Prénom NOM`, cartes avec identité du technicien et statut renforcé ; vue Services harmonisée et Planning limité à Entretien avec Chantier/Dépannage annoncés en développement.
+- **Tâches & Notes :** séparation en trois routes personnelles, attribuées et notes. La to-do privée reçoit priorité obligatoire, date/heure facultatives, groupes repliables et tri ouvert/échéance ; les tâches attribuées affichent photo, nom et fonction. Les échanges de notes sont désormais inline et chargés à la demande.
+- **Communauté, carte et navigation :** hashtags cliquables, recherche serveur par contenu/auteur, galerie privée paginée sans duplication avec lightbox ; repères cartographiques par photo/initiales et piles multi-intervenants ; menus repliables « Tâches & Notes » et « Gestion », plus les quatre fonctions futures avant Paramètres.
+- **Base et sécurité :** migrations `task_priorities_and_due_time` et `task_creator_index_order` appliquées en production (dernier ledger `20260823183746`). Les 2 tâches existantes sont conservées en `not_urgent`, le trigger inter-tenant est `SECURITY DEFINER` à `search_path` fixé et non exécutable par l'API ; test live RLS à zéro ligne étrangère/personnelle et advisor Tâches sans alerte.
+- **Vérification :** typecheck, lint, build de production et 50 tests unitaires validés ; 18 tests d'intégration restent conditionnels aux secrets locaux. La session navigateur disponible n'était pas authentifiée pour inspecter les écrans privés avant publication.
+
 ## 2026-08-23 — Codex — Contrats d'entretien hebdomadaires paresseux
 
 - **Métier :** « Mes entretiens » devient une vraie vue semaine sans limite de navigation, avec création distincte d'un contrat hebdomadaire ou d'un entretien ponctuel. Le contrat ne demande ni piscine, ni heure, ni durée ; les statuts, commentaires, comptes-rendus et déplacements restent propres à chaque passage.

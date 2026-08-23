@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { clientName, memberName, initials, formatMoney } from "@/lib/utils/format";
+import { clientName, memberName, initials, formatMoney, formatDateWithWeekday, operationalClientName } from "@/lib/utils/format";
 
 describe("Formatage", () => {
   it("clientName privilégie l'entreprise puis le nom", () => {
@@ -22,5 +22,14 @@ describe("Formatage", () => {
     const s = formatMoney(120);
     expect(s).toContain("120");
     expect(s).toMatch(/€/);
+  });
+
+  it("rend le nom opérationnel sous la forme Prénom NOM", () => {
+    expect(operationalClientName({ company_name: "ACME", first_name: "jEAN", last_name: "pAyEt" })).toBe("Jean PAYET");
+    expect(operationalClientName({ company_name: "Piscines Ouest", first_name: null, last_name: null })).toBe("Piscines Ouest");
+  });
+
+  it("ajoute le jour de la semaine sans décalage de fuseau", () => {
+    expect(formatDateWithWeekday("2026-08-23")).toBe("Dimanche 23 août");
   });
 });

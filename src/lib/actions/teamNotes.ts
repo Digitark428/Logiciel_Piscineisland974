@@ -10,6 +10,11 @@ function canUseTeamNotes(ctx: SessionContext) {
   return can(ctx, "tasks.view");
 }
 
+function revalidateTeamNotes() {
+  revalidatePath("/app/tasks");
+  revalidatePath("/app/tasks/notes");
+}
+
 /**
  * Notes d'équipe — communication interne. Tout membre peut créer une note ;
  * la suppression est réservée à l'auteur ou au gérant (RLS 0017). workspace_id et
@@ -31,7 +36,7 @@ export async function createTeamNote(_prev: ActionResult, formData: FormData): P
   });
   if (error) return fail("Enregistrement impossible.");
   await logActivity(ctx, { action: "create", entity_type: "team_note", summary: "Note d'équipe ajoutée" });
-  revalidatePath("/app/tasks");
+  revalidateTeamNotes();
   return ok("Note ajoutée.");
 }
 
@@ -43,7 +48,7 @@ export async function deleteTeamNote(id: string): Promise<ActionResult> {
   // La RLS autorise la suppression uniquement à l'auteur ou au gérant.
   const { error } = await supabase.from("team_notes").delete().eq("id", id).eq("workspace_id", ctx.workspace.id);
   if (error) return fail("Suppression impossible.");
-  revalidatePath("/app/tasks");
+  revalidateTeamNotes();
   return ok("Note supprimée.");
 }
 
@@ -64,7 +69,7 @@ export async function markTeamNoteRead(id: string): Promise<ActionResult> {
     { onConflict: "team_note_id,membership_id", ignoreDuplicates: true },
   );
   if (error) return fail("Impossible d'enregistrer la lecture.");
-  revalidatePath("/app/tasks");
+  revalidateTeamNotes();
   return ok();
 }
 
@@ -85,7 +90,7 @@ export async function markTeamNoteExecuted(id: string): Promise<ActionResult> {
     { onConflict: "team_note_id,membership_id", ignoreDuplicates: true },
   );
   if (error) return fail("Impossible d'enregistrer l'exécution.");
-  revalidatePath("/app/tasks");
+  revalidateTeamNotes();
   return ok();
 }
 
@@ -107,6 +112,6 @@ export async function createTeamNoteComment(id: string, rawContent: string): Pro
     content,
   });
   if (error) return fail("Impossible de publier le commentaire.");
-  revalidatePath("/app/tasks");
+  revalidateTeamNotes();
   return ok();
 }

@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { requireContext, can } from "@/lib/auth/context";
 import { createClient } from "@/lib/supabase/server";
-import { Card, StatCard, Badge, EmptyState, PageHeader } from "@/components/ui";
-import { clientName, formatDate, formatTime, SERVICE_STATUS_LABELS } from "@/lib/utils/format";
+import { Card, StatCard, Badge, PageHeader } from "@/components/ui";
+import { formatDate, formatDateWithWeekday, formatTime, operationalClientName, SERVICE_STATUS_LABELS } from "@/lib/utils/format";
 import { todayInReunion } from "@/lib/utils/date";
 import { FinancialCarousel } from "@/components/app/FinancialCarousel";
-import { addCalendarDays } from "@/lib/services/recurrence";
 import { getMaintenanceOccurrences, occurrenceHref, type MaintenanceOccurrence } from "@/lib/services/queries";
+import { signedUrls } from "@/lib/storage";
+import { MemberIdentity } from "@/components/members/MemberIdentity";
 
 export default async function DashboardPage() {
   const ctx = await requireContext();
@@ -20,11 +21,9 @@ export default async function DashboardPage() {
   const applyScope = (q: any): any =>
     scopeMine ? q.eq("assigned_membership_id", ctx.membership.id) : q;
 
-  const upcomingEnd = addCalendarDays(today, 56) ?? today;
   const occurrenceScope = scopeMine ? ctx.membership.id : undefined;
-  const [todayServices, upcomingOccurrences, doneCountRes, inProgressRes, tasksRes, activityRes, financialRes] = await Promise.all([
+  const [todayServices, doneCountRes, inProgressRes, tasksRes, activityRes, financialRes] = await Promise.all([
     getMaintenanceOccurrences(supabase, { workspaceId: ctx.workspace.id, start: today, end: today, assignedMembershipId: occurrenceScope }),
-    getMaintenanceOccurrences(supabase, { workspaceId: ctx.workspace.id, start: addCalendarDays(today, 1) ?? today, end: upcomingEnd, assignedMembershipId: occurrenceScope }),
     applyScope(
       supabase.from("services").select("id", { count: "exact", head: true }).eq("workspace_id", ctx.workspace.id).eq("status", "completed"),
     ) as Promise<{ count: number | null }>,
@@ -40,13 +39,13 @@ export default async function DashboardPage() {
       : Promise.resolve({ data: null }),
   ]);
 
-  const upcoming = upcomingOccurrences.filter((occurrence) => occurrence.status !== "cancelled");
   const inProgress = inProgressRes.data ?? [];
   const tasks = tasksRes.data ?? [];
   const activity = activityRes.data ?? [];
   const financialMetrics = financialRes.data as { recurring_cents: number; one_off_cents: number } | null;
+  const avatarByPath = await signedUrls("avatars", todayServices.map((service) => service.assignee?.photo_path));
 
-  const cn2 = (service: MaintenanceOccurrence) => clientName(service.client);
+  const displayClient = (service: MaintenanceOccurrence) => operationalClientName(service.client);
 
   return (
     <div>
@@ -56,11 +55,12 @@ export default async function DashboardPage() {
         subtitle={`Bonjour ${ctx.membership.first_name ?? ""} 👋 · ${ctx.workspace.name}`}
       />
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
         <StatCard label="Aujourd'hui" value={todayServices.length} hint="entretiens" href="/app/planning" />
-        <StatCard label="À venir" value={upcoming.length} hint="prochaines" tone="graphite" href="/app/services" />
         <StatCard label="En cours" value={inProgress.length} hint="en intervention" tone="amber" />
-        <StatCard label="Terminées" value={doneCountRes.count ?? 0} hint="au total" tone="emerald" />
+        <div className="col-span-2 lg:col-span-1">
+          <StatCard label="Terminées" value={doneCountRes.count ?? 0} hint="au total" tone="emerald" />
+        </div>
       </div>
 
       {ctx.isAdmin && (
@@ -76,22 +76,34 @@ export default async function DashboardPage() {
         <div className="lg:col-span-2 space-y-6">
           <Card>
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-graphite-900">Entretiens du jour</h2>
+              <div>
+                <h2 className="text-lg font-semibold text-graphite-900">Entretiens du jour</h2>
+                <p className="mt-0.5 text-sm font-medium text-pool-700">{formatDateWithWeekday(today)}</p>
+              </div>
               <Link href="/app/planning" className="text-sm font-medium text-pool-600 hover:text-pool-700">Planning →</Link>
             </div>
             {todayServices.length === 0 ? (
               <p className="py-6 text-center text-sm text-graphite-400">Aucun entretien prévu aujourd'hui.</p>
             ) : (
-              <ul className="divide-y divide-graphite-100">
+              <ul className="grid gap-3 sm:grid-cols-2">
                 {todayServices.map((s) => (
                   <li key={s.key}>
-                    <Link href={occurrenceHref(s)} className="flex items-center gap-3 py-3 transition hover:bg-graphite-50 -mx-2 px-2 rounded-lg">
-                      {s.scheduledTime && <div className="w-14 text-sm font-semibold text-graphite-700">{formatTime(s.scheduledTime)}</div>}
-                      <div className="flex-1 min-w-0">
-                        <div className="truncate font-medium text-graphite-900">{cn2(s)}</div>
-                        <div className="truncate text-sm text-graphite-500">{s.serviceType}</div>
+                    <Link href={occurrenceHref(s)} className="block rounded-xl border border-graphite-100 bg-white px-4 py-3.5 transition hover:border-pool-200 hover:shadow-sm">
+                      <div className="text-lg font-bold leading-tight text-graphite-900 sm:text-xl">{displayClient(s)}</div>
+                      <div className="mt-2 min-w-0 text-sm text-graphite-500">
+                        <span className="truncate">{s.serviceType}</span>
+                        {s.scheduledTime && <span className="ml-2 font-medium text-graphite-600">· {formatTime(s.scheduledTime)}</span>}
                       </div>
-                      <Badge tone={s.status}>{SERVICE_STATUS_LABELS[s.status]}</Badge>
+                      <MemberIdentity
+                        member={s.assignee ?? { first_name: null, last_name: null, email: "Non assigné" }}
+                        avatarUrl={s.assignee?.photo_path ? avatarByPath.get(s.assignee.photo_path) ?? null : null}
+                        avatarSize={32}
+                        className="mt-4"
+                        nameClassName="text-sm"
+                      />
+                      <div className="mt-4 border-t border-graphite-100 pt-3">
+                        <Badge tone={s.status} className="px-3 py-1 text-sm font-semibold">{SERVICE_STATUS_LABELS[s.status]}</Badge>
+                      </div>
                     </Link>
                   </li>
                 ))}
@@ -99,22 +111,6 @@ export default async function DashboardPage() {
             )}
           </Card>
 
-          {upcoming.length > 0 && (
-            <Card>
-              <h2 className="mb-4 text-lg font-semibold text-graphite-900">Prochains entretiens</h2>
-              <ul className="divide-y divide-graphite-100">
-                {upcoming.slice(0, 6).map((s) => (
-                  <li key={s.key}>
-                    <Link href={occurrenceHref(s)} className="flex items-center gap-3 py-3 -mx-2 px-2 rounded-lg hover:bg-graphite-50">
-                      <div className="w-28 text-sm text-graphite-500">{formatDate(s.scheduledDate)}</div>
-                      <div className="flex-1 min-w-0 truncate font-medium text-graphite-900">{cn2(s)}</div>
-                      <div className="hidden truncate text-sm text-graphite-400 sm:block">{s.serviceType}</div>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </Card>
-          )}
         </div>
 
         <div className="space-y-6">
@@ -122,7 +118,7 @@ export default async function DashboardPage() {
             <Card>
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-graphite-900">Tâches</h2>
-                <Link href="/app/tasks" className="text-sm font-medium text-pool-600 hover:text-pool-700">Voir →</Link>
+                <Link href="/app/tasks/personal" className="text-sm font-medium text-pool-600 hover:text-pool-700">Voir →</Link>
               </div>
               {tasks.length === 0 ? (
                 <p className="py-4 text-center text-sm text-graphite-400">Aucune tâche en attente.</p>

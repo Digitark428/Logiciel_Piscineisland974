@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import "leaflet/dist/leaflet.css";
 import type { Map as LeafletMap, Marker, LayerGroup, DivIcon } from "leaflet";
+import { MAP_STATUS_COLORS, MAP_STATUS_LABELS, mapMarkerHtml, mapPopupHtml } from "./map-markers";
 
 export interface MapPoint {
   id: string;
@@ -17,6 +18,7 @@ export interface MapService {
   id: string;
   href: string;
   code: string;
+  client: string;
   serviceType: string;
   date: string;
   time: string;
@@ -24,6 +26,9 @@ export interface MapService {
   status: "planned" | "in_progress" | "completed" | "postponed" | "cancelled";
   assigneeId: string | null;
   assignee: string;
+  assigneeShortName: string;
+  assigneeJobTitle: string;
+  assigneeAvatarUrl: string | null;
 }
 
 interface AssigneeOption {
@@ -33,68 +38,6 @@ interface AssigneeOption {
 
 // Centre par défaut : Saint-Denis, La Réunion (974).
 const DEFAULT_CENTER: [number, number] = [-20.8823, 55.4504];
-
-const STATUS_COLORS: Record<MapService["status"], string> = {
-  planned: "#2563eb", // bleu piscine
-  in_progress: "#f59e0b", // ambre
-  completed: "#10b981", // vert
-  postponed: "#f97360", // corail
-  cancelled: "#9ca3af", // gris
-};
-
-const STATUS_LABELS: Record<MapService["status"], string> = {
-  planned: "À faire",
-  in_progress: "En cours",
-  completed: "Terminé",
-  postponed: "Reporté",
-  cancelled: "Annulée",
-};
-
-// Marqueur personnalisé « goutte d'eau / piscine » aux couleurs de LETI,
-// teinté selon le statut (jamais rouge). Épingle SVG + petite vague à l'intérieur.
-function markerHtml(status: MapService["status"]): string {
-  const color = STATUS_COLORS[status];
-  return `
-    <div style="position:relative;width:34px;height:44px;filter:drop-shadow(0 2px 3px rgba(15,23,42,.35))">
-      <svg width="34" height="44" viewBox="0 0 34 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M17 1C8.7 1 2 7.6 2 15.7 2 26 17 43 17 43s15-17 15-27.3C32 7.6 25.3 1 17 1z"
-              fill="${color}" stroke="#ffffff" stroke-width="2"/>
-        <circle cx="17" cy="15.5" r="8.5" fill="#ffffff"/>
-        <path d="M9.5 16.2c1 0 1-.9 2.1-.9s1.1.9 2.1.9 1-.9 2.1-.9 1.1.9 2.1.9 1-.9 2.1-.9 1.1.9 2.1.9"
-              stroke="${color}" stroke-width="1.6" stroke-linecap="round" fill="none"/>
-        <path d="M9.5 19.4c1 0 1-.9 2.1-.9s1.1.9 2.1.9 1-.9 2.1-.9 1.1.9 2.1.9 1-.9 2.1-.9 1.1.9 2.1.9"
-              stroke="${color}" stroke-width="1.6" stroke-linecap="round" fill="none" opacity=".55"/>
-      </svg>
-    </div>`;
-}
-
-function popupHtml(p: MapPoint): string {
-  const wazeUrl = `https://waze.com/ul?ll=${p.lat},${p.lng}&navigate=yes`;
-  const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}`;
-  const esc = (s: string) =>
-    s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-  const services = p.services.map((service) => {
-    const when = [service.date, service.time].filter(Boolean).join(" à ");
-    return `
-      <a href="${esc(service.href)}" style="display:block;margin-top:6px;border:1px solid #e5e7eb;border-radius:8px;padding:7px 8px;text-decoration:none">
-        <div style="font-size:12px;font-weight:600;color:#111827">${esc(service.serviceType)}</div>
-        <div style="font-size:11px;color:#6b7280;margin-top:2px">${esc(STATUS_LABELS[service.status])}${when ? ` · ${esc(when)}` : ""}${service.code ? ` · ${esc(service.code)}` : ""}</div>
-      </a>`;
-  }).join("");
-  return `
-    <div style="min-width:210px;max-width:280px">
-      <div style="font-weight:600;color:#111827">${esc(p.client)}</div>
-      ${p.address ? `<div style="font-size:12px;color:#6b7280;margin-top:2px">${esc(p.address)}</div>` : ""}
-      <div style="margin-top:9px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">Entretiens (${p.services.length})</div>
-      ${services}
-      <div style="display:flex;gap:6px;margin-top:8px">
-        <a href="${wazeUrl}" target="_blank" rel="noopener noreferrer"
-           style="flex:1;text-align:center;background:#2563eb;color:#fff;border-radius:8px;padding:6px 8px;font-size:12px;text-decoration:none">🚗 Waze</a>
-        <a href="${mapsUrl}" target="_blank" rel="noopener noreferrer"
-           style="flex:1;text-align:center;background:#f3f4f6;color:#111827;border-radius:8px;padding:6px 8px;font-size:12px;text-decoration:none">Maps</a>
-      </div>
-    </div>`;
-}
 
 interface VisiblePoint extends MapPoint {
   visibleServices: MapService[];
@@ -111,14 +54,6 @@ function matchesFilters(
   if (statusFilter === "active" && (service.status === "completed" || service.status === "cancelled")) return false;
   if (statusFilter !== "active" && statusFilter !== "all" && service.status !== statusFilter) return false;
   return true;
-}
-
-function markerStatus(services: MapService[]): MapService["status"] {
-  return services.find((service) => service.status === "in_progress")?.status
-    ?? services.find((service) => service.status === "planned")?.status
-    ?? services.find((service) => service.status === "postponed")?.status
-    ?? services.find((service) => service.status === "completed")?.status
-    ?? "cancelled";
 }
 
 export function ServiceMap({
@@ -180,24 +115,25 @@ export function ServiceMap({
     if (!map || !layer) return;
     layer.clearLayers();
     const iconCache = new Map<string, DivIcon>();
-    const icon = (status: MapService["status"]) => {
-      let ic = iconCache.get(status);
+    const icon = (services: MapService[]) => {
+      const cacheKey = services.map((service) => `${service.assigneeId ?? "none"}:${service.assigneeAvatarUrl ?? ""}:${service.status}`).join("|");
+      let ic = iconCache.get(cacheKey);
       if (!ic) {
         ic = L.divIcon({
-          html: markerHtml(status),
+          html: mapMarkerHtml(services),
           className: "piscine-marker",
-          iconSize: [34, 44],
-          iconAnchor: [17, 43],
-          popupAnchor: [0, -38],
+          iconSize: [108, 58],
+          iconAnchor: [54, 57],
+          popupAnchor: [0, -54],
         });
-        iconCache.set(status, ic);
+        iconCache.set(cacheKey, ic);
       }
       return ic;
     };
     const markers: Marker[] = [];
     for (const p of filtered) {
-      const marker = L.marker([p.lat, p.lng], { icon: icon(markerStatus(p.visibleServices)) });
-      marker.bindPopup(popupHtml(p));
+      const marker = L.marker([p.lat, p.lng], { icon: icon(p.visibleServices) });
+      marker.bindPopup(mapPopupHtml({ ...p, services: p.visibleServices }));
       marker.addTo(layer);
       markers.push(marker);
     }
@@ -244,9 +180,9 @@ export function ServiceMap({
           <span key={s} className="inline-flex items-center gap-1.5">
             <span
               className="inline-block h-3 w-3 rounded-full border-2 border-white"
-              style={{ backgroundColor: STATUS_COLORS[s] }}
+              style={{ backgroundColor: MAP_STATUS_COLORS[s] }}
             />
-            {STATUS_LABELS[s]}
+            {MAP_STATUS_LABELS[s]}
           </span>
         ))}
       </div>

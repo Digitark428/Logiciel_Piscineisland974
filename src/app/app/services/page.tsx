@@ -8,7 +8,7 @@ import { getMaintenanceOccurrences, occurrenceAssigneeName, occurrenceHref, type
 import { createClient } from "@/lib/supabase/server";
 import { signedUrls } from "@/lib/storage";
 import { todayInReunion } from "@/lib/utils/date";
-import { clientName, formatDate, formatTime, SERVICE_STATUS_LABELS } from "@/lib/utils/format";
+import { clientName, formatDate, formatTime, operationalClientName, SERVICE_STATUS_LABELS } from "@/lib/utils/format";
 import { addDays, parseAnchor, periodLabel, startOfWeek, toISO } from "@/app/app/planning/planning-utils";
 
 interface SearchParams {
@@ -27,22 +27,22 @@ function queryHref(values: SearchParams): string {
 
 function OccurrenceCard({ occurrence, avatarUrl }: { occurrence: MaintenanceOccurrence; avatarUrl?: string }) {
   return (
-    <Link href={occurrenceHref(occurrence)} className="block rounded-xl border border-graphite-100 bg-white p-3 transition hover:border-pool-200 hover:shadow-sm">
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <div className="truncate text-sm font-semibold text-graphite-900">{clientName(occurrence.client)}</div>
-          <div className="mt-0.5 truncate text-xs text-graphite-500">{occurrence.serviceType}</div>
-        </div>
-        <Badge tone={occurrence.status} className="shrink-0">{SERVICE_STATUS_LABELS[occurrence.status]}</Badge>
+    <Link href={occurrenceHref(occurrence)} className="block rounded-xl border border-graphite-100 bg-white p-4 transition hover:border-pool-200 hover:shadow-sm">
+      <div className="text-lg font-bold leading-tight text-graphite-900">{operationalClientName(occurrence.client)}</div>
+      <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1 text-sm">
+        <span className="font-medium text-graphite-700">{occurrence.serviceType}</span>
+        {occurrence.scheduledTime && <span className="text-xs font-medium text-graphite-500">· {formatTime(occurrence.scheduledTime)}</span>}
       </div>
-      {occurrence.scheduledTime && <div className="mt-2 text-xs font-medium text-graphite-600">{formatTime(occurrence.scheduledTime)}</div>}
       <MemberIdentity
         member={occurrence.assignee ?? { first_name: null, last_name: null, email: "Non assigné" }}
         avatarUrl={avatarUrl}
-        avatarSize={24}
-        className="mt-3 min-w-0"
-        nameClassName="truncate text-xs text-graphite-500"
+        avatarSize={32}
+        className="mt-4 min-w-0"
+        nameClassName="truncate text-sm text-graphite-800"
       />
+      <div className="mt-4 border-t border-graphite-100 pt-3">
+        <Badge tone={occurrence.status} className="px-3 py-1 text-sm font-semibold">{SERVICE_STATUS_LABELS[occurrence.status]}</Badge>
+      </div>
     </Link>
   );
 }
@@ -155,7 +155,7 @@ export default async function ServicesPage({ searchParams }: { searchParams: Sea
         )}
       </div>
 
-      <div className="hidden grid-cols-7 gap-2 md:grid">
+      <div className="hidden gap-3 md:grid md:grid-cols-2 lg:grid-cols-4 min-[1380px]:grid-cols-7">
         {days.map((day) => (
           <section key={day.date} className="min-w-0">
             <div className={`mb-2 rounded-xl px-2 py-2 text-center ${day.date === today ? "bg-pool-100 text-pool-800" : "bg-graphite-50 text-graphite-600"}`}>

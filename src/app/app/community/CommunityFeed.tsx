@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { MemberIdentity } from "@/components/members/MemberIdentity";
 import {
   createCommunityComment,
@@ -18,6 +19,7 @@ import {
   type CommunityReactionKind,
 } from "@/lib/community-types";
 import { formatDateTime, formatRelative } from "@/lib/utils/format";
+import { communityTextParts } from "@/lib/community-search";
 
 const REACTION_LABELS: Record<CommunityReactionKind, { emoji: string; label: string }> = {
   like: { emoji: "👍", label: "J'aime" },
@@ -50,10 +52,12 @@ export function CommunityFeed({
   initialItems,
   initialHasMore,
   canPublish,
+  searchQuery,
 }: {
   initialItems: CommunityFeedItem[];
   initialHasMore: boolean;
   canPublish: boolean;
+  searchQuery: string;
 }) {
   const [posts, setPosts] = useState(initialItems);
   const [hasMore, setHasMore] = useState(initialHasMore);
@@ -65,7 +69,7 @@ export function CommunityFeed({
     if (!last) return;
     setMessage(null);
     startLoadMore(async () => {
-      const result = await loadMoreCommunityPosts({ createdAt: last.createdAt, id: last.id });
+      const result = await loadMoreCommunityPosts({ createdAt: last.createdAt, id: last.id }, searchQuery);
       if (!result.ok) {
         setMessage(result.message);
         return;
@@ -81,8 +85,10 @@ export function CommunityFeed({
       {posts.length === 0 ? (
         <div className="card px-6 py-14 text-center">
           <div className="text-3xl">💬</div>
-          <h2 className="mt-3 text-base font-semibold text-graphite-900">La vie de l'équipe commence ici</h2>
-          <p className="mx-auto mt-1 max-w-md text-sm text-graphite-500">Partagez une photo de chantier, une bonne nouvelle ou un petit mot avec votre équipe.</p>
+          <h2 className="mt-3 text-base font-semibold text-graphite-900">{searchQuery ? "Aucun résultat" : "La vie de l'équipe commence ici"}</h2>
+          <p className="mx-auto mt-1 max-w-md text-sm text-graphite-500">
+            {searchQuery ? `Aucune publication ne correspond à « ${searchQuery} ».` : "Partagez une photo de chantier, une bonne nouvelle ou un petit mot avec votre équipe."}
+          </p>
         </div>
       ) : (
         posts.map((post) => <CommunityPostCard key={post.id} post={post} canPublish={canPublish} onReaction={setPosts} />)
@@ -160,6 +166,7 @@ function PostComposer({ canPublish }: { canPublish: boolean }) {
         className="input resize-none border-0 bg-graphite-50 focus:ring-1"
         placeholder={canPublish ? "Partagez un moment avec l'équipe…" : "La publication est réservée aux membres autorisés."}
       />
+      <p className="mt-2 text-xs text-graphite-400">Astuce : ajoutez un hashtag, par exemple <span className="font-medium text-pool-700">#installation</span>, pour retrouver facilement ce sujet.</p>
       {previewUrls.length > 0 && (
         <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
           {previewUrls.map((url, index) => (
@@ -294,7 +301,7 @@ function CommunityPostCard({
   };
 
   return (
-    <article className="community-post-card card p-0">
+    <article id={`community-post-${post.id}`} className="community-post-card card scroll-mt-6 p-0">
       <div className="p-4 sm:p-5">
         <div className="flex items-start justify-between gap-3">
           <MemberIdentity
@@ -309,7 +316,7 @@ function CommunityPostCard({
             <button type="button" disabled={pending} onClick={remove} className="btn-ghost -mr-2 -mt-1 shrink-0 p-2 text-graphite-400 hover:text-red-500" aria-label="Supprimer la publication">✕</button>
           )}
         </div>
-        {post.content && <p className="mt-4 whitespace-pre-wrap text-sm leading-6 text-graphite-800">{post.content}</p>}
+        {post.content && <CommunityText content={post.content} className="mt-4 whitespace-pre-wrap text-sm leading-6 text-graphite-800" />}
       </div>
 
       {post.media.length > 0 && (
@@ -384,6 +391,23 @@ function CommunityPostCard({
         </div>
       )}
     </article>
+  );
+}
+
+function CommunityText({ content, className }: { content: string; className?: string }) {
+  return (
+    <p className={className}>
+      {communityTextParts(content).map((part, index) => part.kind === "hashtag" ? (
+        <Link
+          key={`${part.value}-${index}`}
+          href={`/app/community?q=${encodeURIComponent(part.value)}`}
+          prefetch={false}
+          className="font-semibold text-pool-700 hover:text-pool-800 hover:underline"
+        >
+          {part.value}
+        </Link>
+      ) : <span key={`text-${index}`}>{part.value}</span>)}
+    </p>
   );
 }
 

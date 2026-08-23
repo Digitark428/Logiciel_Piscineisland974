@@ -13,21 +13,33 @@ import {
 } from "@/lib/actions/teamNotes";
 import { SubmitButton } from "@/components/forms/SubmitButton";
 import { idle } from "@/lib/actions/result";
-import { formatDate, formatDateTime, formatRelative } from "@/lib/utils/format";
-import { memberName } from "@/lib/utils/format";
+import { formatDate, formatDateTime, formatRelative, formatTime } from "@/lib/utils/format";
 import { MemberIdentity, type MemberIdentityData } from "@/components/members/MemberIdentity";
 
-interface TaskItem {
+export interface TaskItem {
   id: string;
   title: string;
   description: string | null;
   category: string;
   status: string;
   due_date: string | null;
-  assignee?: string | null;
+  due_time?: string | null;
+  created_at?: string;
 }
 
-export function TaskRow({ task, canToggle, canDelete }: { task: TaskItem; canToggle: boolean; canDelete: boolean }) {
+export function TaskRow({
+  task,
+  canToggle,
+  canDelete,
+  assignee,
+  assigneeAvatarUrl,
+}: {
+  task: TaskItem;
+  canToggle: boolean;
+  canDelete: boolean;
+  assignee?: MemberIdentityData | null;
+  assigneeAvatarUrl?: string | null;
+}) {
   const [pending, start] = useTransition();
   const router = useRouter();
   const serverDone = task.status === "done";
@@ -41,6 +53,7 @@ export function TaskRow({ task, canToggle, canDelete }: { task: TaskItem; canTog
         type="checkbox"
         checked={done}
         disabled={!canToggle || pending}
+        aria-label={`${done ? "Rouvrir" : "Terminer"} la tâche « ${task.title} »`}
         onChange={(event) => {
           const nextDone = event.currentTarget.checked;
           setDone(nextDone);
@@ -62,16 +75,26 @@ export function TaskRow({ task, canToggle, canDelete }: { task: TaskItem; canTog
       <div className="min-w-0 flex-1">
         <div className={`font-medium ${done ? "text-graphite-400 line-through" : "text-graphite-900"}`}>{task.title}</div>
         {task.description && <div className="text-sm text-graphite-500">{task.description}</div>}
-        <div className="mt-0.5 flex flex-wrap gap-2 text-xs text-graphite-400">
-          {task.due_date && <span>Échéance : {formatDate(task.due_date)}</span>}
-          {task.assignee && <span>· {task.assignee}</span>}
-        </div>
+        {task.due_date && (
+          <div className="mt-1 text-xs text-graphite-500">
+            Échéance : {formatDate(task.due_date)}{task.due_time ? ` à ${formatTime(task.due_time)}` : ""}
+          </div>
+        )}
+        {assignee && (
+          <MemberIdentity
+            member={assignee}
+            avatarUrl={assigneeAvatarUrl}
+            avatarSize={28}
+            className="mt-2"
+            nameClassName="text-xs"
+          />
+        )}
       </div>
       {canDelete && (
         <button
           type="button"
           disabled={pending}
-          className="btn-ghost p-1 text-graphite-300 hover:text-red-500"
+          className="btn-ghost min-h-11 min-w-11 p-1 text-graphite-300 hover:text-red-500"
           aria-label="Supprimer"
           onClick={() => start(async () => { if (confirm("Supprimer cette tâche ?")) { await deleteTask(task.id); router.refresh(); } })}
         >
@@ -202,9 +225,10 @@ export function TeamNoteItem({
     }
   };
 
-  const openDetails = () => {
-    setOpen(true);
-    if (!details) void loadDetails();
+  const toggleDetails = () => {
+    const nextOpen = !open;
+    setOpen(nextOpen);
+    if (nextOpen && !details) void loadDetails();
   };
 
   const addRead = () => {
@@ -261,22 +285,16 @@ export function TeamNoteItem({
   return (
     <li className="py-3">
       <div className="flex items-start justify-between gap-3">
-        <button
-          type="button"
-          onClick={openDetails}
-          className="min-w-0 flex-1 text-left"
-          aria-expanded={open}
-          aria-label={`Ouvrir la note de ${memberName(note.author)}`}
-        >
+        <div className="min-w-0 flex-1">
           <MemberIdentity member={note.author} avatarUrl={note.authorAvatarUrl} avatarSize={30} nameClassName="text-xs text-graphite-700" />
           <div className="ml-[42px] mt-0.5 text-xs text-graphite-400">{formatRelative(note.created_at)}</div>
           <p className="mt-1 whitespace-pre-wrap text-sm text-graphite-800">{note.content}</p>
-        </button>
+        </div>
         {note.canDelete && (
           <button
             type="button"
             disabled={pending}
-            className="btn-ghost p-1 text-graphite-300 hover:text-red-500"
+            className="btn-ghost min-h-11 min-w-11 p-1 text-graphite-300 hover:text-red-500"
             aria-label="Supprimer la note"
             onClick={() => start(async () => { if (confirm("Supprimer cette note ?")) { await deleteTeamNote(note.id); router.refresh(); } })}
           >
@@ -289,7 +307,7 @@ export function TeamNoteItem({
           type="button"
           disabled={pending || hasRead}
           onClick={addRead}
-          className="btn-secondary px-3 py-1.5 text-xs"
+          className="btn-secondary min-h-11 px-3 py-1 text-xs"
           aria-pressed={hasRead}
         >
           {hasRead ? "Lu" : "Marquer comme lu"}
@@ -298,34 +316,35 @@ export function TeamNoteItem({
           type="button"
           disabled={pending || hasExecuted}
           onClick={addExecution}
-          className="btn-secondary px-3 py-1.5 text-xs"
+          className="btn-secondary min-h-11 px-3 py-1 text-xs"
           aria-pressed={hasExecuted}
         >
           Fait
         </button>
         <button
           type="button"
-          onClick={openDetails}
-          className="px-1 text-xs font-medium text-pool-700 hover:text-pool-800"
+          onClick={toggleDetails}
+          className="min-h-11 rounded-lg px-2 text-xs font-medium text-pool-700 hover:bg-pool-50 hover:text-pool-800"
+          aria-expanded={open}
+          aria-controls={`team-note-details-${note.id}`}
         >
-          {commentCount > 0 ? `${commentCount} commentaire${commentCount > 1 ? "s" : ""}` : "Commenter"}
+          {open ? "Masquer les échanges" : commentCount > 0 ? `${commentCount} commentaire${commentCount > 1 ? "s" : ""}` : "Commenter"}
         </button>
       </div>
       <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-graphite-500">
-        {readSummary(readers) && <button type="button" onClick={openDetails} className="text-left hover:text-graphite-700">{readSummary(readers)}</button>}
-        {executionSummary(executions) && <button type="button" onClick={openDetails} className="text-left hover:text-graphite-700">{executionSummary(executions)}</button>}
+        {readSummary(readers) && <button type="button" onClick={toggleDetails} aria-expanded={open} className="min-h-8 text-left hover:text-graphite-700">{readSummary(readers)}</button>}
+        {executionSummary(executions) && <button type="button" onClick={toggleDetails} aria-expanded={open} className="min-h-8 text-left hover:text-graphite-700">{executionSummary(executions)}</button>}
       </div>
-      {message && <p className="mt-2 text-xs text-red-600" role="status">{message}</p>}
+      {message && !open && <p className="mt-2 text-xs text-red-600" role="status">{message}</p>}
       {open && (
-        <TeamNoteDetailsDialog
-          note={note}
+        <TeamNoteDetailsInline
+          id={`team-note-details-${note.id}`}
           readers={readers}
           executions={executions}
           comments={details?.comments ?? []}
           loading={loadingDetails}
           pending={pending}
           message={message}
-          onClose={() => setOpen(false)}
           onReload={loadDetails}
           onComment={(content) => new Promise<boolean>((resolve) => {
             start(() => { void addComment(content).then(resolve); });
@@ -336,26 +355,24 @@ export function TeamNoteItem({
   );
 }
 
-function TeamNoteDetailsDialog({
-  note,
+function TeamNoteDetailsInline({
+  id,
   readers,
   executions,
   comments,
   loading,
   pending,
   message,
-  onClose,
   onReload,
   onComment,
 }: {
-  note: NoteItem;
+  id: string;
   readers: NoteReader[];
   executions: NoteExecution[];
   comments: NoteComment[];
   loading: boolean;
   pending: boolean;
   message: string | null;
-  onClose: () => void;
   onReload: () => Promise<void>;
   onComment: (content: string) => Promise<boolean>;
 }) {
@@ -369,26 +386,7 @@ function TeamNoteDetailsDialog({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-graphite-950/35 p-3 sm:items-center sm:justify-center sm:p-6" onMouseDown={onClose}>
-      <section
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={`team-note-${note.id}`}
-        className="max-h-[calc(100dvh-1.5rem)] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-float sm:max-h-[calc(100dvh-3rem)]"
-        onMouseDown={(event) => event.stopPropagation()}
-      >
-        <div className="sticky top-0 flex items-start justify-between gap-3 border-b border-graphite-100 bg-white px-5 py-4 sm:px-6">
-          <div className="min-w-0">
-            <h2 id={`team-note-${note.id}`} className="text-base font-semibold text-graphite-900">Note d'équipe</h2>
-            <div className="mt-1"><MemberIdentity member={note.author} avatarUrl={note.authorAvatarUrl} avatarSize={28} nameClassName="text-xs text-graphite-700" /></div>
-            <p className="ml-[40px] mt-0.5 text-xs text-graphite-400">{formatDateTime(note.created_at)}</p>
-          </div>
-          <button type="button" className="btn-ghost p-2" onClick={onClose} aria-label="Fermer les détails">✕</button>
-        </div>
-
-        <div className="space-y-6 px-5 py-5 sm:px-6">
-          <p className="whitespace-pre-wrap text-sm leading-6 text-graphite-800">{note.content}</p>
-
+    <section id={id} aria-label="Échanges de la note" className="mt-3 space-y-5 rounded-xl border border-graphite-100 bg-graphite-50/70 p-3 sm:p-4">
           {message && <p className="text-sm text-red-600" role="status">{message}</p>}
 
           {loading ? (
@@ -432,9 +430,9 @@ function TeamNoteDetailsDialog({
           )}
 
           <form onSubmit={submit} className="border-t border-graphite-100 pt-4">
-            <label htmlFor={`comment-${note.id}`} className="label">Ajouter un commentaire</label>
+            <label htmlFor={`comment-${id}`} className="label">Ajouter un commentaire</label>
             <textarea
-              id={`comment-${note.id}`}
+              id={`comment-${id}`}
               value={content}
               onChange={(event) => setContent(event.target.value)}
               rows={3}
@@ -449,9 +447,7 @@ function TeamNoteDetailsDialog({
               </button>
             </div>
           </form>
-        </div>
-      </section>
-    </div>
+    </section>
   );
 }
 

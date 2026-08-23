@@ -17,6 +17,7 @@ export type SeriesRecurrenceKind = "legacy" | "weekly_contract";
 export type SeriesStatus = "active" | "paused" | "ended";
 export type TaskCategory = "professional" | "personal";
 export type TaskStatus = "todo" | "in_progress" | "done";
+export type TaskPriority = "not_urgent" | "urgent" | "very_urgent";
 export type InvoiceStatus = "draft" | "sent" | "paid" | "cancelled";
 export type ContractStatus = "draft" | "active" | "archived";
 
@@ -200,7 +201,9 @@ export interface Task {
   description: string | null;
   category: TaskCategory;
   status: TaskStatus;
+  priority: TaskPriority;
   due_date: string | null;
+  due_time: string | null;
   assigned_membership_id: string | null;
   created_by: string | null;
   created_at: string;

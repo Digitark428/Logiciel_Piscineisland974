@@ -31,6 +31,16 @@ export interface CommunityCursor {
   id: string;
 }
 
+export interface CommunityGalleryItem {
+  mediaId: string;
+  url: string | null;
+  postId: string;
+  content: string | null;
+  createdAt: string;
+  author: CommunityMember;
+  authorAvatarUrl: string | null;
+}
+
 export interface CommunityCommentItem {
   id: string;
   content: string;
