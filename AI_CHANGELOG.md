@@ -2,6 +2,12 @@
 
 > Ajouter une entrée courte après chaque intervention significative. Ne pas y dupliquer la documentation durable de `PROJECT_CONTEXT.md`.
 
+## 2026-08-24 — Codex — Transitions adaptatives permanentes
+
+- **Architecture :** wrapper global sous `/app`, shell persistant et interception des liens internes pour un feedback immédiat ; direction fiable liste ↔ fiche, changements ambigus neutres et durée d'entrée adaptée au temps réellement mesuré, sans attente forcée ni dépendance ajoutée.
+- **Latence et accessibilité :** suppression du fallback de route immédiat susceptible de flasher ; la vue courante reste visible et un skeleton stable ne se révèle qu'après 300 ms. Animations limitées à `opacity`/`transform`, neutralisées avec `prefers-reduced-motion` et compatibles avec les futures routes.
+- **Standard permanent :** règle inscrite dans `AGENTS.md`, `PROJECT_CONTEXT.md` et `DECISIONS.md` ; tests unitaires ajoutés pour les directions client/entretien et les changements de paramètres.
+
 ## 2026-08-23 — Codex — Mise à jour fonctionnelle et ergonomique LETI
 
 - **Pilotage et entretiens :** tableau de bord recentré sur les passages du jour, nom opérationnel `Prénom NOM`, cartes avec identité du technicien et statut renforcé ; vue Services harmonisée et Planning limité à Entretien avec Chantier/Dépannage annoncés en développement.

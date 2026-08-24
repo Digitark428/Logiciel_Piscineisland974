@@ -25,6 +25,9 @@
   --leti-glass-shadow: 0 1px 2px rgba(var(--leti-navy-rgb), 0.025), 0 10px 28px rgba(var(--leti-navy-rgb), 0.045);
   --background: var(--leti-canvas);
   --foreground: var(--leti-navy);
+  --leti-motion-fast: 100ms;
+  --leti-motion-normal: 160ms;
+  --leti-motion-ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 html {
@@ -286,6 +289,58 @@ body {
   will-change: transform;
 }
 
+/*
+ * Navigation LETI : le shell ne bouge jamais. Le contenu réagit au clic,
+ * puis la vue prête entre sans retarder le rendu. Le skeleton est masqué
+ * pendant les micro-latences et ne se révèle qu'après 300 ms.
+ */
+.leti-route-stage {
+  position: relative;
+  min-height: min(32rem, calc(100dvh - 8.5rem));
+}
+
+.leti-route-view {
+  animation: leti-route-enter-right var(--leti-motion-normal) var(--leti-motion-ease-out) both;
+  transform-origin: center;
+}
+
+.leti-route-view[data-pace="fast"] {
+  animation-duration: var(--leti-motion-fast);
+}
+
+.leti-route-view[data-direction="back"] {
+  animation-name: leti-route-enter-left;
+}
+
+.leti-route-view[data-direction="neutral"] {
+  animation-name: leti-route-enter-neutral;
+}
+
+.leti-route-view--pending {
+  opacity: 0.965;
+  transform: translate3d(-3px, 0, 0);
+  transition: opacity 100ms var(--leti-motion-ease-out), transform 120ms var(--leti-motion-ease-out);
+}
+
+.leti-route-view--pending[data-direction="back"] {
+  transform: translate3d(3px, 0, 0);
+}
+
+a[data-leti-navigation-pending="true"] {
+  opacity: 0.78;
+  transform: translate3d(2px, 0, 0);
+}
+
+.leti-route-skeleton {
+  position: absolute;
+  z-index: 10;
+  inset: 0;
+  min-height: 26rem;
+  pointer-events: none;
+  background: rgba(247, 247, 245, 0.96);
+  animation: leti-route-skeleton-reveal 120ms var(--leti-motion-ease-out) 300ms both;
+}
+
 .leti-role-badge {
   border: 1px solid rgba(var(--leti-aqua-rgb), 0.27);
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(var(--leti-aqua-rgb), 0.14));
@@ -326,6 +381,26 @@ body {
   10% { transform: scale(1.06); }
 }
 
+@keyframes leti-route-enter-right {
+  from { opacity: 0.66; transform: translate3d(10px, 0, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@keyframes leti-route-enter-left {
+  from { opacity: 0.66; transform: translate3d(-10px, 0, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@keyframes leti-route-enter-neutral {
+  from { opacity: 0.78; transform: translate3d(0, 0, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@keyframes leti-route-skeleton-reveal {
+  from { opacity: 0; visibility: hidden; }
+  to { opacity: 1; visibility: visible; }
+}
+
 @keyframes leti-fade-in {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -356,6 +431,24 @@ body {
   .leti-notification-bell {
     animation: none;
   }
+
+  .leti-route-view,
+  .leti-route-view[data-direction] {
+    animation-duration: 1ms;
+    animation-delay: 0ms;
+    transform: none;
+  }
+
+  .leti-route-skeleton {
+    animation-duration: 1ms;
+  }
+
+  .leti-route-view--pending,
+  .leti-route-view--pending[data-direction="back"],
+  a[data-leti-navigation-pending="true"] {
+    transform: none;
+    transition-duration: 1ms;
+  }
 }
 
 @media print {
@@ -384,5 +477,10 @@ body {
   .card {
     box-shadow: none !important;
     border-color: #e5e7eb !important;
+  }
+
+  .leti-route-view {
+    animation: none !important;
+    transform: none !important;
   }
 }

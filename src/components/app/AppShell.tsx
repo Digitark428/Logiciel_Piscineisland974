@@ -1,15 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type MouseEvent } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Logo } from "@/components/Logo";
 import { Avatar } from "@/components/ui";
 import { Icon } from "./icons";
+import { AdaptiveRouteTransition } from "./AdaptiveRouteTransition";
 import { signOut } from "@/lib/auth/actions";
 import { isNavGroup, type NavEntry, type NavItem } from "./nav";
 import { cn } from "@/lib/utils/cn";
 import { WorkspaceIdentity } from "./WorkspaceIdentity";
+import { navigationDirection, routePathname, type NavigationDirection } from "@/lib/navigation/transitions";
 
 function NavigationLinks({
   items,
@@ -137,13 +139,21 @@ export function AppShell({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pendingHref, setPendingHref] = useState<string | null>(null);
+  const [direction, setDirection] = useState<NavigationDirection>("neutral");
+  const [arrivalPace, setArrivalPace] = useState<"fast" | "normal">("normal");
   const prefetchedRoutes = useRef(new Map<string, number>());
   const queuedPrefetch = useRef<string | null>(null);
   const prefetchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingAnchor = useRef<HTMLAnchorElement | null>(null);
+  const navigationStartedAt = useRef<number | null>(null);
   const closeMenu = useCallback(() => setOpen(false), []);
+  const search = searchParams.toString();
+  const routeKey = search ? `${pathname}?${search}` : pathname;
+  const pendingPathname = pendingHref ? routePathname(pendingHref) : null;
 
   // Une destination n'est préchargée qu'après une intention brève et explicite.
   // Le dernier lien survolé gagne : déplacer le pointeur dans le menu ne lance pas
@@ -195,18 +205,38 @@ export function AppShell({
     }, 120);
   }, [pathname, router]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     // La navigation Next.js est déjà concurrente via Link ; cet état ne sert qu'à
     // donner un retour visuel immédiatement après le clic, avant le rendu suivant.
+    if (navigationStartedAt.current !== null) {
+      setArrivalPace(performance.now() - navigationStartedAt.current < 100 ? "fast" : "normal");
+      navigationStartedAt.current = null;
+    }
     setPendingHref(null);
+    pendingAnchor.current?.removeAttribute("data-leti-navigation-pending");
+    pendingAnchor.current = null;
     // Une route visitée pourra être préparée à nouveau lors d'un prochain
     // retour, notamment après une invalidation déclenchée par une mutation.
     prefetchedRoutes.current.delete(pathname);
-  }, [pathname]);
+  }, [pathname, routeKey]);
 
   useEffect(() => () => {
     if (prefetchTimer.current) clearTimeout(prefetchTimer.current);
   }, []);
+
+  const startNavigation = useCallback((href: string, anchor?: HTMLAnchorElement | null, nextDirection?: NavigationDirection) => {
+    if (href === routeKey) return;
+
+    pendingAnchor.current?.removeAttribute("data-leti-navigation-pending");
+    if (anchor) {
+      anchor.setAttribute("data-leti-navigation-pending", "true");
+      pendingAnchor.current = anchor;
+    }
+
+    setDirection(nextDirection ?? navigationDirection(routeKey, href));
+    navigationStartedAt.current = performance.now();
+    setPendingHref(href);
+  }, [routeKey]);
 
   const navigate = useCallback((href: string, event: MouseEvent<HTMLAnchorElement>) => {
     // Ne pas fermer le menu ni afficher une transition pour un nouvel onglet / lien
@@ -214,12 +244,37 @@ export function AppShell({
     if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
 
     cancelPrefetch(href);
-    if (href !== pathname) setPendingHref(href);
+    startNavigation(href, event.currentTarget);
     closeMenu();
-  }, [cancelPrefetch, closeMenu, pathname]);
+  }, [cancelPrefetch, closeMenu, startNavigation]);
+
+  const handleInternalNavigation = useCallback((event: MouseEvent<HTMLDivElement>) => {
+    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    if (!(event.target instanceof Element)) return;
+
+    const anchor = event.target.closest<HTMLAnchorElement>("a[href]");
+    if (!anchor || anchor.target === "_blank" || anchor.hasAttribute("download")) return;
+
+    const url = new URL(anchor.href, window.location.href);
+    if (url.origin !== window.location.origin || !url.pathname.startsWith("/app")) return;
+
+    const href = `${url.pathname}${url.search}`;
+    if (href === routeKey) return;
+    startNavigation(href, anchor);
+  }, [routeKey, startNavigation]);
+
+  useEffect(() => {
+    const handleHistoryNavigation = () => {
+      const href = `${window.location.pathname}${window.location.search}`;
+      if (href !== routeKey) startNavigation(href, null, "neutral");
+    };
+
+    window.addEventListener("popstate", handleHistoryNavigation);
+    return () => window.removeEventListener("popstate", handleHistoryNavigation);
+  }, [routeKey, startNavigation]);
 
   return (
-    <div className="min-h-screen bg-graphite-50">
+    <div className="min-h-screen bg-graphite-50" onClickCapture={handleInternalNavigation}>
       {/* Sidebar desktop */}
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-graphite-200 bg-white lg:flex">
         <div className="flex h-[4.5rem] items-center px-5">
@@ -246,7 +301,7 @@ export function AppShell({
             onNavigate={navigate}
             onPrefetch={prefetch}
             onCancelPrefetch={cancelPrefetch}
-            pendingHref={pendingHref}
+            pendingHref={pendingPathname}
           />
         </div>
       </aside>
@@ -270,7 +325,7 @@ export function AppShell({
                 onNavigate={navigate}
                 onPrefetch={prefetch}
                 onCancelPrefetch={cancelPrefetch}
-                pendingHref={pendingHref}
+                pendingHref={pendingPathname}
               />
             </div>
           </aside>
@@ -317,7 +372,19 @@ export function AppShell({
             </form>
           </div>
         </header>
-        <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8 lg:py-10">{children}</main>
+        <main
+          className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8 lg:py-10"
+          aria-busy={pendingHref !== null}
+        >
+          <AdaptiveRouteTransition
+            routeKey={routeKey}
+            direction={direction}
+            pace={arrivalPace}
+            pending={pendingHref !== null}
+          >
+            {children}
+          </AdaptiveRouteTransition>
+        </main>
       </div>
     </div>
   );

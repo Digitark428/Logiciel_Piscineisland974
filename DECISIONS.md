@@ -73,3 +73,9 @@
 **Décision :** le middleware valide localement la signature et l'expiration du JWT ES256 avec `getClaims`, tandis qu'au moins une vérification distante `getUser` reste conservée dans le contexte serveur authentifié.
 
 **Raison :** supprimer l'appel Auth redondant du middleware accélère chaque navigation privée, tout en conservant la détection immédiate d'une session révoquée avant l'accès aux données métier.
+
+## Fluidité permanente des navigations
+
+**Décision :** toutes les vues internes `/app`, présentes et futures, utilisent le wrapper global `AdaptiveRouteTransition` dans `AppShell`. Les liens internes déclenchent un feedback immédiat ; le shell reste monté, l'entrée se limite à `opacity` et `transform`, la durée dépend du temps réellement observé et le skeleton reste invisible pendant les 300 premières millisecondes. Aucun délai d'affichage artificiel n'est ajouté, et le mouvement est neutralisé avec `prefers-reduced-motion`.
+
+**Raison :** absorber les micro-latences sans ralentir les routes rapides, éviter les écrans blancs et garantir automatiquement une sensation cohérente sur les futures navigations LETI.
