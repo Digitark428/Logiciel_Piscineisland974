@@ -37,6 +37,30 @@ export function filterNavEntries(entries: NavEntry[], canShow: (item: NavItem) =
   return filtered;
 }
 
+export const MANAGEMENT_ITEMS: NavItem[] = [
+  { href: "/app/documents", label: "Documents", icon: "file", perm: "documents.view" },
+  { href: "/app/team", label: "Équipe", icon: "team", perm: "team.manage" },
+  { href: "/app/backups", label: "Sauvegardes", icon: "backup", perm: "backups.manage" },
+  { href: "/app/activity", label: "Journal", icon: "activity", adminOnly: true },
+];
+
+export const SETTINGS_ITEM: NavItem = {
+  href: "/app/settings",
+  label: "Paramètres",
+  icon: "settings",
+  perm: "settings.manage",
+};
+
+export const ACCOUNT_NAV_ITEMS: NavEntry[] = [
+  {
+    key: "management",
+    label: "Gestion",
+    icon: "receipt",
+    children: MANAGEMENT_ITEMS,
+  },
+  SETTINGS_ITEM,
+];
+
 export const NAV_ITEMS: NavEntry[] = [
   { href: "/app", label: "Tableau de bord", icon: "home" },
   { href: "/app/services", label: "Mes entretiens", icon: "wrench", perm: "services.view" },
@@ -54,20 +78,8 @@ export const NAV_ITEMS: NavEntry[] = [
   { href: "/app/community", label: "Entre nous", icon: "community", perm: "community.view" },
   { href: "/app/map", label: "Carte", icon: "map", perm: "map.view" },
   { href: "/app/clients", label: "Clients", icon: "users", perm: "clients.view" },
-  {
-    key: "management",
-    label: "Gestion",
-    icon: "receipt",
-    children: [
-      { href: "/app/documents", label: "Documents", icon: "file", perm: "documents.view" },
-      { href: "/app/team", label: "Équipe", icon: "team", perm: "team.manage" },
-      { href: "/app/backups", label: "Sauvegardes", icon: "backup", perm: "backups.manage" },
-      { href: "/app/activity", label: "Journal", icon: "activity", adminOnly: true },
-    ],
-  },
   { href: "/app/chantiers", label: "Mes chantiers", icon: "wrench", development: true, developmentTone: "coral" },
   { href: "/app/depannages", label: "Mes dépannages", icon: "wrench", development: true, developmentTone: "coral" },
   { href: "/app/comptabilite", label: "Gérer ma comptabilité", icon: "activity", development: true, developmentTone: "coral" },
   { href: "/app/leti-ia", label: "LETI IA", icon: "sparkles", development: true, developmentTone: "aqua", description: "Accéder à la puissance LETI" },
-  { href: "/app/settings", label: "Paramètres", icon: "settings", perm: "settings.manage" },
 ];

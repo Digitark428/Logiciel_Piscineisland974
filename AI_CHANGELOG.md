@@ -2,6 +2,12 @@
 
 > Ajouter une entrée courte après chaque intervention significative. Ne pas y dupliquer la documentation durable de `PROJECT_CONTEXT.md`.
 
+## 2026-08-24 — Codex — Menu du profil et navigation allégée
+
+- **En-tête :** le bloc utilisateur ouvre désormais un menu accessible réunissant la modification du profil, « Gestion » et « Paramètres » selon les droits déjà en place.
+- **Barre latérale :** « Gestion » et « Paramètres » en sont retirés sans modifier leurs routes ni leurs permissions ; Documents, Équipe, Sauvegardes et Journal restent filtrés individuellement.
+- **Hiérarchie et fluidité :** les sous-menus ouverts utilisent un fond gris discret ; le menu se ferme après navigation, au clic extérieur et avec Échap, tout en héritant du préchargement et des transitions adaptatives globales.
+
 ## 2026-08-24 — Codex — Transitions adaptatives permanentes
 
 - **Architecture :** wrapper global sous `/app`, shell persistant et interception des liens internes pour un feedback immédiat ; direction fiable liste ↔ fiche, changements ambigus neutres et durée d'entrée adaptée au temps réellement mesuré, sans attente forcée ni dépendance ajoutée.

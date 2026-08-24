@@ -104,14 +104,18 @@ function NavigationLinks({
               aria-controls={`nav-group-${entry.key}`}
               className={cn(
                 "flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition",
-                active ? "bg-graphite-50 text-graphite-900" : "text-graphite-600 hover:bg-graphite-100 hover:text-graphite-900",
+                active || expanded ? "bg-graphite-100 text-graphite-900" : "text-graphite-600 hover:bg-graphite-100 hover:text-graphite-900",
               )}
             >
               <Icon name={entry.icon} size={19} />
               <span className="min-w-0 flex-1 truncate">{entry.label}</span>
               <span aria-hidden className={cn("text-xs transition-transform", expanded && "rotate-180")}>⌄</span>
             </button>
-            {expanded && <div id={`nav-group-${entry.key}`} className="mt-1 space-y-1">{entry.children.map((item) => renderItem(item, true))}</div>}
+            {expanded && (
+              <div id={`nav-group-${entry.key}`} className="ml-2 mt-1 space-y-1 rounded-xl border border-graphite-100 bg-graphite-50 p-1.5">
+                {entry.children.map((item) => renderItem(item, true))}
+              </div>
+            )}
           </div>
         );
       })}
@@ -119,8 +123,176 @@ function NavigationLinks({
   );
 }
 
+function ProfileMenu({
+  accountItems,
+  profileHref,
+  userName,
+  avatarUrl,
+  roleLabel,
+  pathname,
+  pendingHref,
+  onNavigate,
+  onPrefetch,
+  onCancelPrefetch,
+}: {
+  accountItems: NavEntry[];
+  profileHref: string | null;
+  userName: string;
+  avatarUrl?: string | null;
+  roleLabel: string;
+  pathname: string;
+  pendingHref: string | null;
+  onNavigate: (href: string, event: MouseEvent<HTMLAnchorElement>) => void;
+  onPrefetch: (href: string, immediate?: boolean) => void;
+  onCancelPrefetch: (href: string) => void;
+}) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const [open, setOpen] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(() => Object.fromEntries(
+    accountItems
+      .filter(isNavGroup)
+      .map((group) => [group.key, group.children.some((item) => pathname.startsWith(item.href))]),
+  ));
+
+  useEffect(() => {
+    setOpen(false);
+    setExpandedGroups((current) => {
+      const next = { ...current };
+      for (const entry of accountItems) {
+        if (isNavGroup(entry) && entry.children.some((item) => pathname.startsWith(item.href))) next[entry.key] = true;
+      }
+      return next;
+    });
+  }, [accountItems, pathname]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (rootRef.current && !rootRef.current.contains(event.target as Node)) setOpen(false);
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+        triggerRef.current?.focus();
+      }
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open]);
+
+  const renderLink = (item: NavItem, nested = false) => {
+    const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+    const isPending = pendingHref === item.href;
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        prefetch={false}
+        onClick={(event) => {
+          setOpen(false);
+          onNavigate(item.href, event);
+        }}
+        onPointerEnter={() => onPrefetch(item.href)}
+        onPointerLeave={() => onCancelPrefetch(item.href)}
+        onTouchStart={() => onPrefetch(item.href, true)}
+        onFocus={() => onPrefetch(item.href)}
+        onBlur={() => onCancelPrefetch(item.href)}
+        aria-current={active ? "page" : undefined}
+        className={cn(
+          "flex min-h-11 items-center gap-3 rounded-xl border-l-2 border-transparent px-3 py-2.5 text-sm font-medium transition",
+          nested && "text-[13px] text-graphite-500",
+          (active && !pendingHref) || isPending
+            ? "border-coral-500 bg-pool-50 text-graphite-900"
+            : "text-graphite-600 hover:bg-white hover:text-graphite-900",
+          isPending && "opacity-80",
+        )}
+      >
+        <Icon name={item.icon} size={nested ? 17 : 19} />
+        <span className="min-w-0 flex-1 truncate">{item.label}</span>
+      </Link>
+    );
+  };
+
+  return (
+    <div ref={rootRef} className="relative">
+      <button
+        ref={triggerRef}
+        type="button"
+        onClick={() => setOpen((current) => !current)}
+        aria-expanded={open}
+        aria-controls="leti-profile-menu"
+        aria-label={`Ouvrir le menu du profil de ${userName}`}
+        className={cn(
+          "flex min-h-11 items-center gap-2 rounded-xl px-2 py-1 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-pool-500 focus-visible:ring-offset-2",
+          open ? "bg-graphite-100" : "hover:bg-graphite-50",
+        )}
+      >
+        <Avatar name={userName} src={avatarUrl} size={34} />
+        <span className="hidden sm:block">
+          <span className="block text-sm font-semibold leading-tight text-graphite-900">{userName}</span>
+          <span className="block text-xs leading-tight text-graphite-400">{roleLabel}</span>
+        </span>
+        <span aria-hidden className={cn("hidden text-xs text-graphite-400 transition-transform sm:inline", open && "rotate-180")}>⌄</span>
+      </button>
+
+      {open && (
+        <nav
+          id="leti-profile-menu"
+          aria-label="Menu du profil"
+          className="absolute right-0 top-full z-50 mt-2 w-[min(19rem,calc(100vw-2rem))] rounded-2xl border border-graphite-200 bg-white p-2 shadow-float"
+        >
+          <div className="mb-2 border-b border-graphite-100 px-3 py-2 sm:hidden">
+            <div className="truncate text-sm font-semibold text-graphite-900">{userName}</div>
+            <div className="truncate text-xs text-graphite-400">{roleLabel}</div>
+          </div>
+
+          {profileHref && renderLink({ href: profileHref, label: "Modifier mon profil", icon: "users" })}
+
+          {accountItems.map((entry) => {
+            if (!isNavGroup(entry)) return renderLink(entry);
+            const expanded = expandedGroups[entry.key] ?? false;
+            const active = entry.children.some((item) => pathname === item.href || pathname.startsWith(`${item.href}/`));
+            return (
+              <div key={entry.key} className="mt-1">
+                <button
+                  type="button"
+                  onClick={() => setExpandedGroups((current) => ({ ...current, [entry.key]: !expanded }))}
+                  aria-expanded={expanded}
+                  aria-controls={`profile-group-${entry.key}`}
+                  className={cn(
+                    "flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition",
+                    active || expanded ? "bg-graphite-100 text-graphite-900" : "text-graphite-600 hover:bg-graphite-100 hover:text-graphite-900",
+                  )}
+                >
+                  <Icon name={entry.icon} size={19} />
+                  <span className="min-w-0 flex-1 truncate">{entry.label}</span>
+                  <span aria-hidden className={cn("text-xs transition-transform", expanded && "rotate-180")}>⌄</span>
+                </button>
+                {expanded && (
+                  <div id={`profile-group-${entry.key}`} className="ml-2 mt-1 space-y-1 rounded-xl border border-graphite-100 bg-graphite-50 p-1.5">
+                    {entry.children.map((item) => renderLink(item, true))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </nav>
+      )}
+    </div>
+  );
+}
+
 export function AppShell({
   items,
+  accountItems,
+  profileHref,
   workspaceName,
   companyCode,
   userName,
@@ -130,6 +302,8 @@ export function AppShell({
   children,
 }: {
   items: NavEntry[];
+  accountItems: NavEntry[];
+  profileHref: string | null;
   workspaceName: string;
   companyCode: string;
   userName: string;
@@ -358,13 +532,18 @@ export function AppShell({
                 </span>
               )}
             </Link>
-            <div className="flex items-center gap-2 rounded-xl px-2 py-1">
-              <Avatar name={userName} src={avatarUrl} size={34} />
-              <div className="hidden sm:block">
-                <div className="text-sm font-semibold leading-tight text-graphite-900">{userName}</div>
-                <div className="text-xs leading-tight text-graphite-400">{roleLabel}</div>
-              </div>
-            </div>
+            <ProfileMenu
+              accountItems={accountItems}
+              profileHref={profileHref}
+              userName={userName}
+              avatarUrl={avatarUrl}
+              roleLabel={roleLabel}
+              pathname={pathname}
+              pendingHref={pendingPathname}
+              onNavigate={navigate}
+              onPrefetch={prefetch}
+              onCancelPrefetch={cancelPrefetch}
+            />
             <form action={signOut}>
               <button type="submit" className="btn-ghost p-2" aria-label="Se déconnecter" title="Se déconnecter">
                 <Icon name="logout" size={20} />
