@@ -59,7 +59,7 @@ function Section({
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {items.map(({ m, url }) => {
             return (
-              <Link key={m.id} href={`/app/team/${m.id}`} className="card flex items-center gap-3 p-4 transition hover:shadow-float">
+              <Link key={m.id} href={`/app/team/${m.id}`} className="card flex items-center gap-3 p-4 transition hover:border-pool-200">
                 <MemberIdentity member={m} avatarUrl={url} avatarSize={48} className="min-w-0 flex-1" />
                 {m.status === "disabled" && <Badge tone="disabled">Désactivé</Badge>}
                 {m.role === "admin" && m.status === "active" && <Badge tone="admin">Admin</Badge>}

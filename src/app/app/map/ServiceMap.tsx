@@ -189,7 +189,7 @@ export function ServiceMap({
 
       <div
         ref={containerRef}
-        className="h-[70vh] w-full rounded-xl border border-graphite-200"
+        className="h-[70vh] w-full rounded-xl border border-graphite-100 shadow-card"
         style={{ minHeight: 420 }}
       />
     </div>

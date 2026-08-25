@@ -11,9 +11,9 @@ import { TaskRow } from "../TasksClient";
 export const dynamic = "force-dynamic";
 
 const PRIORITY_STYLES: Record<TaskPriority, string> = {
-  very_urgent: "border-red-200 bg-red-50/70 text-red-800",
-  urgent: "border-coral-200 bg-coral-50/70 text-graphite-900",
-  not_urgent: "border-pool-200 bg-pool-50/70 text-pool-900",
+  very_urgent: "border-red-100 bg-red-50/60 text-red-800",
+  urgent: "border-coral-100 bg-coral-50/60 text-graphite-900",
+  not_urgent: "border-pool-100 bg-pool-50/60 text-pool-900",
 };
 
 export default async function PersonalTasksPage() {

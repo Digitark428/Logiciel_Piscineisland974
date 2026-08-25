@@ -19,7 +19,7 @@ export function PageHeader({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="mb-7 flex flex-wrap items-start justify-between gap-4">
+    <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
       <div>
         <h1 className="text-2xl font-semibold tracking-[-0.025em] text-graphite-900 sm:text-[1.75rem]">{title}</h1>
         {description && <p className="mt-1.5 max-w-2xl text-sm leading-6 text-graphite-500">{description}</p>}
@@ -54,23 +54,23 @@ export function EmptyState({
 }
 
 const BADGE_TONES: Record<string, string> = {
-  planned: "bg-pool-50 text-pool-700",
-  in_progress: "bg-amber-50 text-amber-700",
-  completed: "bg-emerald-50 text-emerald-700",
-  postponed: "bg-coral-50 text-graphite-700",
-  cancelled: "bg-graphite-100 text-graphite-500",
-  active: "bg-emerald-50 text-emerald-700",
-  paused: "bg-amber-50 text-amber-700",
-  ended: "bg-graphite-100 text-graphite-500",
-  disabled: "bg-graphite-100 text-graphite-500",
-  archived: "bg-graphite-100 text-graphite-500",
-  draft: "bg-graphite-100 text-graphite-600",
-  sent: "bg-pool-50 text-pool-700",
-  paid: "bg-emerald-50 text-emerald-700",
-  todo: "bg-graphite-100 text-graphite-600",
-  done: "bg-emerald-50 text-emerald-700",
-  admin: "bg-coral-50 text-graphite-700",
-  member: "bg-graphite-100 text-graphite-600",
+  planned: "border-pool-100 bg-pool-50 text-pool-700",
+  in_progress: "border-amber-100 bg-amber-50 text-amber-700",
+  completed: "border-emerald-100 bg-emerald-50 text-emerald-700",
+  postponed: "border-coral-100 bg-coral-50 text-graphite-700",
+  cancelled: "border-graphite-200 bg-graphite-100 text-graphite-500",
+  active: "border-emerald-100 bg-emerald-50 text-emerald-700",
+  paused: "border-amber-100 bg-amber-50 text-amber-700",
+  ended: "border-graphite-200 bg-graphite-100 text-graphite-500",
+  disabled: "border-graphite-200 bg-graphite-100 text-graphite-500",
+  archived: "border-graphite-200 bg-graphite-100 text-graphite-500",
+  draft: "border-graphite-200 bg-graphite-100 text-graphite-600",
+  sent: "border-pool-100 bg-pool-50 text-pool-700",
+  paid: "border-emerald-100 bg-emerald-50 text-emerald-700",
+  todo: "border-graphite-200 bg-graphite-100 text-graphite-600",
+  done: "border-emerald-100 bg-emerald-50 text-emerald-700",
+  admin: "border-coral-100 bg-coral-50 text-graphite-700",
+  member: "border-graphite-200 bg-graphite-100 text-graphite-600",
 };
 
 export function Badge({
@@ -137,7 +137,7 @@ export function StatCard({
     amber: "text-amber-600",
   };
   const inner = (
-    <div className="card card--stat p-5 transition hover:border-pool-200 hover:shadow-float">
+    <div className="card card--stat p-5 transition hover:border-pool-200">
       <div className="text-sm font-medium text-graphite-500">{label}</div>
       <div className={cn("mt-1 text-3xl font-bold tracking-tight", tones[tone])}>{value}</div>
       {hint && <div className="mt-1 text-xs text-graphite-400">{hint}</div>}

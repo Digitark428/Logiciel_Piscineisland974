@@ -133,7 +133,7 @@ export function AssistanceWidget({ token, conversations, unreadTotal, services }
           ref={launcherRef}
           onClick={openPanel}
           aria-label="Ouvrir l'assistance"
-          className="fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-full bg-pool-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-pool-600/30 transition hover:bg-pool-700 active:scale-95"
+          className="leti-support-launcher fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-full px-4 py-3 text-sm font-semibold transition active:scale-[0.985]"
           style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
         >
           <span className="text-base leading-none">💬</span>
@@ -149,7 +149,7 @@ export function AssistanceWidget({ token, conversations, unreadTotal, services }
       {open && (
         <div
           ref={panelRef}
-          className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-50 mx-auto flex max-h-[85dvh] w-auto max-w-sm flex-col overflow-hidden rounded-2xl border border-graphite-200 bg-white shadow-2xl sm:inset-x-auto sm:right-5 sm:bottom-5 sm:w-[370px]"
+          className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-50 mx-auto flex max-h-[85dvh] w-auto max-w-sm flex-col overflow-hidden rounded-2xl border border-graphite-100 bg-white shadow-float sm:inset-x-auto sm:right-5 sm:bottom-5 sm:w-[370px]"
           role="dialog"
           aria-modal="true"
           tabIndex={-1}

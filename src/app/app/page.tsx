@@ -88,7 +88,7 @@ export default async function DashboardPage() {
               <ul className="grid gap-3 sm:grid-cols-2">
                 {todayServices.map((s) => (
                   <li key={s.key}>
-                    <Link href={occurrenceHref(s)} className="block rounded-xl border border-graphite-100 bg-white px-4 py-3.5 transition hover:border-pool-200 hover:shadow-sm">
+                    <Link href={occurrenceHref(s)} className="block rounded-xl border border-graphite-100 bg-graphite-50/60 px-4 py-3.5 transition hover:border-pool-200 hover:bg-white">
                       <div className="text-lg font-bold leading-tight text-graphite-900 sm:text-xl">{displayClient(s)}</div>
                       <div className="mt-2 min-w-0 text-sm text-graphite-500">
                         <span className="truncate">{s.serviceType}</span>

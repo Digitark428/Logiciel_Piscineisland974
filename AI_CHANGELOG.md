@@ -2,6 +2,12 @@
 
 > Ajouter une entrée courte après chaque intervention significative. Ne pas y dupliquer la documentation durable de `PROJECT_CONTEXT.md`.
 
+## 2026-08-25 — Codex — Finition visuelle stricte LETI
+
+- **Fondations :** cartes désormais pleines et calmes, bordures plus fines, ombres raccourcies, gradients décoratifs retirés, CTA corail affirmé, contrôles à 44 px et focus aqua cohérent ; les rayons et la typographie existants sont conservés.
+- **Écrans :** shell, dashboard, Mes entretiens, planning, tâches, piscines, équipe, carte et assistance reçoivent uniquement des ajustements de surfaces, états actifs et micro-interactions. Aucun texte, contenu, ordre, route, permission, action ou comportement métier n'a changé.
+- **Vérification :** diff TSX limité aux classes visuelles, lint et typecheck validés, build de production réussi, 58 tests unitaires validés et 19 tests d'intégration conditionnels ignorés. Accueil et connexion contrôlés à 375, 768 et 1440 px sans débordement ; les écrans privés restent contrôlés statiquement faute de session navigateur authentifiée.
+
 ## 2026-08-25 — Codex — UX compacte, planning personnel et modales accessibles
 
 - **Profil et entretiens :** « Gestion » démarre fermé à chaque ouverture du menu profil ; la vue des entretiens reçoit un en-tête, des actions, des cartes et une barre semaine plus compacts, avec recherche/filtres dans un panneau dédié responsive.

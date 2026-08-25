@@ -26,7 +26,7 @@ export function TasksSubnav() {
               "inline-flex min-h-11 shrink-0 items-center rounded-xl border px-3 py-2 text-sm font-medium transition",
               active
                 ? "border-pool-300 bg-pool-50 text-graphite-900"
-                : "border-graphite-200 bg-white text-graphite-600 hover:border-pool-200 hover:text-graphite-900",
+                : "border-graphite-100 bg-white text-graphite-600 hover:border-pool-200 hover:bg-graphite-50 hover:text-graphite-900",
             )}
           >
             {item.label}

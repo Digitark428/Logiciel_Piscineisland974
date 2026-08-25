@@ -50,14 +50,14 @@ function NavigationLinks({
       return (
         <div
           key={item.href}
-          className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-graphite-600 transition hover:bg-graphite-100 hover:text-graphite-900"
+          className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-graphite-600"
           aria-label={`${item.label} — En développement`}
         >
           <Icon name={item.icon} size={19} />
           <span className="min-w-0 leading-tight">
             <span className="block truncate">{item.label}</span>
             {item.description && <span className="mt-0.5 block truncate text-[11px] font-normal text-graphite-500">{item.description}</span>}
-            <span className={cn("leti-development-badge mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide", tone === "aqua" && "leti-development-badge--aqua")}>En développement</span>
+            <span className={cn("leti-development-badge mt-1 inline-flex rounded-lg px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide", tone === "aqua" && "leti-development-badge--aqua")}>En développement</span>
           </span>
         </div>
       );
@@ -104,7 +104,7 @@ function NavigationLinks({
               aria-controls={`nav-group-${entry.key}`}
               className={cn(
                 "flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition",
-                active || expanded ? "bg-graphite-100 text-graphite-900" : "text-graphite-600 hover:bg-graphite-100 hover:text-graphite-900",
+                active || expanded ? "bg-graphite-50 text-graphite-900" : "text-graphite-600 hover:bg-graphite-50 hover:text-graphite-900",
               )}
             >
               <Icon name={entry.icon} size={19} />
@@ -230,7 +230,7 @@ function ProfileMenu({
         aria-label={`${open ? "Fermer" : "Ouvrir"} le menu du profil de ${userName}`}
         className={cn(
           "flex min-h-11 items-center gap-2 rounded-xl px-2 py-1 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-pool-500 focus-visible:ring-offset-2",
-          open ? "bg-graphite-100" : "hover:bg-graphite-50",
+          open ? "bg-graphite-50" : "hover:bg-graphite-50",
         )}
       >
         <Avatar name={userName} src={avatarUrl} size={34} />
@@ -245,7 +245,7 @@ function ProfileMenu({
         <nav
           id="leti-profile-menu"
           aria-label="Menu du profil"
-          className="absolute right-0 top-full z-50 mt-2 w-[min(19rem,calc(100vw-2rem))] rounded-2xl border border-graphite-200 bg-white p-2 shadow-float"
+          className="absolute right-0 top-full z-50 mt-2 w-[min(19rem,calc(100vw-2rem))] rounded-2xl border border-graphite-100 bg-white p-2 shadow-float"
         >
           <div className="mb-2 border-b border-graphite-100 px-3 py-2 sm:hidden">
             <div className="truncate text-sm font-semibold text-graphite-900">{userName}</div>
@@ -266,7 +266,7 @@ function ProfileMenu({
                   aria-controls={`profile-group-${entry.key}`}
                   className={cn(
                     "flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition",
-                    expanded ? "bg-graphite-100 text-graphite-900" : "text-graphite-600 hover:bg-graphite-100 hover:text-graphite-900",
+                    expanded ? "bg-graphite-50 text-graphite-900" : "text-graphite-600 hover:bg-graphite-50 hover:text-graphite-900",
                   )}
                 >
                   <Icon name={entry.icon} size={19} />
@@ -494,7 +494,7 @@ export function AppShell({
   return (
     <div className="min-h-screen bg-graphite-50" onClickCapture={handleInternalNavigation}>
       {/* Sidebar desktop */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-graphite-200 bg-white lg:flex">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-graphite-100 bg-white lg:flex">
         <div className="flex h-[4.5rem] items-center px-5">
           <Link
             href="/app"
@@ -552,7 +552,7 @@ export function AppShell({
 
       {/* Contenu */}
       <div className="lg:pl-64">
-        <header className="sticky top-0 z-20 flex h-[4.5rem] items-center gap-3 border-b border-graphite-200 bg-white/90 px-4 backdrop-blur sm:px-6">
+        <header className="sticky top-0 z-20 flex h-[4.5rem] items-center gap-3 border-b border-graphite-100 bg-white/95 px-4 backdrop-blur sm:px-6">
           <button ref={mobileMenuButtonRef} onClick={() => setOpen(true)} className="btn-ghost p-2 lg:hidden" aria-label="Menu">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
           </button>
@@ -566,7 +566,7 @@ export function AppShell({
               onTouchStart={() => prefetch("/app/notifications", true)}
               onFocus={() => prefetch("/app/notifications")}
               onBlur={() => cancelPrefetch("/app/notifications")}
-              className="relative inline-flex h-10 w-10 shrink-0 overflow-visible btn-ghost p-2"
+              className="relative inline-flex h-11 w-11 shrink-0 overflow-visible btn-ghost p-2"
               aria-label={notifCount > 0 ? `Notifications (${notifCount > 99 ? "99+" : notifCount} non lues)` : "Notifications"}
             >
               <span className={cn("inline-flex h-8 w-8 items-center justify-center rounded-full", notifCount > 0 && "leti-notification-bell")}><Icon name="bell" size={21} /></span>

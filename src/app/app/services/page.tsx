@@ -26,7 +26,7 @@ function queryHref(values: SearchParams): string {
 
 function OccurrenceCard({ occurrence }: { occurrence: MaintenanceOccurrence }) {
   return (
-    <Link href={occurrenceHref(occurrence)} className="block rounded-xl border border-graphite-100 bg-white px-3 py-2.5 transition hover:border-pool-200 hover:shadow-sm">
+    <Link href={occurrenceHref(occurrence)} className="block rounded-xl border border-graphite-100 bg-white px-3 py-2.5 transition hover:border-pool-200 hover:bg-pool-50/30">
       <div className="truncate text-base font-bold leading-tight text-graphite-900">{operationalClientName(occurrence.client)}</div>
       <div className="mt-1 flex min-w-0 items-center gap-1.5 text-[11px] leading-tight text-graphite-500">
         <span className="truncate">{occurrence.serviceType}</span>
@@ -92,7 +92,7 @@ export default async function ServicesPage({ searchParams }: { searchParams: Sea
         )}
       </div>
 
-      <div className="mb-4 flex flex-wrap items-center gap-2 rounded-2xl border border-graphite-200 bg-white/80 p-2 shadow-card">
+      <div className="mb-4 flex flex-wrap items-center gap-2 rounded-2xl border border-graphite-100 bg-white p-2 shadow-card">
         <div className="flex items-center gap-2">
           <Link href={queryHref({ ...preserved, date: toISO(addDays(weekStart, -7)) })} className="btn-secondary px-3" aria-label="Semaine précédente">←</Link>
           <Link href={queryHref({ ...preserved, date: today })} className="btn-secondary px-3">Cette semaine</Link>
@@ -116,7 +116,7 @@ export default async function ServicesPage({ searchParams }: { searchParams: Sea
           <Link
             key={day.date}
             href={queryHref({ ...preserved, date: start, day: day.date })}
-            className={`min-w-[4.6rem] rounded-xl px-3 py-2 text-center ring-1 ${day.date === selectedDate ? "bg-pool-100 text-pool-800 ring-pool-300" : "bg-white text-graphite-600 ring-graphite-200"}`}
+            className={`min-w-[4.6rem] rounded-xl border px-3 py-2 text-center transition ${day.date === selectedDate ? "border-pool-300 bg-pool-50 text-pool-800" : "border-graphite-100 bg-white text-graphite-600 hover:border-pool-200"}`}
           >
             <span className="block text-xs font-semibold uppercase">{day.short}</span>
             <span className="mt-0.5 block text-lg font-bold">{Number(day.date.slice(-2))}</span>
@@ -139,7 +139,7 @@ export default async function ServicesPage({ searchParams }: { searchParams: Sea
       <div className="hidden gap-3 md:grid md:grid-cols-2 lg:grid-cols-4 min-[1380px]:grid-cols-7">
         {days.map((day) => (
           <section key={day.date} className="min-w-0">
-            <div className={`mb-2 rounded-xl px-2 py-2 text-center ${day.date === today ? "bg-pool-100 text-pool-800" : "bg-graphite-50 text-graphite-600"}`}>
+            <div className={`mb-2 rounded-xl border px-2 py-2 text-center ${day.date === today ? "border-pool-200 bg-pool-50 text-pool-800" : "border-transparent bg-graphite-50 text-graphite-600"}`}>
               <div className="text-xs font-semibold uppercase">{day.short}</div>
               <div className="text-lg font-bold">{Number(day.date.slice(-2))}</div>
             </div>

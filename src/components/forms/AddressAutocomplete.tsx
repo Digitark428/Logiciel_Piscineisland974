@@ -179,7 +179,7 @@ export function AddressAutocomplete({
           </span>
         )}
         {open && suggestions.length > 0 && (
-          <ul className="absolute z-20 mt-1 max-h-72 w-full overflow-auto rounded-lg border border-graphite-200 bg-white shadow-lg">
+          <ul className="absolute z-20 mt-1 max-h-72 w-full overflow-auto rounded-lg border border-graphite-100 bg-white shadow-float">
             {suggestions.map((s, i) => (
               <li key={`${s.label}-${i}`}>
                 <button

@@ -148,7 +148,7 @@ export default async function PlanningPage({ searchParams }: { searchParams: Sea
                   key={type}
                   href={planningHref(view, anchor, nextTypes)}
                   aria-pressed={active}
-                  className={`inline-flex min-h-11 items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition ${active ? "border-pool-300 bg-pool-50 text-graphite-900" : "border-graphite-200 bg-white text-graphite-500 hover:bg-graphite-50"}`}
+                  className={`inline-flex min-h-11 items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition ${active ? "border-pool-300 bg-pool-50 text-graphite-900" : "border-graphite-100 bg-white text-graphite-500 hover:border-pool-200 hover:bg-graphite-50"}`}
                 >
                   <span className={`h-2 w-2 rounded-full ${type === "event" ? "bg-coral-500" : type === "task" ? "bg-amber-400" : "bg-pool-400"}`} />
                   {PLANNING_TYPE_LABELS[type]}
@@ -170,10 +170,10 @@ export default async function PlanningPage({ searchParams }: { searchParams: Sea
             <Link href={link(view, next)} className="btn-secondary px-3" aria-label="Période suivante">›</Link>
             <h2 className="min-w-0 basis-full text-base font-semibold capitalize text-graphite-900 sm:ml-2 sm:basis-auto sm:text-lg">{periodLabel(view, anchor)}</h2>
           </div>
-          <div className="flex gap-1 rounded-xl bg-white p-1 ring-1 ring-graphite-200">
+          <div className="flex gap-1 rounded-xl border border-graphite-100 bg-white p-1 shadow-card">
             {(["day", "week", "month", "year"] as PlanningView[]).map((nextView) => (
               <Link key={nextView} href={link(nextView, anchor)}
-                className={`rounded-lg px-2.5 py-2 text-xs font-medium sm:px-3 sm:text-sm ${view === nextView ? "bg-pool-100 text-graphite-900" : "text-graphite-600 hover:bg-graphite-100"}`}>
+                className={`rounded-lg px-2.5 py-2 text-xs font-medium transition sm:px-3 sm:text-sm ${view === nextView ? "bg-pool-50 text-graphite-900 ring-1 ring-inset ring-pool-200" : "text-graphite-600 hover:bg-graphite-50"}`}>
                 {nextView === "day" ? "Jour" : nextView === "week" ? "Semaine" : nextView === "month" ? "Mois" : "Année"}
               </Link>
             ))}
@@ -237,7 +237,7 @@ function WeekView({ start, byDate }: { start: Date; byDate: Map<string, Calendar
         const iso = toISO(day);
         const list = byDate.get(iso) ?? [];
         return (
-          <div key={iso} className={`card p-3 ${iso === today ? "ring-2 ring-pool-300" : ""}`}>
+          <div key={iso} className={`card p-3 ${iso === today ? "border-pool-300 bg-pool-50/30" : ""}`}>
             <div className="mb-2 flex items-baseline justify-between">
               <span className="text-xs font-semibold uppercase text-graphite-400">{weekdayShort(day)}</span>
               <span className="text-lg font-bold text-graphite-800">{day.getUTCDate()}</span>
@@ -268,7 +268,7 @@ function MonthView({ anchor, byDate, dayHref }: { anchor: Date; byDate: Map<stri
           const list = byDate.get(iso) ?? [];
           const inMonth = day.getUTCMonth() === anchor.getUTCMonth();
           return (
-            <div key={iso} className={`min-h-[76px] min-w-0 rounded-lg border p-1 text-left sm:p-1.5 ${inMonth ? "border-graphite-100 bg-white" : "border-transparent bg-graphite-50/50"} ${iso === today ? "ring-2 ring-pool-300" : ""}`}>
+            <div key={iso} className={`min-h-[76px] min-w-0 rounded-lg border p-1 text-left sm:p-1.5 ${inMonth ? "border-graphite-100 bg-white" : "border-transparent bg-graphite-50/50"} ${iso === today ? "border-pool-300 bg-pool-50/30" : ""}`}>
               <Link href={dayHref(iso)} className={`inline-flex h-6 min-w-6 items-center justify-center rounded text-xs font-semibold hover:bg-pool-50 ${inMonth ? "text-graphite-700" : "text-graphite-300"}`}>
                 {day.getUTCDate()}
               </Link>
@@ -312,7 +312,7 @@ function YearView({ year, byDate, monthHref }: { year: number; byDate: Map<strin
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {counts.map((count, index) => (
-        <Link key={monthName(index)} href={monthHref(`${year}-${String(index + 1).padStart(2, "0")}-01`)} className="card p-5 transition hover:shadow-float">
+        <Link key={monthName(index)} href={monthHref(`${year}-${String(index + 1).padStart(2, "0")}-01`)} className="card p-5 transition hover:border-pool-200">
           <div className="text-sm font-medium text-graphite-500">{monthName(index)}</div>
           <div className="mt-1 text-3xl font-bold text-pool-600">{count}</div>
           <div className="text-xs text-graphite-400">élément{count > 1 ? "s" : ""}</div>

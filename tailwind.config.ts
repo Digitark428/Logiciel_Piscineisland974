@@ -59,8 +59,8 @@ const config: Config = {
         ],
       },
       boxShadow: {
-        card: "0 1px 2px rgba(24,58,89,0.025), 0 5px 18px rgba(24,58,89,0.035)",
-        float: "0 14px 36px rgba(24,58,89,0.12)",
+        card: "0 1px 2px rgba(24,58,89,0.02), 0 4px 14px rgba(24,58,89,0.035)",
+        float: "0 12px 32px rgba(24,58,89,0.1)",
       },
       borderRadius: {
         xl: "0.875rem",

@@ -26,7 +26,7 @@ export default async function PoolsPage() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {pools.map((p: any) => (
-            <Link key={p.id} href={`/app/pools/${p.id}`} className="card p-5 transition hover:shadow-float">
+            <Link key={p.id} href={`/app/pools/${p.id}`} className="card p-5 transition hover:border-pool-200">
               <div className="text-base font-semibold text-graphite-900">{p.name}</div>
               <div className="mt-1 text-sm text-graphite-500">{clientName(p.client ?? {})}</div>
               <div className="mt-3 flex flex-wrap gap-1.5 text-xs">

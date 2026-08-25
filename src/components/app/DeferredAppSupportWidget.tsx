@@ -30,7 +30,7 @@ export function DeferredAppSupportWidget() {
       onTouchStart={preloadSupportWidget}
       aria-label="Ouvrir l'aide et les retours"
       aria-haspopup="dialog"
-      className="leti-support-launcher fixed bottom-5 right-5 z-30 flex items-center gap-2 rounded-full px-4 py-3 text-sm font-semibold backdrop-blur transition active:scale-95"
+      className="leti-support-launcher fixed bottom-5 right-5 z-30 flex items-center gap-2 rounded-full px-4 py-3 text-sm font-semibold transition active:scale-[0.985]"
       style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
     >
       <span aria-hidden="true" className="text-base leading-none">💬</span>
@@ -48,7 +48,7 @@ function SupportLoadingPanel() {
     <>
       <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-40 bg-graphite-950/10 backdrop-blur-[2px]" />
       <section
-        className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-50 mx-auto flex w-auto max-w-sm items-center gap-3 rounded-2xl border border-graphite-200 bg-white p-4 shadow-2xl sm:inset-x-auto sm:bottom-5 sm:right-5 sm:w-[370px]"
+        className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-50 mx-auto flex w-auto max-w-sm items-center gap-3 rounded-2xl border border-graphite-100 bg-white p-4 shadow-float sm:inset-x-auto sm:bottom-5 sm:right-5 sm:w-[370px]"
         role="dialog"
         tabIndex={-1}
         autoFocus
