@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   createSupportConversation,
@@ -69,6 +69,8 @@ export function AssistanceWidget({ token, conversations, unreadTotal, services }
   const [activeId, setActiveId] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const launcherRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   const active = useMemo(() => conversations.find((c) => c.id === activeId) ?? null, [conversations, activeId]);
 
@@ -80,6 +82,44 @@ export function AssistanceWidget({ token, conversations, unreadTotal, services }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, screen, activeId, active?.unread]);
 
+  const closePanel = useCallback(() => {
+    setOpen(false);
+    requestAnimationFrame(() => launcherRef.current?.focus());
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closePanel();
+        return;
+      }
+      if (event.key !== "Tab" || !panelRef.current) return;
+      const focusable = Array.from(panelRef.current.querySelectorAll<HTMLElement>(
+        "button:not([disabled]), a[href], input:not([disabled]), textarea:not([disabled]), select:not([disabled])",
+      ));
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    requestAnimationFrame(() => panelRef.current?.focus());
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [closePanel, open]);
+
   function openPanel() {
     setOpen(true);
     setError(null);
@@ -90,6 +130,7 @@ export function AssistanceWidget({ token, conversations, unreadTotal, services }
     <>
       {!open && (
         <button
+          ref={launcherRef}
           onClick={openPanel}
           aria-label="Ouvrir l'assistance"
           className="fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-full bg-pool-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-pool-600/30 transition hover:bg-pool-700 active:scale-95"
@@ -107,14 +148,17 @@ export function AssistanceWidget({ token, conversations, unreadTotal, services }
 
       {open && (
         <div
-          className="fixed inset-x-3 bottom-3 z-50 mx-auto flex max-h-[85vh] w-auto max-w-sm flex-col overflow-hidden rounded-2xl border border-graphite-200 bg-white shadow-2xl sm:inset-x-auto sm:right-5 sm:bottom-5 sm:w-[370px]"
+          ref={panelRef}
+          className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-50 mx-auto flex max-h-[85dvh] w-auto max-w-sm flex-col overflow-hidden rounded-2xl border border-graphite-200 bg-white shadow-2xl sm:inset-x-auto sm:right-5 sm:bottom-5 sm:w-[370px]"
           role="dialog"
+          aria-modal="true"
+          tabIndex={-1}
           aria-label="Assistance"
         >
           <Header
             screen={screen}
             onBack={() => { setError(null); setScreen(conversations.length ? "home" : "category"); }}
-            onClose={() => setOpen(false)}
+            onClose={closePanel}
           />
 
           <div className="min-h-0 flex-1 overflow-y-auto">
@@ -194,7 +238,7 @@ function Header({ screen, onBack, onClose }: { screen: Screen; onBack: () => voi
     <div className="flex items-center justify-between gap-2 border-b border-graphite-100 bg-graphite-50 px-4 py-3">
       <div className="flex items-center gap-2">
         {showBack && (
-          <button onClick={onBack} aria-label="Retour" className="rounded-lg p-1 text-graphite-500 hover:bg-graphite-100">
+          <button onClick={onBack} aria-label="Retour" className="flex h-11 w-11 items-center justify-center rounded-lg text-xl text-graphite-500 hover:bg-graphite-100">
             ‹
           </button>
         )}
@@ -203,7 +247,7 @@ function Header({ screen, onBack, onClose }: { screen: Screen; onBack: () => voi
           <div className="text-xs text-graphite-400">Nous vous répondons ici</div>
         </div>
       </div>
-      <button onClick={onClose} aria-label="Fermer" className="rounded-lg p-1.5 text-graphite-400 hover:bg-graphite-100">
+      <button onClick={onClose} aria-label="Fermer" className="flex h-11 w-11 items-center justify-center rounded-lg text-graphite-400 hover:bg-graphite-100">
         ✕
       </button>
     </div>
