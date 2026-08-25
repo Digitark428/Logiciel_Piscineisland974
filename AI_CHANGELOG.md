@@ -2,6 +2,13 @@
 
 > Ajouter une entrée courte après chaque intervention significative. Ne pas y dupliquer la documentation durable de `PROJECT_CONTEXT.md`.
 
+## 2026-08-25 — Codex — Navigation directionnelle et préchargement maîtrisé
+
+- **Transitions :** ordre logique global des écrans principaux et des sous-menus, ouverture d'une fiche vers l'avant et retour vers l'arrière ; mouvement horizontal discret limité au contenu, shell fixe, retour immédiat au clic et neutralisation complète avec `prefers-reduced-motion`.
+- **Chargement :** préchargement automatique retiré des listes denses et remplacé par une intention explicite (survol, focus, toucher), avec déduplication des doubles clics et des destinations déjà en cours.
+- **Audit :** base minuscule et requêtes Supabase principales à environ 1–3 ms ; la latence froide observée vient surtout du rendu serveur authentifié et du réseau. La validation distante `getUser` reste conservée pour la révocation immédiate des sessions.
+- **Vérification :** lint, typecheck, build de production et 60 tests unitaires validés ; publication directe Vercel en production. La sonde de mesure temporaire a été retirée du livrable final.
+
 ## 2026-08-25 — Codex — Finition visuelle stricte LETI
 
 - **Fondations :** cartes désormais pleines et calmes, bordures plus fines, ombres raccourcies, gradients décoratifs retirés, CTA corail affirmé, contrôles à 44 px et focus aqua cohérent ; les rayons et la typographie existants sont conservés.

@@ -80,7 +80,7 @@ export default async function DashboardPage() {
                 <h2 className="text-lg font-semibold text-graphite-900">Entretiens du jour</h2>
                 <p className="mt-0.5 text-sm font-medium text-pool-700">{formatDateWithWeekday(today)}</p>
               </div>
-              <Link href="/app/planning" className="text-sm font-medium text-pool-600 hover:text-pool-700">Planning →</Link>
+              <Link prefetch={false} href="/app/planning" className="text-sm font-medium text-pool-600 hover:text-pool-700">Planning →</Link>
             </div>
             {todayServices.length === 0 ? (
               <p className="py-6 text-center text-sm text-graphite-400">Aucun entretien prévu aujourd'hui.</p>
@@ -88,7 +88,7 @@ export default async function DashboardPage() {
               <ul className="grid gap-3 sm:grid-cols-2">
                 {todayServices.map((s) => (
                   <li key={s.key}>
-                    <Link href={occurrenceHref(s)} className="block rounded-xl border border-graphite-100 bg-graphite-50/60 px-4 py-3.5 transition hover:border-pool-200 hover:bg-white">
+                    <Link prefetch={false} href={occurrenceHref(s)} className="block rounded-xl border border-graphite-100 bg-graphite-50/60 px-4 py-3.5 transition hover:border-pool-200 hover:bg-white">
                       <div className="text-lg font-bold leading-tight text-graphite-900 sm:text-xl">{displayClient(s)}</div>
                       <div className="mt-2 min-w-0 text-sm text-graphite-500">
                         <span className="truncate">{s.serviceType}</span>
@@ -118,7 +118,7 @@ export default async function DashboardPage() {
             <Card>
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-graphite-900">Tâches</h2>
-                <Link href="/app/tasks/personal" className="text-sm font-medium text-pool-600 hover:text-pool-700">Voir →</Link>
+                <Link prefetch={false} href="/app/tasks/personal" className="text-sm font-medium text-pool-600 hover:text-pool-700">Voir →</Link>
               </div>
               {tasks.length === 0 ? (
                 <p className="py-4 text-center text-sm text-graphite-400">Aucune tâche en attente.</p>

@@ -147,7 +147,7 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
           <Card>
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-graphite-900">Contrats d'entretien</h2>
-              {can(ctx, "services.create") && <Link href={`/app/services/new?kind=contract&client=${client.id}`} className="text-sm font-medium text-pool-600 hover:text-pool-700">+ Nouveau contrat</Link>}
+              {can(ctx, "services.create") && <Link href={`/app/services/new?kind=contract&client=${client.id}`} prefetch={false} data-leti-direction="forward" className="text-sm font-medium text-pool-600 hover:text-pool-700">+ Nouveau contrat</Link>}
             </div>
             {maintenanceContracts.length === 0 ? (
               <p className="py-4 text-center text-sm text-graphite-400">Aucun contrat d'entretien hebdomadaire.</p>
@@ -158,7 +158,7 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
                   const amount = amountByContract.get(contract.id);
                   return (
                     <li key={contract.id}>
-                      <Link href={`/app/services/contracts/${contract.id}`} className="flex flex-wrap items-center justify-between gap-3 -mx-2 rounded-lg px-2 py-3 hover:bg-graphite-50">
+                      <Link href={`/app/services/contracts/${contract.id}`} prefetch={false} data-leti-direction="forward" className="flex flex-wrap items-center justify-between gap-3 -mx-2 rounded-lg px-2 py-3 hover:bg-graphite-50">
                         <div>
                           <div className="font-medium text-graphite-900">{serviceTypeLabel(contract.service_type)} · chaque {weekdayLabel(contract.recurrence_weekday).toLocaleLowerCase("fr")}</div>
                           <div className="mt-0.5 text-sm text-graphite-500">Depuis le {formatDate(contract.starts_on)}{contract.ends_on ? ` · jusqu'au ${formatDate(contract.ends_on)}` : ""}{assignee ? ` · ${[assignee.first_name, assignee.last_name].filter(Boolean).join(" ") || assignee.email}` : ""}</div>
@@ -178,7 +178,7 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-graphite-900">Historique des entretiens</h2>
               {can(ctx, "services.create") && (
-                <Link href={`/app/services/new?kind=one_off&client=${client.id}`} className="text-sm font-medium text-pool-600 hover:text-pool-700">+ Entretien ponctuel</Link>
+                <Link href={`/app/services/new?kind=one_off&client=${client.id}`} prefetch={false} data-leti-direction="forward" className="text-sm font-medium text-pool-600 hover:text-pool-700">+ Entretien ponctuel</Link>
               )}
             </div>
             {services.length === 0 ? (
@@ -187,7 +187,7 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
               <ul className="divide-y divide-graphite-100">
                 {services.map((s) => (
                   <li key={s.id}>
-                    <Link href={`/app/services/${s.id}`} className="flex items-center gap-3 py-3 hover:bg-graphite-50 -mx-2 px-2 rounded-lg">
+                    <Link href={`/app/services/${s.id}`} prefetch={false} data-leti-direction="forward" className="flex items-center gap-3 py-3 hover:bg-graphite-50 -mx-2 px-2 rounded-lg">
                       <div className="w-28 text-sm text-graphite-500">{formatDate(s.scheduled_date)}</div>
                       <div className="min-w-0 flex-1">
                         <div className="truncate font-medium text-graphite-900">{serviceTypeLabel(s.service_type)}</div>

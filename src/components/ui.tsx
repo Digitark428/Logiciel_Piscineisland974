@@ -143,5 +143,5 @@ export function StatCard({
       {hint && <div className="mt-1 text-xs text-graphite-400">{hint}</div>}
     </div>
   );
-  return href ? <Link href={href}>{inner}</Link> : inner;
+  return href ? <Link href={href} prefetch={false}>{inner}</Link> : inner;
 }

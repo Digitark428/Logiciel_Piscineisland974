@@ -146,6 +146,7 @@ export default async function PlanningPage({ searchParams }: { searchParams: Sea
               return (
                 <Link
                   key={type}
+                  prefetch={false}
                   href={planningHref(view, anchor, nextTypes)}
                   aria-pressed={active}
                   className={`inline-flex min-h-11 items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition ${active ? "border-pool-300 bg-pool-50 text-graphite-900" : "border-graphite-100 bg-white text-graphite-500 hover:border-pool-200 hover:bg-graphite-50"}`}
@@ -165,14 +166,14 @@ export default async function PlanningPage({ searchParams }: { searchParams: Sea
 
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <Link href={link(view, prev)} className="btn-secondary px-3" aria-label="Période précédente">‹</Link>
-            <Link href={link(view, todayInReunion())} className="btn-secondary px-3">Aujourd'hui</Link>
-            <Link href={link(view, next)} className="btn-secondary px-3" aria-label="Période suivante">›</Link>
+            <Link prefetch={false} href={link(view, prev)} className="btn-secondary px-3" aria-label="Période précédente">‹</Link>
+            <Link prefetch={false} href={link(view, todayInReunion())} className="btn-secondary px-3">Aujourd'hui</Link>
+            <Link prefetch={false} href={link(view, next)} className="btn-secondary px-3" aria-label="Période suivante">›</Link>
             <h2 className="min-w-0 basis-full text-base font-semibold capitalize text-graphite-900 sm:ml-2 sm:basis-auto sm:text-lg">{periodLabel(view, anchor)}</h2>
           </div>
           <div className="flex gap-1 rounded-xl border border-graphite-100 bg-white p-1 shadow-card">
             {(["day", "week", "month", "year"] as PlanningView[]).map((nextView) => (
-              <Link key={nextView} href={link(nextView, anchor)}
+              <Link key={nextView} prefetch={false} href={link(nextView, anchor)}
                 className={`rounded-lg px-2.5 py-2 text-xs font-medium transition sm:px-3 sm:text-sm ${view === nextView ? "bg-pool-50 text-graphite-900 ring-1 ring-inset ring-pool-200" : "text-graphite-600 hover:bg-graphite-50"}`}>
                 {nextView === "day" ? "Jour" : nextView === "week" ? "Semaine" : nextView === "month" ? "Mois" : "Année"}
               </Link>
@@ -191,7 +192,7 @@ export default async function PlanningPage({ searchParams }: { searchParams: Sea
 
 function ServiceRow({ service }: { service: MaintenanceOccurrence }) {
   return (
-    <Link href={occurrenceHref(service)} className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-graphite-50">
+    <Link prefetch={false} href={occurrenceHref(service)} className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-graphite-50">
       <span className={`h-2 w-2 shrink-0 rounded-full ${STATUS_DOT[service.status]}`} />
       {service.scheduledTime && <span className="w-12 shrink-0 text-xs text-graphite-400">{formatTime(service.scheduledTime)}</span>}
       <span className="truncate text-graphite-800">{clientName(service.client ?? {})}</span>
@@ -202,7 +203,7 @@ function ServiceRow({ service }: { service: MaintenanceOccurrence }) {
 function TaskRow({ task }: { task: PlanningTask }) {
   const href = task.category === "personal" ? "/app/tasks/personal" : "/app/tasks/assign";
   return (
-    <Link href={href} className="flex items-center gap-2 rounded-lg border border-amber-100 bg-amber-50/35 px-2 py-1.5 text-sm hover:bg-amber-50">
+    <Link prefetch={false} href={href} className="flex items-center gap-2 rounded-lg border border-amber-100 bg-amber-50/35 px-2 py-1.5 text-sm hover:bg-amber-50">
       <span className={`h-2 w-2 shrink-0 rounded-full ${STATUS_DOT[task.status]}`} />
       {task.due_time && <span className="w-12 shrink-0 text-xs text-graphite-400">{formatTime(task.due_time)}</span>}
       <span className="truncate text-graphite-800">{task.title}</span>
@@ -269,12 +270,12 @@ function MonthView({ anchor, byDate, dayHref }: { anchor: Date; byDate: Map<stri
           const inMonth = day.getUTCMonth() === anchor.getUTCMonth();
           return (
             <div key={iso} className={`min-h-[76px] min-w-0 rounded-lg border p-1 text-left sm:p-1.5 ${inMonth ? "border-graphite-100 bg-white" : "border-transparent bg-graphite-50/50"} ${iso === today ? "border-pool-300 bg-pool-50/30" : ""}`}>
-              <Link href={dayHref(iso)} className={`inline-flex h-6 min-w-6 items-center justify-center rounded text-xs font-semibold hover:bg-pool-50 ${inMonth ? "text-graphite-700" : "text-graphite-300"}`}>
+              <Link prefetch={false} href={dayHref(iso)} className={`inline-flex h-6 min-w-6 items-center justify-center rounded text-xs font-semibold hover:bg-pool-50 ${inMonth ? "text-graphite-700" : "text-graphite-300"}`}>
                 {day.getUTCDate()}
               </Link>
               <div className="mt-0.5 space-y-0.5">
                 {list.slice(0, 3).map((item) => <CalendarCompact key={calendarItemKey(item)} item={item} />)}
-                {list.length > 3 && <Link href={dayHref(iso)} className="block text-[10px] text-graphite-400 hover:text-pool-700">+{list.length - 3}</Link>}
+                {list.length > 3 && <Link prefetch={false} href={dayHref(iso)} className="block text-[10px] text-graphite-400 hover:text-pool-700">+{list.length - 3}</Link>}
               </div>
             </div>
           );
@@ -289,14 +290,14 @@ function CalendarCompact({ item }: { item: CalendarItem }) {
   if (item.kind === "task") {
     const href = item.task.category === "personal" ? "/app/tasks/personal" : "/app/tasks/assign";
     return (
-      <Link href={href} className="flex min-w-0 items-center gap-1 rounded px-0.5 py-0.5 hover:bg-amber-50">
+      <Link prefetch={false} href={href} className="flex min-w-0 items-center gap-1 rounded px-0.5 py-0.5 hover:bg-amber-50">
         <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400" />
         <span className="truncate text-[11px] text-graphite-600">{item.task.title}</span>
       </Link>
     );
   }
   return (
-    <Link href={occurrenceHref(item.service)} className="flex min-w-0 items-center gap-1 rounded px-0.5 py-0.5 hover:bg-pool-50">
+    <Link prefetch={false} href={occurrenceHref(item.service)} className="flex min-w-0 items-center gap-1 rounded px-0.5 py-0.5 hover:bg-pool-50">
       <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${STATUS_DOT[item.service.status]}`} />
       <span className="truncate text-[11px] text-graphite-600">{clientName(item.service.client ?? {})}</span>
     </Link>
@@ -312,7 +313,7 @@ function YearView({ year, byDate, monthHref }: { year: number; byDate: Map<strin
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {counts.map((count, index) => (
-        <Link key={monthName(index)} href={monthHref(`${year}-${String(index + 1).padStart(2, "0")}-01`)} className="card p-5 transition hover:border-pool-200">
+        <Link key={monthName(index)} prefetch={false} href={monthHref(`${year}-${String(index + 1).padStart(2, "0")}-01`)} className="card p-5 transition hover:border-pool-200">
           <div className="text-sm font-medium text-graphite-500">{monthName(index)}</div>
           <div className="mt-1 text-3xl font-bold text-pool-600">{count}</div>
           <div className="text-xs text-graphite-400">élément{count > 1 ? "s" : ""}</div>

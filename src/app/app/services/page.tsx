@@ -26,7 +26,7 @@ function queryHref(values: SearchParams): string {
 
 function OccurrenceCard({ occurrence }: { occurrence: MaintenanceOccurrence }) {
   return (
-    <Link href={occurrenceHref(occurrence)} className="block rounded-xl border border-graphite-100 bg-white px-3 py-2.5 transition hover:border-pool-200 hover:bg-pool-50/30">
+    <Link prefetch={false} href={occurrenceHref(occurrence)} className="block rounded-xl border border-graphite-100 bg-white px-3 py-2.5 transition hover:border-pool-200 hover:bg-pool-50/30">
       <div className="truncate text-base font-bold leading-tight text-graphite-900">{operationalClientName(occurrence.client)}</div>
       <div className="mt-1 flex min-w-0 items-center gap-1.5 text-[11px] leading-tight text-graphite-500">
         <span className="truncate">{occurrence.serviceType}</span>
@@ -86,17 +86,17 @@ export default async function ServicesPage({ searchParams }: { searchParams: Sea
         <h1 className="text-xl font-semibold tracking-[-0.025em] text-graphite-900 sm:text-[1.75rem]">Mes entretiens</h1>
         {canCreate && (
           <div className="flex shrink-0 gap-1.5 sm:gap-2">
-            <Link href="/app/services/new?kind=contract" className="btn-primary px-2.5 text-[13px] sm:px-3" title="Nouveau contrat">+ Contrat</Link>
-            <Link href="/app/services/new?kind=one_off" className="btn-secondary px-2.5 text-[13px] sm:px-3" title="Nouvel entretien ponctuel">+ Ponctuel</Link>
+            <Link prefetch={false} href="/app/services/new?kind=contract" className="btn-primary px-2.5 text-[13px] sm:px-3" title="Nouveau contrat">+ Contrat</Link>
+            <Link prefetch={false} href="/app/services/new?kind=one_off" className="btn-secondary px-2.5 text-[13px] sm:px-3" title="Nouvel entretien ponctuel">+ Ponctuel</Link>
           </div>
         )}
       </div>
 
       <div className="mb-4 flex flex-wrap items-center gap-2 rounded-2xl border border-graphite-100 bg-white p-2 shadow-card">
         <div className="flex items-center gap-2">
-          <Link href={queryHref({ ...preserved, date: toISO(addDays(weekStart, -7)) })} className="btn-secondary px-3" aria-label="Semaine précédente">←</Link>
-          <Link href={queryHref({ ...preserved, date: today })} className="btn-secondary px-3">Cette semaine</Link>
-          <Link href={queryHref({ ...preserved, date: toISO(addDays(weekStart, 7)) })} className="btn-secondary px-3" aria-label="Semaine suivante">→</Link>
+          <Link prefetch={false} href={queryHref({ ...preserved, date: toISO(addDays(weekStart, -7)) })} className="btn-secondary px-3" aria-label="Semaine précédente">←</Link>
+          <Link prefetch={false} href={queryHref({ ...preserved, date: today })} className="btn-secondary px-3">Cette semaine</Link>
+          <Link prefetch={false} href={queryHref({ ...preserved, date: toISO(addDays(weekStart, 7)) })} className="btn-secondary px-3" aria-label="Semaine suivante">→</Link>
         </div>
         <ServicesFilterPanel
           date={start}
@@ -115,6 +115,7 @@ export default async function ServicesPage({ searchParams }: { searchParams: Sea
         {days.map((day) => (
           <Link
             key={day.date}
+            prefetch={false}
             href={queryHref({ ...preserved, date: start, day: day.date })}
             className={`min-w-[4.6rem] rounded-xl border px-3 py-2 text-center transition ${day.date === selectedDate ? "border-pool-300 bg-pool-50 text-pool-800" : "border-graphite-100 bg-white text-graphite-600 hover:border-pool-200"}`}
           >

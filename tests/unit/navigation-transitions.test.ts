@@ -12,6 +12,17 @@ describe("Transitions de navigation LETI", () => {
     expect(navigationDirection("/app/services/service-1", "/app/services")).toBe("back");
   });
 
+  it("suit l'ordre visuel des sections principales dans les deux sens", () => {
+    expect(navigationDirection("/app/services", "/app/clients")).toBe("forward");
+    expect(navigationDirection("/app/clients", "/app/planning")).toBe("back");
+    expect(navigationDirection("/app/settings", "/app/documents")).toBe("back");
+  });
+
+  it("suit l'ordre visible des sous-menus", () => {
+    expect(navigationDirection("/app/tasks/personal", "/app/tasks/notes")).toBe("forward");
+    expect(navigationDirection("/app/tasks/notes", "/app/tasks/assign")).toBe("back");
+  });
+
   it("reste neutre quand seule la requête change", () => {
     expect(navigationDirection("/app/planning?date=2026-08-24", "/app/planning?date=2026-08-25")).toBe("neutral");
   });

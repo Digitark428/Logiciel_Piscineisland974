@@ -24,8 +24,8 @@
   --leti-card-shadow: 0 1px 2px rgba(var(--leti-navy-rgb), 0.02), 0 4px 14px rgba(var(--leti-navy-rgb), 0.035);
   --background: var(--leti-canvas);
   --foreground: var(--leti-navy);
-  --leti-motion-fast: 100ms;
-  --leti-motion-normal: 160ms;
+  --leti-motion-fast: 140ms;
+  --leti-motion-normal: 190ms;
   --leti-motion-ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
@@ -252,6 +252,8 @@ body {
  * pendant les micro-latences et ne se révèle qu'après 300 ms.
  */
 .leti-route-stage {
+  --leti-route-distance: 18px;
+  --leti-route-pending-distance: 6px;
   position: relative;
   min-height: min(32rem, calc(100dvh - 8.5rem));
 }
@@ -274,13 +276,19 @@ body {
 }
 
 .leti-route-view--pending {
-  opacity: 0.965;
-  transform: translate3d(-3px, 0, 0);
-  transition: opacity 100ms var(--leti-motion-ease-out), transform 120ms var(--leti-motion-ease-out);
+  animation: none;
+  opacity: 0.975;
+  transform: translate3d(calc(var(--leti-route-pending-distance) * -1), 0, 0);
+  transition: opacity 110ms var(--leti-motion-ease-out), transform 140ms var(--leti-motion-ease-out);
 }
 
 .leti-route-view--pending[data-direction="back"] {
-  transform: translate3d(3px, 0, 0);
+  transform: translate3d(var(--leti-route-pending-distance), 0, 0);
+}
+
+.leti-route-view--pending[data-direction="neutral"] {
+  opacity: 0.985;
+  transform: none;
 }
 
 a[data-leti-navigation-pending="true"] {
@@ -321,17 +329,17 @@ a[data-leti-navigation-pending="true"] {
 }
 
 @keyframes leti-route-enter-right {
-  from { opacity: 0.66; transform: translate3d(10px, 0, 0); }
+  from { opacity: 0.97; transform: translate3d(var(--leti-route-distance), 0, 0); }
   to { opacity: 1; transform: translate3d(0, 0, 0); }
 }
 
 @keyframes leti-route-enter-left {
-  from { opacity: 0.66; transform: translate3d(-10px, 0, 0); }
+  from { opacity: 0.97; transform: translate3d(calc(var(--leti-route-distance) * -1), 0, 0); }
   to { opacity: 1; transform: translate3d(0, 0, 0); }
 }
 
 @keyframes leti-route-enter-neutral {
-  from { opacity: 0.78; transform: translate3d(0, 0, 0); }
+  from { opacity: 0.985; transform: translate3d(0, 0, 0); }
   to { opacity: 1; transform: translate3d(0, 0, 0); }
 }
 
@@ -347,6 +355,13 @@ a[data-leti-navigation-pending="true"] {
 
 @keyframes leti-splash-out {
   to { opacity: 0; visibility: hidden; }
+}
+
+@media (max-width: 1023px) {
+  .leti-route-stage {
+    --leti-route-distance: 22px;
+    --leti-route-pending-distance: 8px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

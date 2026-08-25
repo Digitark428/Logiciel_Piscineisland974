@@ -1,6 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type MouseEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type FocusEvent,
+  type MouseEvent,
+  type PointerEvent,
+  type TouchEvent,
+} from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Logo } from "@/components/Logo";
@@ -12,6 +22,23 @@ import { isNavGroup, type NavEntry, type NavItem } from "./nav";
 import { cn } from "@/lib/utils/cn";
 import { WorkspaceIdentity } from "./WorkspaceIdentity";
 import { navigationDirection, routePathname, type NavigationDirection } from "@/lib/navigation/transitions";
+
+function explicitNavigationDirection(anchor: HTMLAnchorElement): NavigationDirection | undefined {
+  const direction = anchor.dataset.letiDirection;
+  return direction === "forward" || direction === "back" || direction === "neutral"
+    ? direction
+    : undefined;
+}
+
+function internalAppLink(target: EventTarget | null): { anchor: HTMLAnchorElement; href: string } | null {
+  if (!(target instanceof Element)) return null;
+  const anchor = target.closest<HTMLAnchorElement>("a[href]");
+  if (!anchor || anchor.target === "_blank" || anchor.hasAttribute("download")) return null;
+
+  const url = new URL(anchor.href, window.location.href);
+  if (url.origin !== window.location.origin || !url.pathname.startsWith("/app")) return null;
+  return { anchor, href: `${url.pathname}${url.search}` };
+}
 
 function NavigationLinks({
   items,
@@ -162,7 +189,7 @@ function ProfileMenu({
   useEffect(() => {
     if (!open) return;
 
-    const handlePointerDown = (event: PointerEvent) => {
+    const handlePointerDown = (event: globalThis.PointerEvent) => {
       if (rootRef.current && !rootRef.current.contains(event.target as Node)) closeMenu();
     };
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -330,6 +357,8 @@ export function AppShell({
   const queuedPrefetch = useRef<string | null>(null);
   const prefetchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingAnchor = useRef<HTMLAnchorElement | null>(null);
+  const pendingRoute = useRef<string | null>(null);
+  const pendingDirection = useRef<NavigationDirection | null>(null);
   const navigationStartedAt = useRef<number | null>(null);
   const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
   const mobileDrawerRef = useRef<HTMLElement>(null);
@@ -340,6 +369,7 @@ export function AppShell({
   }, []);
   const search = searchParams.toString();
   const routeKey = search ? `${pathname}?${search}` : pathname;
+  const committedRoute = useRef(routeKey);
   const pendingPathname = pendingHref ? routePathname(pendingHref) : null;
 
   // Une destination n'est préchargée qu'après une intention brève et explicite.
@@ -389,16 +419,27 @@ export function AppShell({
       const lastPrefetchedAt = prefetchedRoutes.current.get(nextHref);
       if (lastPrefetchedAt && Date.now() - lastPrefetchedAt < 30_000) return;
       runPrefetch(nextHref);
-    }, 120);
+    }, 80);
   }, [pathname, router]);
 
   useLayoutEffect(() => {
+    const previousRoute = committedRoute.current;
+    const inferredDirection = navigationDirection(previousRoute, routeKey);
+    const arrivedDirection = pendingDirection.current && pendingDirection.current !== "neutral"
+      ? pendingDirection.current
+      : inferredDirection;
+
+    if (previousRoute !== routeKey) setDirection(arrivedDirection);
+    committedRoute.current = routeKey;
+
     // La navigation Next.js est déjà concurrente via Link ; cet état ne sert qu'à
     // donner un retour visuel immédiatement après le clic, avant le rendu suivant.
     if (navigationStartedAt.current !== null) {
-      setArrivalPace(performance.now() - navigationStartedAt.current < 100 ? "fast" : "normal");
+      setArrivalPace(performance.now() - navigationStartedAt.current < 180 ? "fast" : "normal");
       navigationStartedAt.current = null;
     }
+    pendingRoute.current = null;
+    pendingDirection.current = null;
     setPendingHref(null);
     pendingAnchor.current?.removeAttribute("data-leti-navigation-pending");
     pendingAnchor.current = null;
@@ -443,7 +484,12 @@ export function AppShell({
   }, [closeDrawer, open]);
 
   const startNavigation = useCallback((href: string, anchor?: HTMLAnchorElement | null, nextDirection?: NavigationDirection) => {
-    if (href === routeKey) return;
+    if (href === routeKey || pendingRoute.current === href) return;
+
+    const startedAt = performance.now();
+    const resolvedDirection = nextDirection ?? navigationDirection(routeKey, href);
+    pendingRoute.current = href;
+    pendingDirection.current = resolvedDirection;
 
     pendingAnchor.current?.removeAttribute("data-leti-navigation-pending");
     if (anchor) {
@@ -451,8 +497,8 @@ export function AppShell({
       pendingAnchor.current = anchor;
     }
 
-    setDirection(nextDirection ?? navigationDirection(routeKey, href));
-    navigationStartedAt.current = performance.now();
+    setDirection(resolvedDirection);
+    navigationStartedAt.current = startedAt;
     setPendingHref(href);
   }, [routeKey]);
 
@@ -462,24 +508,60 @@ export function AppShell({
     if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
 
     cancelPrefetch(href);
-    startNavigation(href, event.currentTarget);
+    startNavigation(href, event.currentTarget, explicitNavigationDirection(event.currentTarget));
     closeMenu();
   }, [cancelPrefetch, closeMenu, startNavigation]);
 
   const handleInternalNavigation = useCallback((event: MouseEvent<HTMLDivElement>) => {
     if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-    if (!(event.target instanceof Element)) return;
-
-    const anchor = event.target.closest<HTMLAnchorElement>("a[href]");
-    if (!anchor || anchor.target === "_blank" || anchor.hasAttribute("download")) return;
-
-    const url = new URL(anchor.href, window.location.href);
-    if (url.origin !== window.location.origin || !url.pathname.startsWith("/app")) return;
-
-    const href = `${url.pathname}${url.search}`;
+    const link = internalAppLink(event.target);
+    if (!link) return;
+    const { anchor, href } = link;
     if (href === routeKey) return;
-    startNavigation(href, anchor);
+
+    // Le premier clic est déjà traité en capture. Un second clic vers la même
+    // destination pendant le chargement ne doit pas lancer une seconde requête.
+    if (pendingRoute.current === href && event.detail > 1) {
+      event.preventDefault();
+      return;
+    }
+
+    startNavigation(href, anchor, explicitNavigationDirection(anchor));
   }, [routeKey, startNavigation]);
+
+  const handleContentPointerOver = useCallback((event: PointerEvent<HTMLElement>) => {
+    const link = internalAppLink(event.target);
+    if (!link) return;
+    if (event.relatedTarget instanceof Node && link.anchor.contains(event.relatedTarget)) return;
+    prefetch(link.href);
+  }, [prefetch]);
+
+  const handleContentPointerOut = useCallback((event: PointerEvent<HTMLElement>) => {
+    const link = internalAppLink(event.target);
+    if (!link) return;
+    if (event.relatedTarget instanceof Node && link.anchor.contains(event.relatedTarget)) return;
+    cancelPrefetch(link.href);
+  }, [cancelPrefetch]);
+
+  const handleContentPointerDown = useCallback((event: PointerEvent<HTMLElement>) => {
+    const link = internalAppLink(event.target);
+    if (link) prefetch(link.href, true);
+  }, [prefetch]);
+
+  const handleContentFocus = useCallback((event: FocusEvent<HTMLElement>) => {
+    const link = internalAppLink(event.target);
+    if (link) prefetch(link.href);
+  }, [prefetch]);
+
+  const handleContentBlur = useCallback((event: FocusEvent<HTMLElement>) => {
+    const link = internalAppLink(event.target);
+    if (link) cancelPrefetch(link.href);
+  }, [cancelPrefetch]);
+
+  const handleContentTouchStart = useCallback((event: TouchEvent<HTMLElement>) => {
+    const link = internalAppLink(event.target);
+    if (link) prefetch(link.href, true);
+  }, [prefetch]);
 
   useEffect(() => {
     const handleHistoryNavigation = () => {
@@ -598,6 +680,12 @@ export function AppShell({
         <main
           className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8 lg:py-10"
           aria-busy={pendingHref !== null}
+          onPointerOver={handleContentPointerOver}
+          onPointerOut={handleContentPointerOut}
+          onPointerDown={handleContentPointerDown}
+          onFocus={handleContentFocus}
+          onBlur={handleContentBlur}
+          onTouchStart={handleContentTouchStart}
         >
           <AdaptiveRouteTransition
             routeKey={routeKey}

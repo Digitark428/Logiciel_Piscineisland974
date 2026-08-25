@@ -37,7 +37,7 @@ export default async function ClientsPage({
         subtitle={`${clients?.length ?? 0} ${showArchived ? "archivé(s)" : "actif(s)"}`}
         action={
           can(ctx, "clients.edit") ? (
-            <Link href="/app/clients/new" className="btn-primary">+ Nouveau client</Link>
+            <Link prefetch={false} href="/app/clients/new" className="btn-primary">+ Nouveau client</Link>
           ) : undefined
         }
       />
@@ -53,6 +53,7 @@ export default async function ClientsPage({
           />
         </form>
         <Link
+          prefetch={false}
           href={showArchived ? "/app/clients" : "/app/clients?archived=1"}
           className="btn-secondary"
         >
@@ -66,7 +67,7 @@ export default async function ClientsPage({
           description={q ? "Aucun résultat pour cette recherche." : "Commencez par créer votre premier client."}
           action={
             can(ctx, "clients.edit") && !q ? (
-              <Link href="/app/clients/new" className="btn-primary">+ Nouveau client</Link>
+              <Link prefetch={false} href="/app/clients/new" className="btn-primary">+ Nouveau client</Link>
             ) : undefined
           }
         />
@@ -77,7 +78,7 @@ export default async function ClientsPage({
               const name = clientName(c);
               return (
                 <li key={c.id}>
-                  <Link href={`/app/clients/${c.id}`} className="flex items-center gap-4 px-4 py-3.5 transition hover:bg-graphite-50 sm:px-6">
+                  <Link prefetch={false} href={`/app/clients/${c.id}`} className="flex items-center gap-4 px-4 py-3.5 transition hover:bg-graphite-50 sm:px-6">
                     <Avatar name={name} size={40} />
                     <div className="min-w-0 flex-1">
                       <div className="truncate font-medium text-graphite-900">{name}</div>
