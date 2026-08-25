@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, useTransition, type TransitionStartFunction } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition, type TransitionStartFunction } from "react";
 import {
   createAppSupportConversation,
   markAppConversationSeen,
@@ -59,6 +59,7 @@ function timeLabel(iso: string): string {
  */
 export function AppSupportWidget({ initiallyOpen = false }: { initiallyOpen?: boolean }) {
   const [open, setOpen] = useState(initiallyOpen);
+  const [blurEnabled, setBlurEnabled] = useState(true);
   const [screen, setScreen] = useState<Screen>("home");
   const [category, setCategory] = useState<SupportCategory>("bug");
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -67,6 +68,8 @@ export function AppSupportWidget({ initiallyOpen = false }: { initiallyOpen?: bo
   const [loading, setLoading] = useState(initiallyOpen);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const panelRef = useRef<HTMLElement>(null);
+  const launcherRef = useRef<HTMLButtonElement>(null);
 
   const active = useMemo(
     () => data.conversations.find((conversation) => conversation.id === activeId) ?? null,
@@ -92,8 +95,48 @@ export function AppSupportWidget({ initiallyOpen = false }: { initiallyOpen?: bo
     if (open) void loadSupport();
   }, [loadSupport, open]);
 
+  const closePanel = useCallback(() => {
+    setOpen(false);
+    setBlurEnabled(true);
+    requestAnimationFrame(() => launcherRef.current?.focus());
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closePanel();
+        return;
+      }
+      if (event.key !== "Tab" || !panelRef.current) return;
+      const focusable = Array.from(panelRef.current.querySelectorAll<HTMLElement>(
+        "button:not([disabled]), a[href], input:not([disabled]), textarea:not([disabled]), select:not([disabled])",
+      ));
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    requestAnimationFrame(() => panelRef.current?.focus());
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [closePanel, open]);
+
   function openPanel() {
     setOpen(true);
+    setBlurEnabled(true);
     setScreen("home");
     setError(null);
   }
@@ -125,6 +168,7 @@ export function AppSupportWidget({ initiallyOpen = false }: { initiallyOpen?: bo
     <>
       {!open && (
         <button
+          ref={launcherRef}
           type="button"
           onClick={openPanel}
           aria-label="Ouvrir l'aide et les retours"
@@ -137,20 +181,29 @@ export function AppSupportWidget({ initiallyOpen = false }: { initiallyOpen?: bo
       )}
 
       {open && (
-        <section
-          className="fixed inset-x-3 bottom-3 z-50 mx-auto flex max-h-[85vh] w-auto max-w-sm flex-col overflow-hidden rounded-2xl border border-graphite-200 bg-white shadow-2xl sm:inset-x-auto sm:bottom-5 sm:right-5 sm:w-[370px]"
-          role="dialog"
-          tabIndex={-1}
-          autoFocus
-          aria-label="Aide et retours"
-        >
-          <WidgetHeader
-            screen={screen}
-            onBack={goHome}
-            onClose={() => setOpen(false)}
+        <>
+          <div
+            aria-hidden="true"
+            onMouseDown={closePanel}
+            className={`fixed inset-0 z-40 cursor-default bg-graphite-950/10 transition duration-200 ${blurEnabled ? "backdrop-blur-[2px] opacity-100" : "backdrop-blur-none opacity-0"}`}
           />
+          <section
+            ref={panelRef}
+            className="fixed inset-x-2 bottom-[max(0.5rem,env(safe-area-inset-bottom))] top-[max(0.5rem,env(safe-area-inset-top))] z-50 mx-auto flex w-auto max-w-sm flex-col overflow-hidden rounded-2xl border border-graphite-200 bg-white shadow-2xl sm:inset-x-auto sm:bottom-5 sm:right-5 sm:top-auto sm:max-h-[85dvh] sm:w-[370px]"
+            role="dialog"
+            aria-modal="true"
+            tabIndex={-1}
+            aria-label="Aide et retours"
+          >
+            <WidgetHeader
+              screen={screen}
+              blurEnabled={blurEnabled}
+              onToggleBlur={() => setBlurEnabled((current) => !current)}
+              onBack={goHome}
+              onClose={closePanel}
+            />
 
-          <div className="min-h-0 flex-1 overflow-y-auto">
+          <div className={screen === "thread" ? "flex min-h-0 flex-1 flex-col overflow-hidden" : "min-h-0 flex-1 overflow-y-auto"}>
             {loading && !loaded ? <LoadingState /> : null}
             {!loading || loaded ? (
               <>
@@ -214,26 +267,49 @@ export function AppSupportWidget({ initiallyOpen = false }: { initiallyOpen?: bo
             {error && screen !== "compose" && screen !== "thread" && (
               <p className="px-4 pb-3 text-xs text-red-600">{error}</p>
             )}
-          </div>
-        </section>
+            </div>
+          </section>
+        </>
       )}
     </>
   );
 }
 
-function WidgetHeader({ screen, onBack, onClose }: { screen: Screen; onBack: () => void; onClose: () => void }) {
+function WidgetHeader({
+  screen,
+  blurEnabled,
+  onToggleBlur,
+  onBack,
+  onClose,
+}: {
+  screen: Screen;
+  blurEnabled: boolean;
+  onToggleBlur: () => void;
+  onBack: () => void;
+  onClose: () => void;
+}) {
   return (
-    <div className="flex items-center justify-between gap-2 border-b border-graphite-100 bg-graphite-50 px-4 py-3">
-      <div className="flex items-center gap-2">
+    <div className="flex shrink-0 items-center justify-between gap-2 border-b border-graphite-100 bg-graphite-50 px-2 py-2.5 sm:px-3">
+      <div className="flex min-w-0 items-center gap-1">
         {screen !== "home" && (
-          <button type="button" onClick={onBack} aria-label="Retour" className="rounded-lg p-1 text-graphite-500 hover:bg-graphite-100">‹</button>
+          <button type="button" onClick={onBack} aria-label="Retour" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-xl text-graphite-500 hover:bg-graphite-100">‹</button>
         )}
-        <div>
+        <div className="min-w-0">
           <div className="text-sm font-semibold text-graphite-900">Aide & retours</div>
-          <div className="text-xs text-graphite-400">Réservé aux utilisateurs LETI</div>
+          <div className="flex flex-wrap items-center gap-x-2 text-[11px] text-graphite-400">
+            <span>Réservé aux utilisateurs LETI</span>
+            <button
+              type="button"
+              onClick={onToggleBlur}
+              aria-pressed={blurEnabled}
+              className="font-medium text-pool-700 underline decoration-pool-300 underline-offset-2 hover:text-pool-800"
+            >
+              {blurEnabled ? "Enlever le flou" : "Activer le flou"}
+            </button>
+          </div>
         </div>
       </div>
-      <button type="button" onClick={onClose} aria-label="Fermer" className="rounded-lg p-1.5 text-graphite-400 hover:bg-graphite-100">✕</button>
+      <button type="button" onClick={onClose} aria-label="Fermer" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-graphite-400 hover:bg-graphite-100">✕</button>
     </div>
   );
 }
@@ -380,12 +456,12 @@ function Thread({
   const [content, setContent] = useState("");
   const category = CATEGORY_BY_KEY[conversation.category];
   return (
-    <div className="flex min-h-[360px] flex-col">
+    <div className="flex h-full min-h-0 flex-col">
       <div className="flex items-center justify-between gap-2 border-b border-graphite-100 px-4 py-2.5">
         <div className="text-sm font-medium text-graphite-800">{category.emoji} {category.label}</div>
         <StatusPill status={conversation.status} />
       </div>
-      <div className="flex-1 space-y-3 p-4">
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
         {conversation.messages.map((message) => {
           const isAdmin = message.author_type === "admin";
           return (
@@ -400,7 +476,7 @@ function Thread({
         })}
         {conversation.messages.length === 0 && <p className="text-center text-sm text-graphite-500">Aucun message.</p>}
       </div>
-      <div className="border-t border-graphite-100 p-3">
+      <div className="shrink-0 border-t border-graphite-100 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <textarea
           value={content}
           onChange={(event) => setContent(event.target.value.slice(0, SUPPORT_MESSAGE_MAX))}

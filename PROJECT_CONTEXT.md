@@ -13,7 +13,7 @@ LETI est le nom visible du SaaS de gestion destiné aux piscinistes, principalem
 - Les routes sont dans `src/app/`; les composants réutilisables dans `src/components/`.
 - Les actions serveur sont organisées par domaine dans `src/lib/actions/` et retournent le format `ActionResult`.
 - Les clients Supabase sont dans `src/lib/supabase/`; `admin.ts` utilise le service role côté serveur uniquement.
-- Les migrations SQL sont numérotées dans `supabase/migrations/` ; la dernière migration appliquée est `20260823183746_task_creator_index_order` (fichier local `20260823183735_task_creator_index_order.sql`).
+- Les migrations SQL sont numérotées dans `supabase/migrations/` ; la dernière migration appliquée est `20260825064057_planning_events_grant_hardening` (fichier local `20260825064042_planning_events_grant_hardening.sql`).
 - La V1 est exploitée uniquement à La Réunion : toute date métier sans heure (`YYYY-MM-DD`) doit être calculée dans le fuseau `Indian/Reunion` via `src/lib/utils/date.ts`, jamais avec `toISOString().slice(0, 10)`.
 
 ## Données, sécurité et autorisations
@@ -28,6 +28,7 @@ LETI est le nom visible du SaaS de gestion destiné aux piscinistes, principalem
 ## Fonctionnalités actuellement présentes
 
 - Gestion des clients, piscines, contrats d'entretien hebdomadaires, entretiens ponctuels, planning, équipe, tâches, documents, sauvegardes, notifications internes et journal d'activité. Les revenus restent réservés au gérant : montant par entretien ponctuel, montant mensuel unique par contrat et synthèse financière admin-only du tableau de bord.
+- Le planning réunit les entretiens, les tâches datées en lecture seule et les événements personnels. Un événement personnel appartient au membre connecté dans son entreprise : même un gérant ou un collègue ne peut ni le lire ni le modifier. Les chantiers et dépannages restent annoncés « En développement ».
 - « Tâches & Notes » est organisé en trois routes : `/app/tasks/personal`, `/app/tasks/assign` et `/app/tasks/notes`. Les to-do personnelles restent invisibles aux autres membres, y compris au gérant, et portent une priorité obligatoire (`very_urgent`, `urgent`, `not_urgent`) ainsi qu'une date et une heure facultatives.
 - Les contrats hebdomadaires sont des règles durables dans `service_series` ; leurs passages futurs sont calculés à la lecture. Une ligne `services` n'est créée que lors d'un statut, commentaire, compte-rendu ou déplacement, avec `occurrence_date` immuable comme date nominale et `scheduled_date` comme éventuelle exception. Les anciennes séries restent `legacy` et leur historique n'est pas réécrit.
 - Les notes d'équipe disposent d'interactions append-only isolées par entreprise : lectures, exécutions et commentaires (`team_note_reads`, `team_note_executions`, `team_note_comments`), avec contrôle RLS et trigger d'intégrité tenant.

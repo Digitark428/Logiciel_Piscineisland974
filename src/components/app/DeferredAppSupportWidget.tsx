@@ -45,17 +45,20 @@ function preloadSupportWidget() {
 
 function SupportLoadingPanel() {
   return (
-    <section
-      className="fixed inset-x-3 bottom-3 z-50 mx-auto flex w-auto max-w-sm items-center gap-3 rounded-2xl border border-graphite-200 bg-white p-4 shadow-2xl sm:inset-x-auto sm:bottom-5 sm:right-5 sm:w-[370px]"
-      role="dialog"
-      tabIndex={-1}
-      autoFocus
-      aria-label="Ouverture de l'aide et des retours"
-      aria-busy="true"
-      aria-live="polite"
-    >
-      <span aria-hidden="true" className="h-5 w-5 animate-spin rounded-full border-2 border-pool-200 border-t-pool-600" />
-      <span className="text-sm font-medium text-graphite-700">Ouverture de l’aide…</span>
-    </section>
+    <>
+      <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-40 bg-graphite-950/10 backdrop-blur-[2px]" />
+      <section
+        className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-50 mx-auto flex w-auto max-w-sm items-center gap-3 rounded-2xl border border-graphite-200 bg-white p-4 shadow-2xl sm:inset-x-auto sm:bottom-5 sm:right-5 sm:w-[370px]"
+        role="dialog"
+        tabIndex={-1}
+        autoFocus
+        aria-label="Ouverture de l'aide et des retours"
+        aria-busy="true"
+        aria-live="polite"
+      >
+        <span aria-hidden="true" className="h-5 w-5 animate-spin rounded-full border-2 border-pool-200 border-t-pool-600" />
+        <span className="text-sm font-medium text-graphite-700">Ouverture de l’aide…</span>
+      </section>
+    </>
   );
 }

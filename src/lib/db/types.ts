@@ -210,6 +210,21 @@ export interface Task {
   updated_at: string;
 }
 
+/** Événement manuel strictement personnel à un membership dans un espace. */
+export interface PlanningEvent {
+  id: string;
+  workspace_id: string;
+  owner_membership_id: string;
+  title: string;
+  event_date: string;
+  start_time: string | null;
+  end_time: string | null;
+  all_day: boolean;
+  description: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Contract {
   id: string;
   workspace_id: string;

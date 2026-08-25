@@ -1,15 +1,14 @@
 import Link from "next/link";
-import { PageHeader, Badge, EmptyState } from "@/components/ui";
-import { MemberIdentity } from "@/components/members/MemberIdentity";
+import { Badge, EmptyState } from "@/components/ui";
 import { can, requirePermission } from "@/lib/auth/context";
 import { getMemberOptions } from "@/lib/db/queries";
-import { SERVICE_STATUSES, WEEKDAYS } from "@/lib/services/constants";
+import { WEEKDAYS } from "@/lib/services/constants";
 import { getMaintenanceOccurrences, occurrenceAssigneeName, occurrenceHref, type MaintenanceOccurrence } from "@/lib/services/queries";
 import { createClient } from "@/lib/supabase/server";
-import { signedUrls } from "@/lib/storage";
 import { todayInReunion } from "@/lib/utils/date";
 import { clientName, formatDate, formatTime, operationalClientName, SERVICE_STATUS_LABELS } from "@/lib/utils/format";
 import { addDays, parseAnchor, periodLabel, startOfWeek, toISO } from "@/app/app/planning/planning-utils";
+import { ServicesFilterPanel } from "./ServicesFilterPanel";
 
 interface SearchParams {
   date?: string;
@@ -25,23 +24,16 @@ function queryHref(values: SearchParams): string {
   return `/app/services?${params.toString()}`;
 }
 
-function OccurrenceCard({ occurrence, avatarUrl }: { occurrence: MaintenanceOccurrence; avatarUrl?: string }) {
+function OccurrenceCard({ occurrence }: { occurrence: MaintenanceOccurrence }) {
   return (
-    <Link href={occurrenceHref(occurrence)} className="block rounded-xl border border-graphite-100 bg-white p-4 transition hover:border-pool-200 hover:shadow-sm">
-      <div className="text-lg font-bold leading-tight text-graphite-900">{operationalClientName(occurrence.client)}</div>
-      <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1 text-sm">
-        <span className="font-medium text-graphite-700">{occurrence.serviceType}</span>
-        {occurrence.scheduledTime && <span className="text-xs font-medium text-graphite-500">· {formatTime(occurrence.scheduledTime)}</span>}
+    <Link href={occurrenceHref(occurrence)} className="block rounded-xl border border-graphite-100 bg-white px-3 py-2.5 transition hover:border-pool-200 hover:shadow-sm">
+      <div className="truncate text-base font-bold leading-tight text-graphite-900">{operationalClientName(occurrence.client)}</div>
+      <div className="mt-1 flex min-w-0 items-center gap-1.5 text-[11px] leading-tight text-graphite-500">
+        <span className="truncate">{occurrence.serviceType}</span>
+        {occurrence.scheduledTime && <span className="shrink-0 font-medium">· {formatTime(occurrence.scheduledTime)}</span>}
       </div>
-      <MemberIdentity
-        member={occurrence.assignee ?? { first_name: null, last_name: null, email: "Non assigné" }}
-        avatarUrl={avatarUrl}
-        avatarSize={32}
-        className="mt-4 min-w-0"
-        nameClassName="truncate text-sm text-graphite-800"
-      />
-      <div className="mt-4 border-t border-graphite-100 pt-3">
-        <Badge tone={occurrence.status} className="px-3 py-1 text-sm font-semibold">{SERVICE_STATUS_LABELS[occurrence.status]}</Badge>
+      <div className="mt-2">
+        <Badge tone={occurrence.status} className="px-2.5 py-0.5 text-xs font-semibold">{SERVICE_STATUS_LABELS[occurrence.status]}</Badge>
       </div>
     </Link>
   );
@@ -85,50 +77,39 @@ export default async function ServicesPage({ searchParams }: { searchParams: Sea
     ? searchParams.day!
     : days.some((day) => day.date === today) ? today : start;
   const selectedDay = days.find((day) => day.date === selectedDate)!;
-  const photoPaths = Array.from(new Set(occurrences.map((occurrence) => occurrence.assignee?.photo_path).filter((path): path is string => Boolean(path))));
-  const avatarByPath = await signedUrls("avatars", photoPaths);
   const preserved = { q: searchParams.q, assignee: searchParams.assignee, status: searchParams.status };
+  const canCreate = can(ctx, "services.create");
 
   return (
     <div>
-      <PageHeader
-        title="Mes entretiens"
-        description="Retrouvez les passages hebdomadaires et les entretiens ponctuels, semaine après semaine."
-        action={can(ctx, "services.create") ? (
-          <div className="flex flex-wrap gap-2">
-            <Link href="/app/services/new?kind=contract" className="btn-primary">+ Nouveau contrat</Link>
-            <Link href="/app/services/new?kind=one_off" className="btn-secondary">+ Entretien ponctuel</Link>
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h1 className="text-xl font-semibold tracking-[-0.025em] text-graphite-900 sm:text-[1.75rem]">Mes entretiens</h1>
+        {canCreate && (
+          <div className="flex shrink-0 gap-1.5 sm:gap-2">
+            <Link href="/app/services/new?kind=contract" className="btn-primary px-2.5 text-[13px] sm:px-3" title="Nouveau contrat">+ Contrat</Link>
+            <Link href="/app/services/new?kind=one_off" className="btn-secondary px-2.5 text-[13px] sm:px-3" title="Nouvel entretien ponctuel">+ Ponctuel</Link>
           </div>
-        ) : undefined}
-      />
-
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <Link href={queryHref({ ...preserved, date: toISO(addDays(weekStart, -7)) })} className="btn-secondary px-3" aria-label="Semaine précédente">←</Link>
-          <Link href={queryHref({ ...preserved, date: today })} className="btn-secondary">Cette semaine</Link>
-          <Link href={queryHref({ ...preserved, date: toISO(addDays(weekStart, 7)) })} className="btn-secondary px-3" aria-label="Semaine suivante">→</Link>
-        </div>
-        <h2 className="text-base font-semibold text-graphite-800">Semaine du {periodLabel("week", weekStart)}</h2>
+        )}
       </div>
 
-      <form className="card mb-5 grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4" action="/app/services">
-        <input type="hidden" name="date" value={start} />
-        <div className={seesAll ? "lg:col-span-2" : "sm:col-span-2 lg:col-span-3"}>
-          <label htmlFor="q" className="sr-only">Rechercher</label>
-          <input id="q" name="q" className="input" defaultValue={searchParams.q ?? ""} placeholder="Rechercher un client, un entretien…" />
+      <div className="mb-4 flex flex-wrap items-center gap-2 rounded-2xl border border-graphite-200 bg-white/80 p-2 shadow-card">
+        <div className="flex items-center gap-2">
+          <Link href={queryHref({ ...preserved, date: toISO(addDays(weekStart, -7)) })} className="btn-secondary px-3" aria-label="Semaine précédente">←</Link>
+          <Link href={queryHref({ ...preserved, date: today })} className="btn-secondary px-3">Cette semaine</Link>
+          <Link href={queryHref({ ...preserved, date: toISO(addDays(weekStart, 7)) })} className="btn-secondary px-3" aria-label="Semaine suivante">→</Link>
         </div>
-        {seesAll && (
-          <select name="assignee" className="input" defaultValue={searchParams.assignee ?? ""} aria-label="Technicien">
-            <option value="">Tous les techniciens</option>
-            {members.map((member) => <option key={member.id} value={member.id}>{member.label}</option>)}
-          </select>
-        )}
-        <select name="status" className="input" defaultValue={searchParams.status ?? ""} aria-label="Statut">
-          <option value="">Tous les statuts</option>
-          {SERVICE_STATUSES.map((status) => <option key={status.value} value={status.value}>{status.label}</option>)}
-        </select>
-        <button className="btn-secondary sm:col-start-2 lg:col-start-auto">Filtrer</button>
-      </form>
+        <ServicesFilterPanel
+          date={start}
+          query={searchParams.q ?? ""}
+          assignee={searchParams.assignee ?? ""}
+          status={searchParams.status ?? ""}
+          members={members}
+          showAssignee={seesAll}
+        />
+        <h2 className="min-w-0 flex-1 basis-full px-1 text-sm font-semibold text-graphite-800 sm:basis-auto sm:text-right">
+          Semaine du {periodLabel("week", weekStart)}
+        </h2>
+      </div>
 
       <div className="mb-4 flex gap-2 overflow-x-auto pb-1 md:hidden">
         {days.map((day) => (
@@ -149,8 +130,8 @@ export default async function ServicesPage({ searchParams }: { searchParams: Sea
         {selectedDay.occurrences.length === 0 ? (
           <EmptyState title="Aucun entretien" description="Aucun passage prévu ce jour." />
         ) : (
-          <div className="space-y-3">
-            {selectedDay.occurrences.map((occurrence) => <OccurrenceCard key={occurrence.key} occurrence={occurrence} avatarUrl={occurrence.assignee?.photo_path ? avatarByPath.get(occurrence.assignee.photo_path) : undefined} />)}
+          <div className="space-y-2">
+            {selectedDay.occurrences.map((occurrence) => <OccurrenceCard key={occurrence.key} occurrence={occurrence} />)}
           </div>
         )}
       </div>
@@ -166,7 +147,7 @@ export default async function ServicesPage({ searchParams }: { searchParams: Sea
               {day.occurrences.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-graphite-200 px-2 py-6 text-center text-xs text-graphite-400">Aucun</div>
               ) : day.occurrences.map((occurrence) => (
-                <OccurrenceCard key={occurrence.key} occurrence={occurrence} avatarUrl={occurrence.assignee?.photo_path ? avatarByPath.get(occurrence.assignee.photo_path) : undefined} />
+                <OccurrenceCard key={occurrence.key} occurrence={occurrence} />
               ))}
             </div>
           </section>

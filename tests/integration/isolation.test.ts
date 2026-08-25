@@ -121,7 +121,7 @@ describe.skipIf(!READY)("Isolation multi-tenant (RLS)", () => {
       p_first: "Employé",
       p_last: "TenantA",
       p_email: A.employeeEmail,
-      p_permission_keys: ["clients.view", "services.view", "services.complete", "tasks.view"],
+      p_permission_keys: ["clients.view", "services.view", "services.complete", "tasks.view", "planning.view"],
     });
     A.employeeMembershipId = membershipId!;
     await admin!.from("services").update({ assigned_membership_id: A.employeeMembershipId }).eq("id", A.recurringServiceId);
@@ -309,6 +309,49 @@ describe.skipIf(!READY)("Isolation multi-tenant (RLS)", () => {
       priority: "un jour peut-être",
     });
     expect(invalidPriority.error).toBeTruthy();
+  });
+
+  it("isole les événements personnels par membership et workspace", async () => {
+    const asA = createClient(URL!, ANON!, { auth: { persistSession: false } });
+    const asEmployee = createClient(URL!, ANON!, { auth: { persistSession: false } });
+    await Promise.all([
+      asA.auth.signInWithPassword({ email: A.email, password: A.password }),
+      asEmployee.auth.signInWithPassword({ email: A.employeeEmail, password: A.password }),
+    ]);
+
+    const employeeEvent = await asEmployee.from("planning_events").insert({
+      workspace_id: A.workspaceId,
+      owner_membership_id: A.employeeMembershipId,
+      title: "Rendez-vous personnel employé",
+      event_date: "2026-08-25",
+      start_time: "08:00",
+      end_time: "09:00",
+    }).select("id,title").single();
+    expect(employeeEvent.error).toBeNull();
+
+    const [employeeRead, adminRead, otherWorkspaceRead] = await Promise.all([
+      asEmployee.from("planning_events").select("id").eq("id", employeeEvent.data!.id),
+      asA.from("planning_events").select("id").eq("id", employeeEvent.data!.id),
+      asEmployee.from("planning_events").select("id").eq("workspace_id", B.workspaceId),
+    ]);
+    expect(employeeRead.data).toHaveLength(1);
+    expect(adminRead.data ?? []).toHaveLength(0);
+    expect(otherWorkspaceRead.data ?? []).toHaveLength(0);
+
+    const reassign = await asEmployee.from("planning_events")
+      .update({ owner_membership_id: A.membershipId })
+      .eq("id", employeeEvent.data!.id)
+      .select("id");
+    expect(reassign.error).toBeTruthy();
+
+    const crossTenantGuard = await admin!.from("planning_events").insert({
+      workspace_id: A.workspaceId,
+      owner_membership_id: B.membershipId,
+      title: "Intrusion inter-espace",
+      event_date: "2026-08-25",
+      all_day: true,
+    });
+    expect(crossTenantGuard.error).toBeTruthy();
   });
 
   it("les interactions de notes restent isolées et l'auteur est dérivé du compte connecté", async () => {

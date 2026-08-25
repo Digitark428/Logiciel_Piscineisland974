@@ -56,6 +56,12 @@
 
 **Raison :** conserver une source unique par photo, éviter les incohérences de suppression et maintenir l'isolation du bucket privé par entreprise.
 
+## Événements personnels du planning
+
+**Décision :** les événements personnels vivent dans `planning_events`, séparés des entretiens et des tâches. Ils sont rattachés à la fois au `workspace_id` et au `owner_membership_id`; leur CRUD est strictement réservé à ce propriétaire authentifié, y compris face au gérant ou à un collègue du même workspace. Les tâches datées restent seulement consultables depuis le planning et continuent d'être modifiées depuis leur écran dédié.
+
+**Raison :** préserver la confidentialité individuelle, empêcher toute relation inter-tenant et garder une source métier unique pour chaque type d'élément du planning.
+
 ## Cibles de production
 
 **Décision :** les changements publiés utilisent exclusivement la branche GitHub `claude/piscine-island-saas-cvvhln`, le projet Vercel `logiciel-piscineisland974-eu7f` et le projet Supabase `umrjrpbritekqcfqkhxz`.

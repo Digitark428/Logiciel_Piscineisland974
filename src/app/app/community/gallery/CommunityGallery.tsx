@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import Image from "next/image";
 import { MemberIdentity } from "@/components/members/MemberIdentity";
 import { loadMoreCommunityGallery } from "@/lib/actions/community";
 import type { CommunityCursor, CommunityGalleryItem } from "@/lib/community-types";
@@ -24,6 +25,7 @@ export function CommunityGallery({
   const [message, setMessage] = useState<string | null>(null);
   const [loading, startLoading] = useTransition();
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLElement>(null);
   const openerRef = useRef<HTMLElement | null>(null);
 
   const closeLightbox = useCallback(() => {
@@ -34,14 +36,41 @@ export function CommunityGallery({
   useEffect(() => {
     if (!selected) return;
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") closeLightbox();
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeLightbox();
+        return;
+      }
+      if (event.key !== "Tab" || !dialogRef.current) return;
+      const focusable = Array.from(dialogRef.current.querySelectorAll<HTMLElement>("button:not([disabled]), a[href]"));
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
+    const scrollY = window.scrollY;
     const previousOverflow = document.body.style.overflow;
+    const previousPosition = document.body.style.position;
+    const previousTop = document.body.style.top;
+    const previousWidth = document.body.style.width;
     document.body.style.overflow = "hidden";
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = "100%";
     window.addEventListener("keydown", onKeyDown);
     closeButtonRef.current?.focus();
     return () => {
       document.body.style.overflow = previousOverflow;
+      document.body.style.position = previousPosition;
+      document.body.style.top = previousTop;
+      document.body.style.width = previousWidth;
+      window.scrollTo({ top: scrollY, behavior: "auto" });
       window.removeEventListener("keydown", onKeyDown);
     };
   }, [closeLightbox, selected]);
@@ -85,8 +114,13 @@ export function CommunityGallery({
             className="group relative aspect-square overflow-hidden rounded-xl bg-graphite-100 text-left ring-1 ring-graphite-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pool-500"
             aria-label={`Ouvrir la photo publiée le ${formatDateTime(item.createdAt)}`}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={item.url} alt="" className="h-full w-full object-cover transition duration-200 group-hover:scale-[1.03]" />
+            <Image
+              src={item.url}
+              alt=""
+              fill
+              sizes="(max-width: 639px) 50vw, (max-width: 1023px) 33vw, 20vw"
+              className="object-cover transition duration-200 group-hover:scale-[1.03]"
+            />
             <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-graphite-950/70 to-transparent px-2 pb-2 pt-8 text-xs font-medium text-white opacity-0 transition group-hover:opacity-100 group-focus-visible:opacity-100">
               {item.author.first_name ?? item.author.email ?? "Membre"}
             </span>
@@ -101,25 +135,43 @@ export function CommunityGallery({
       )}
 
       {selected?.url && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-graphite-950/85 p-3 sm:p-6" onMouseDown={closeLightbox}>
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-graphite-950/94 p-2 backdrop-blur-sm sm:p-6" onMouseDown={closeLightbox}>
           <section
+            ref={dialogRef}
             role="dialog"
             aria-modal="true"
             aria-label="Détail de la photo"
-            className="flex max-h-[calc(100dvh-1.5rem)] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-white shadow-float lg:flex-row"
+            className="relative flex h-[calc(100dvh-1rem)] w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-graphite-950 shadow-float sm:h-[calc(100dvh-3rem)]"
             onMouseDown={(event) => event.stopPropagation()}
           >
-            <div className="flex min-h-0 flex-1 items-center justify-center bg-graphite-950">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={selected.url} alt="Photo partagée par l'équipe" className="max-h-[68dvh] max-w-full object-contain lg:max-h-[calc(100dvh-3rem)]" />
+            <button
+              ref={closeButtonRef}
+              type="button"
+              className="absolute right-[max(0.75rem,env(safe-area-inset-right))] top-[max(0.75rem,env(safe-area-inset-top))] z-10 flex h-11 w-11 items-center justify-center rounded-full bg-graphite-950/75 text-xl text-white ring-1 ring-white/20 backdrop-blur transition hover:bg-graphite-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-pool-300"
+              onClick={closeLightbox}
+              aria-label="Fermer la photo"
+            >
+              ✕
+            </button>
+            <div className="relative min-h-0 flex-1 bg-black">
+              <Image
+                src={selected.url}
+                alt="Photo partagée par l'équipe"
+                fill
+                sizes="100vw"
+                className="object-contain"
+                priority
+              />
             </div>
-            <aside className="w-full shrink-0 overflow-y-auto p-4 sm:p-5 lg:w-80">
-              <div className="flex items-start justify-between gap-3">
-                <MemberIdentity member={selected.author} avatarUrl={selected.authorAvatarUrl} avatarSize={38} />
-                <button ref={closeButtonRef} type="button" className="btn-ghost -mr-2 -mt-2 min-h-11 min-w-11 p-2" onClick={closeLightbox} aria-label="Fermer">✕</button>
-              </div>
-              <time className="mt-3 block text-xs text-graphite-400">{formatDateTime(selected.createdAt)}</time>
-              {selected.content && <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-graphite-700">{selected.content}</p>}
+            <aside className="max-h-[34dvh] shrink-0 overflow-y-auto border-t border-white/10 bg-graphite-950 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] text-white sm:px-5 sm:py-4">
+              <MemberIdentity
+                member={selected.author}
+                avatarUrl={selected.authorAvatarUrl}
+                avatarSize={36}
+                nameClassName="text-sm text-white"
+                meta={<time className="text-graphite-300">{formatDateTime(selected.createdAt)}</time>}
+              />
+              {selected.content && <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-graphite-100">{selected.content}</p>}
             </aside>
           </section>
         </div>

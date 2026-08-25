@@ -2,6 +2,14 @@
 
 > Ajouter une entrée courte après chaque intervention significative. Ne pas y dupliquer la documentation durable de `PROJECT_CONTEXT.md`.
 
+## 2026-08-25 — Codex — UX compacte, planning personnel et modales accessibles
+
+- **Profil et entretiens :** « Gestion » démarre fermé à chaque ouverture du menu profil ; la vue des entretiens reçoit un en-tête, des actions, des cartes et une barre semaine plus compacts, avec recherche/filtres dans un panneau dédié responsive.
+- **Planning :** entretiens, tâches datées en lecture seule et événements personnels peuvent être filtrés et affichés en jour/semaine/mois/année. Les événements disposent d'un CRUD dans une modale accessible ; Chantiers et Dépannages restent désactivés et annoncés « Bientôt ».
+- **Galerie et assistance :** lightbox sombre sans panneau blanc, images optimisées, fermeture hors zone/Échap et verrouillage du défilement ; « Aide & retours » devient un vrai dialogue mobile avec flou activé par défaut, bouton de désactivation, fil défilant et saisie toujours accessible.
+- **Base et sécurité :** migrations `personal_planning_events` et `planning_events_grant_hardening` appliquées en production (dernier ledger `20260825064057`). La table est isolée par workspace et propriétaire, RLS owner-only même face au gérant, garde inter-tenant, aucun droit anon et strict CRUD authentifié ; les advisors ne signalent aucune alerte de sécurité liée.
+- **Vérification :** lint, typecheck, build et 58 tests unitaires validés. Les 19 tests d'intégration conditionnels aux secrets locaux sont ignorés ; leurs scénarios critiques ont été reproduits avec succès dans une transaction de production annulée, sans donnée de test persistée.
+
 ## 2026-08-24 — Codex — Menu du profil et navigation allégée
 
 - **En-tête :** le bloc utilisateur ouvre désormais un menu accessible réunissant la modification du profil, « Gestion » et « Paramètres » selon les droits déjà en place.

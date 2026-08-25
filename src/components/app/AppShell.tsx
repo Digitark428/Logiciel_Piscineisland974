@@ -149,32 +149,25 @@ function ProfileMenu({
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
-  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(() => Object.fromEntries(
-    accountItems
-      .filter(isNavGroup)
-      .map((group) => [group.key, group.children.some((item) => pathname.startsWith(item.href))]),
-  ));
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+  const closeMenu = useCallback(() => {
+    setOpen(false);
+    setExpandedGroups({});
+  }, []);
 
   useEffect(() => {
-    setOpen(false);
-    setExpandedGroups((current) => {
-      const next = { ...current };
-      for (const entry of accountItems) {
-        if (isNavGroup(entry) && entry.children.some((item) => pathname.startsWith(item.href))) next[entry.key] = true;
-      }
-      return next;
-    });
-  }, [accountItems, pathname]);
+    closeMenu();
+  }, [closeMenu, pathname]);
 
   useEffect(() => {
     if (!open) return;
 
     const handlePointerDown = (event: PointerEvent) => {
-      if (rootRef.current && !rootRef.current.contains(event.target as Node)) setOpen(false);
+      if (rootRef.current && !rootRef.current.contains(event.target as Node)) closeMenu();
     };
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        setOpen(false);
+        closeMenu();
         triggerRef.current?.focus();
       }
     };
@@ -185,7 +178,7 @@ function ProfileMenu({
       document.removeEventListener("pointerdown", handlePointerDown);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [open]);
+  }, [closeMenu, open]);
 
   const renderLink = (item: NavItem, nested = false) => {
     const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
@@ -196,7 +189,7 @@ function ProfileMenu({
         href={item.href}
         prefetch={false}
         onClick={(event) => {
-          setOpen(false);
+          closeMenu();
           onNavigate(item.href, event);
         }}
         onPointerEnter={() => onPrefetch(item.href)}
@@ -225,10 +218,16 @@ function ProfileMenu({
       <button
         ref={triggerRef}
         type="button"
-        onClick={() => setOpen((current) => !current)}
+        onClick={() => {
+          if (open) closeMenu();
+          else {
+            setExpandedGroups({});
+            setOpen(true);
+          }
+        }}
         aria-expanded={open}
         aria-controls="leti-profile-menu"
-        aria-label={`Ouvrir le menu du profil de ${userName}`}
+        aria-label={`${open ? "Fermer" : "Ouvrir"} le menu du profil de ${userName}`}
         className={cn(
           "flex min-h-11 items-center gap-2 rounded-xl px-2 py-1 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-pool-500 focus-visible:ring-offset-2",
           open ? "bg-graphite-100" : "hover:bg-graphite-50",
@@ -258,7 +257,6 @@ function ProfileMenu({
           {accountItems.map((entry) => {
             if (!isNavGroup(entry)) return renderLink(entry);
             const expanded = expandedGroups[entry.key] ?? false;
-            const active = entry.children.some((item) => pathname === item.href || pathname.startsWith(`${item.href}/`));
             return (
               <div key={entry.key} className="mt-1">
                 <button
@@ -268,12 +266,21 @@ function ProfileMenu({
                   aria-controls={`profile-group-${entry.key}`}
                   className={cn(
                     "flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition",
-                    active || expanded ? "bg-graphite-100 text-graphite-900" : "text-graphite-600 hover:bg-graphite-100 hover:text-graphite-900",
+                    expanded ? "bg-graphite-100 text-graphite-900" : "text-graphite-600 hover:bg-graphite-100 hover:text-graphite-900",
                   )}
                 >
                   <Icon name={entry.icon} size={19} />
                   <span className="min-w-0 flex-1 truncate">{entry.label}</span>
-                  <span aria-hidden className={cn("text-xs transition-transform", expanded && "rotate-180")}>⌄</span>
+                  <svg
+                    aria-hidden
+                    viewBox="0 0 20 20"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    className={cn("h-[18px] w-[18px] shrink-0 transition-transform", expanded && "rotate-180")}
+                  >
+                    <path d="m5 7.5 5 5 5-5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
                 </button>
                 {expanded && (
                   <div id={`profile-group-${entry.key}`} className="ml-2 mt-1 space-y-1 rounded-xl border border-graphite-100 bg-graphite-50 p-1.5">
@@ -324,7 +331,13 @@ export function AppShell({
   const prefetchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingAnchor = useRef<HTMLAnchorElement | null>(null);
   const navigationStartedAt = useRef<number | null>(null);
+  const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
+  const mobileDrawerRef = useRef<HTMLElement>(null);
   const closeMenu = useCallback(() => setOpen(false), []);
+  const closeDrawer = useCallback(() => {
+    setOpen(false);
+    requestAnimationFrame(() => mobileMenuButtonRef.current?.focus());
+  }, []);
   const search = searchParams.toString();
   const routeKey = search ? `${pathname}?${search}` : pathname;
   const pendingPathname = pendingHref ? routePathname(pendingHref) : null;
@@ -397,6 +410,37 @@ export function AppShell({
   useEffect(() => () => {
     if (prefetchTimer.current) clearTimeout(prefetchTimer.current);
   }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeDrawer();
+        return;
+      }
+      if (event.key !== "Tab" || !mobileDrawerRef.current) return;
+      const focusable = Array.from(mobileDrawerRef.current.querySelectorAll<HTMLElement>("button:not([disabled]), a[href]"));
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    requestAnimationFrame(() => mobileDrawerRef.current?.querySelector<HTMLButtonElement>("button")?.focus());
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [closeDrawer, open]);
 
   const startNavigation = useCallback((href: string, anchor?: HTMLAnchorElement | null, nextDirection?: NavigationDirection) => {
     if (href === routeKey) return;
@@ -483,11 +527,11 @@ export function AppShell({
       {/* Drawer mobile */}
       {open && (
         <div className="fixed inset-0 z-40 lg:hidden">
-          <div className="absolute inset-0 bg-graphite-950/25" onClick={() => setOpen(false)} />
-          <aside className="absolute inset-y-0 left-0 flex w-72 max-w-[85%] flex-col bg-white shadow-float">
+          <button type="button" className="absolute inset-0 cursor-default bg-graphite-950/25" onClick={closeDrawer} aria-label="Fermer le menu" />
+          <aside ref={mobileDrawerRef} role="dialog" aria-modal="true" aria-label="Navigation principale" className="absolute inset-y-0 left-0 flex w-72 max-w-[85%] flex-col bg-white shadow-float">
             <div className="flex h-[4.5rem] items-center justify-between px-5">
               <Logo symbolEffect="sidebar" />
-              <button onClick={() => setOpen(false)} className="btn-ghost p-2" aria-label="Fermer">✕</button>
+              <button onClick={closeDrawer} className="btn-ghost p-2" aria-label="Fermer">✕</button>
             </div>
             <div className="px-5 pb-3">
               <WorkspaceIdentity name={workspaceName} companyCode={companyCode} />
@@ -509,7 +553,7 @@ export function AppShell({
       {/* Contenu */}
       <div className="lg:pl-64">
         <header className="sticky top-0 z-20 flex h-[4.5rem] items-center gap-3 border-b border-graphite-200 bg-white/90 px-4 backdrop-blur sm:px-6">
-          <button onClick={() => setOpen(true)} className="btn-ghost p-2 lg:hidden" aria-label="Menu">
+          <button ref={mobileMenuButtonRef} onClick={() => setOpen(true)} className="btn-ghost p-2 lg:hidden" aria-label="Menu">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
           </button>
           <div className="ml-auto flex items-center gap-2">
