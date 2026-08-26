@@ -1,32 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { navigationDirection, routePathname } from "@/lib/navigation/transitions";
+import { routePathname } from "@/lib/navigation/transitions";
 
 describe("Transitions de navigation LETI", () => {
-  it("entre vers l'avant d'une liste vers une fiche", () => {
-    expect(navigationDirection("/app/clients", "/app/clients/client-1")).toBe("forward");
-    expect(navigationDirection("/app/services", "/app/services/service-1")).toBe("forward");
-  });
-
-  it("revient vers l'arrière d'une fiche vers sa liste", () => {
-    expect(navigationDirection("/app/clients/client-1", "/app/clients")).toBe("back");
-    expect(navigationDirection("/app/services/service-1", "/app/services")).toBe("back");
-  });
-
-  it("suit l'ordre visuel des sections principales dans les deux sens", () => {
-    expect(navigationDirection("/app/services", "/app/clients")).toBe("forward");
-    expect(navigationDirection("/app/clients", "/app/planning")).toBe("back");
-    expect(navigationDirection("/app/settings", "/app/documents")).toBe("back");
-  });
-
-  it("suit l'ordre visible des sous-menus", () => {
-    expect(navigationDirection("/app/tasks/personal", "/app/tasks/notes")).toBe("forward");
-    expect(navigationDirection("/app/tasks/notes", "/app/tasks/assign")).toBe("back");
-  });
-
-  it("reste neutre quand seule la requête change", () => {
-    expect(navigationDirection("/app/planning?date=2026-08-24", "/app/planning?date=2026-08-25")).toBe("neutral");
-  });
-
   it("normalise les requêtes pour l'état actif du menu", () => {
     expect(routePathname("/app/services?date=2026-08-24#week")).toBe("/app/services");
   });

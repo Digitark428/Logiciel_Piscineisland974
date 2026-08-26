@@ -33,7 +33,7 @@ export default async function PoolDetailPage({ params }: { params: { id: string 
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-graphite-900">{pool.name}</h1>
           {client && (
-            <Link href={`/app/clients/${client.id}`} prefetch={false} data-leti-direction="back" className="mt-1 inline-block text-sm text-pool-600 hover:text-pool-700">
+            <Link href={`/app/clients/${client.id}`} prefetch={false} className="mt-1 inline-block text-sm text-pool-600 hover:text-pool-700">
               {clientName(client)}
             </Link>
           )}
@@ -60,7 +60,7 @@ export default async function PoolDetailPage({ params }: { params: { id: string 
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-base font-semibold text-graphite-900">Entretiens ponctuels</h2>
             {can(ctx, "services.create") && client && (
-              <Link href={`/app/services/new?kind=one_off&client=${client.id}&pool=${pool.id}`} prefetch={false} data-leti-direction="forward" className="text-sm font-medium text-pool-600">+ Entretien ponctuel</Link>
+              <Link href={`/app/services/new?kind=one_off&client=${client.id}&pool=${pool.id}`} prefetch={false} className="text-sm font-medium text-pool-600">+ Entretien ponctuel</Link>
             )}
           </div>
           {!services || services.length === 0 ? (
@@ -69,7 +69,7 @@ export default async function PoolDetailPage({ params }: { params: { id: string 
             <ul className="space-y-2 text-sm">
               {services.map((s) => (
                 <li key={s.id}>
-                  <Link href={`/app/services/${s.id}`} prefetch={false} data-leti-direction="forward" className="flex items-center justify-between hover:text-pool-700">
+                  <Link href={`/app/services/${s.id}`} prefetch={false} className="flex items-center justify-between hover:text-pool-700">
                     <span className="text-graphite-700">{formatDate(s.scheduled_date)}</span>
                     <Badge tone={s.status}>{SERVICE_STATUS_LABELS[s.status]}</Badge>
                   </Link>

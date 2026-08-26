@@ -82,6 +82,6 @@
 
 ## Fluidité permanente des navigations
 
-**Décision :** toutes les vues internes `/app`, présentes et futures, utilisent le wrapper global `AdaptiveRouteTransition` dans `AppShell`. Les liens internes déclenchent un feedback immédiat ; le shell reste monté, l'entrée se limite à `opacity` et `transform`, la durée dépend du temps réellement observé et le skeleton reste invisible pendant les 300 premières millisecondes. Aucun délai d'affichage artificiel n'est ajouté, et le mouvement est neutralisé avec `prefers-reduced-motion`.
+**Décision :** toutes les vues internes `/app`, présentes et futures, utilisent le wrapper global `AdaptiveRouteTransition` dans `AppShell`. Les liens internes déclenchent un feedback immédiat ; le shell reste monté, l'entrée utilise uniquement un fondu court sans translation, la durée dépend du temps réellement observé et le skeleton reste invisible pendant les 300 premières millisecondes. Aucun délai d'affichage artificiel n'est ajouté, et l'animation est neutralisée avec `prefers-reduced-motion`.
 
-**Raison :** absorber les micro-latences sans ralentir les routes rapides, éviter les écrans blancs et garantir automatiquement une sensation cohérente sur les futures navigations LETI.
+**Raison :** absorber les micro-latences sans ralentir les routes rapides ni accentuer visuellement leur délai, éviter les écrans blancs et garantir automatiquement une sensation cohérente sur les futures navigations LETI.

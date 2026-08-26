@@ -21,14 +21,7 @@ import { signOut } from "@/lib/auth/actions";
 import { isNavGroup, type NavEntry, type NavItem } from "./nav";
 import { cn } from "@/lib/utils/cn";
 import { WorkspaceIdentity } from "./WorkspaceIdentity";
-import { navigationDirection, routePathname, type NavigationDirection } from "@/lib/navigation/transitions";
-
-function explicitNavigationDirection(anchor: HTMLAnchorElement): NavigationDirection | undefined {
-  const direction = anchor.dataset.letiDirection;
-  return direction === "forward" || direction === "back" || direction === "neutral"
-    ? direction
-    : undefined;
-}
+import { routePathname } from "@/lib/navigation/transitions";
 
 function internalAppLink(target: EventTarget | null): { anchor: HTMLAnchorElement; href: string } | null {
   if (!(target instanceof Element)) return null;
@@ -351,14 +344,12 @@ export function AppShell({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pendingHref, setPendingHref] = useState<string | null>(null);
-  const [direction, setDirection] = useState<NavigationDirection>("neutral");
   const [arrivalPace, setArrivalPace] = useState<"fast" | "normal">("normal");
   const prefetchedRoutes = useRef(new Map<string, number>());
   const queuedPrefetch = useRef<string | null>(null);
   const prefetchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingAnchor = useRef<HTMLAnchorElement | null>(null);
   const pendingRoute = useRef<string | null>(null);
-  const pendingDirection = useRef<NavigationDirection | null>(null);
   const navigationStartedAt = useRef<number | null>(null);
   const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
   const mobileDrawerRef = useRef<HTMLElement>(null);
@@ -369,7 +360,6 @@ export function AppShell({
   }, []);
   const search = searchParams.toString();
   const routeKey = search ? `${pathname}?${search}` : pathname;
-  const committedRoute = useRef(routeKey);
   const pendingPathname = pendingHref ? routePathname(pendingHref) : null;
 
   // Une destination n'est préchargée qu'après une intention brève et explicite.
@@ -423,15 +413,6 @@ export function AppShell({
   }, [pathname, router]);
 
   useLayoutEffect(() => {
-    const previousRoute = committedRoute.current;
-    const inferredDirection = navigationDirection(previousRoute, routeKey);
-    const arrivedDirection = pendingDirection.current && pendingDirection.current !== "neutral"
-      ? pendingDirection.current
-      : inferredDirection;
-
-    if (previousRoute !== routeKey) setDirection(arrivedDirection);
-    committedRoute.current = routeKey;
-
     // La navigation Next.js est déjà concurrente via Link ; cet état ne sert qu'à
     // donner un retour visuel immédiatement après le clic, avant le rendu suivant.
     if (navigationStartedAt.current !== null) {
@@ -439,7 +420,6 @@ export function AppShell({
       navigationStartedAt.current = null;
     }
     pendingRoute.current = null;
-    pendingDirection.current = null;
     setPendingHref(null);
     pendingAnchor.current?.removeAttribute("data-leti-navigation-pending");
     pendingAnchor.current = null;
@@ -483,13 +463,11 @@ export function AppShell({
     };
   }, [closeDrawer, open]);
 
-  const startNavigation = useCallback((href: string, anchor?: HTMLAnchorElement | null, nextDirection?: NavigationDirection) => {
+  const startNavigation = useCallback((href: string, anchor?: HTMLAnchorElement | null) => {
     if (href === routeKey || pendingRoute.current === href) return;
 
     const startedAt = performance.now();
-    const resolvedDirection = nextDirection ?? navigationDirection(routeKey, href);
     pendingRoute.current = href;
-    pendingDirection.current = resolvedDirection;
 
     pendingAnchor.current?.removeAttribute("data-leti-navigation-pending");
     if (anchor) {
@@ -497,7 +475,6 @@ export function AppShell({
       pendingAnchor.current = anchor;
     }
 
-    setDirection(resolvedDirection);
     navigationStartedAt.current = startedAt;
     setPendingHref(href);
   }, [routeKey]);
@@ -508,7 +485,7 @@ export function AppShell({
     if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
 
     cancelPrefetch(href);
-    startNavigation(href, event.currentTarget, explicitNavigationDirection(event.currentTarget));
+    startNavigation(href, event.currentTarget);
     closeMenu();
   }, [cancelPrefetch, closeMenu, startNavigation]);
 
@@ -526,7 +503,7 @@ export function AppShell({
       return;
     }
 
-    startNavigation(href, anchor, explicitNavigationDirection(anchor));
+    startNavigation(href, anchor);
   }, [routeKey, startNavigation]);
 
   const handleContentPointerOver = useCallback((event: PointerEvent<HTMLElement>) => {
@@ -566,7 +543,7 @@ export function AppShell({
   useEffect(() => {
     const handleHistoryNavigation = () => {
       const href = `${window.location.pathname}${window.location.search}`;
-      if (href !== routeKey) startNavigation(href, null, "neutral");
+      if (href !== routeKey) startNavigation(href);
     };
 
     window.addEventListener("popstate", handleHistoryNavigation);
@@ -689,7 +666,6 @@ export function AppShell({
         >
           <AdaptiveRouteTransition
             routeKey={routeKey}
-            direction={direction}
             pace={arrivalPace}
             pending={pendingHref !== null}
           >

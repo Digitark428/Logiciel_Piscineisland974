@@ -2,6 +2,13 @@
 
 > Ajouter une entrée courte après chaque intervention significative. Ne pas y dupliquer la documentation durable de `PROJECT_CONTEXT.md`.
 
+## 2026-08-26 — Codex — Retour au fondu de navigation
+
+- **Transition :** suppression complète du glissement horizontal, du calcul avant/arrière, des distances CSS et des attributs directionnels. Toutes les vues `/app` utilisent désormais un fondu global court de 120 à 160 ms, sans déplacement du contenu ni du lien actif.
+- **Conservé :** shell fixe, feedback immédiat, préchargement sur intention, déduplication des clics, skeleton après 300 ms et neutralisation via `prefers-reduced-motion`.
+- **Traçabilité :** standard durable mis à jour dans `AGENTS.md`, `PROJECT_CONTEXT.md` et `DECISIONS.md` afin que les futures pages restent sur ce fondu simple.
+- **Vérification :** typecheck, lint, build de production et 55 tests unitaires validés ; 19 tests d'intégration conditionnels aux secrets locaux ignorés.
+
 ## 2026-08-25 — Codex — Navigation directionnelle et préchargement maîtrisé
 
 - **Transitions :** ordre logique global des écrans principaux et des sous-menus, ouverture d'une fiche vers l'avant et retour vers l'arrière ; mouvement horizontal discret limité au contenu, shell fixe, retour immédiat au clic et neutralisation complète avec `prefers-reduced-motion`.

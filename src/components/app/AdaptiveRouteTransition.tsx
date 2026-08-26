@@ -1,16 +1,12 @@
 "use client";
 
-import type { NavigationDirection } from "@/lib/navigation/transitions";
-
 export function AdaptiveRouteTransition({
   routeKey,
-  direction,
   pace,
   pending,
   children,
 }: {
   routeKey: string;
-  direction: NavigationDirection;
   pace: "fast" | "normal";
   pending: boolean;
   children: React.ReactNode;
@@ -20,7 +16,6 @@ export function AdaptiveRouteTransition({
       <div
         key={routeKey}
         className={`leti-route-view${pending ? " leti-route-view--pending" : ""}`}
-        data-direction={direction}
         data-pace={pace}
       >
         {children}
