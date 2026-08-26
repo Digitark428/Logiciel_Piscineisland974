@@ -2,6 +2,13 @@
 
 > Ajouter une entrée courte après chaque intervention significative. Ne pas y dupliquer la documentation durable de `PROJECT_CONTEXT.md`.
 
+## 2026-08-26 — Codex — Refonte premium des fiches d’entretien
+
+- **Gabarit partagé :** les entretiens ponctuels, passages récurrents enregistrés et occurrences hebdomadaires futures utilisent désormais le même en-tête, bandeau opérationnel et navigation interne « Intervention / Suivi & contrat / Détails ».
+- **Terrain :** client, téléphone, accès, Waze, Maps et actions de statut restent immédiatement visibles ; tâches, notes client, note du passage et compte rendu sont regroupés sans modifier leurs données ni leurs actions serveur.
+- **Suivi :** exceptions hebdomadaires, montant autorisé, contrat, facture, intervenant, fonction et informations structurelles conservent leurs permissions et sont répartis dans les onglets dédiés.
+- **Vérification :** lint et typecheck valides, build de production réussi et 61 tests unitaires validés ; contrôle navigateur à 375 et 1440 px sans débordement, overlay ni erreur, avec onglets clavier fonctionnels et saisie préservée.
+
 ## 2026-08-26 — Codex — Refonte premium du Planning
 
 - **Hiérarchie :** en-tête plus respirant, filtres typés sous forme de chips, navigation temporelle unifiée et vues Jour/Semaine/Mois/Année réunies dans un contrôle segmenté compact.

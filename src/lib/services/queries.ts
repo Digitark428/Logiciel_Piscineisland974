@@ -17,6 +17,7 @@ export interface OccurrenceClient {
   city: string | null;
   latitude: number | null;
   longitude: number | null;
+  access_info: string | null;
 }
 
 export interface OccurrenceAssignee {
@@ -98,7 +99,7 @@ interface ServiceRow {
   series: { notes: string | null } | Array<{ notes: string | null }> | null;
 }
 
-const CLIENT_SELECT = "id,first_name,last_name,company_name,phone,address_line1,postal_code,city,latitude,longitude";
+const CLIENT_SELECT = "id,first_name,last_name,company_name,phone,address_line1,postal_code,city,latitude,longitude,access_info";
 const ASSIGNEE_SELECT = "id,first_name,last_name,email,role,job_title,photo_path";
 const POOL_SELECT = "id,name,address_line1,postal_code,city,latitude,longitude";
 

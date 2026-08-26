@@ -47,23 +47,23 @@ export function StatusActions({
     });
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="grid w-full grid-cols-1 gap-2 sm:flex sm:w-auto sm:flex-wrap" aria-live="polite">
       {status === "planned" && (
-        <button type="button" disabled={pending} onClick={() => run("in_progress")} className="btn-secondary">Démarrer</button>
+        <button type="button" disabled={pending} aria-busy={pending} onClick={() => run("in_progress")} className="btn-secondary border-pool-200 text-pool-800">Démarrer</button>
       )}
       {(status === "planned" || status === "in_progress" || status === "postponed") && (
-        <button type="button" disabled={pending} onClick={() => run("completed")} className="btn-primary bg-emerald-600 hover:bg-emerald-700">
+        <button type="button" disabled={pending} aria-busy={pending} onClick={() => run("completed")} className="btn border border-emerald-200 bg-emerald-50 text-emerald-800 hover:border-emerald-300 hover:bg-emerald-100">
           ✓ Terminer l'entretien
         </button>
       )}
       {status === "completed" && (
-        <button type="button" disabled={pending} onClick={() => run("planned")} className="btn-secondary">Rouvrir l'entretien</button>
+        <button type="button" disabled={pending} aria-busy={pending} onClick={() => run("planned")} className="btn-secondary">Rouvrir l'entretien</button>
       )}
       {canEdit && status !== "cancelled" && status !== "completed" && (
-        <button type="button" disabled={pending} onClick={() => run("cancelled")} className="btn-secondary text-red-700">Annuler ce passage</button>
+        <button type="button" disabled={pending} aria-busy={pending} onClick={() => run("cancelled")} className="btn border border-red-100 bg-white text-red-700 hover:border-red-200 hover:bg-red-50">Annuler</button>
       )}
       {canEdit && status === "cancelled" && (
-        <button type="button" disabled={pending} onClick={() => run("planned")} className="btn-secondary">Rétablir le passage</button>
+        <button type="button" disabled={pending} aria-busy={pending} onClick={() => run("planned")} className="btn-secondary">Rétablir le passage</button>
       )}
     </div>
   );
@@ -93,7 +93,7 @@ export function TasksChecklist({
     <ul className="space-y-2">
       {tasks.map((t) => (
         <li key={t.id}>
-          <label className="flex cursor-pointer items-center gap-3 rounded-lg bg-graphite-50 px-3 py-2.5">
+          <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-xl border border-transparent bg-graphite-50 px-3.5 py-2.5 transition hover:border-pool-100 hover:bg-pool-50/60">
             <input
               type="checkbox"
               checked={doneById[t.id] ?? t.done}
@@ -132,12 +132,17 @@ export function ReportForm({ occurrence, report, notes }: { occurrence: Occurren
       {occurrence.serviceId && <input type="hidden" name="id" value={occurrence.serviceId} />}
       {occurrence.seriesId && <input type="hidden" name="series_id" value={occurrence.seriesId} />}
       {occurrence.occurrenceDate && <input type="hidden" name="occurrence_date" value={occurrence.occurrenceDate} />}
-      <label className="label" htmlFor="occurrence-notes">Commentaire de ce passage</label>
-      <textarea id="occurrence-notes" name="notes" rows={3} className="input" defaultValue={notes ?? ""} placeholder="Remarque propre à cette semaine…" />
-      <label className="label mt-4" htmlFor="occurrence-report">Compte-rendu</label>
-      <textarea id="occurrence-report" name="report" rows={4} className="input" defaultValue={report ?? ""} placeholder="Observations, produits utilisés, remarques…" />
-      <div className="mt-3 flex justify-end">
-        <SubmitButton>Enregistrer le compte-rendu</SubmitButton>
+      <div>
+        <label className="label" htmlFor="occurrence-notes">Note propre à ce passage</label>
+        <textarea id="occurrence-notes" name="notes" rows={3} className="input resize-y bg-graphite-50/35" defaultValue={notes ?? ""} placeholder="Particularité ou information liée à cette date…" />
+        <p className="mt-1.5 text-xs leading-5 text-graphite-400">Cette note reste attachée à ce passage uniquement.</p>
+      </div>
+      <div className="mt-5">
+        <label className="label" htmlFor="occurrence-report">Compte rendu de l’intervention</label>
+        <textarea id="occurrence-report" name="report" rows={5} className="input resize-y bg-graphite-50/35" defaultValue={report ?? ""} placeholder="Observations, produits utilisés et actions réalisées…" />
+      </div>
+      <div className="mt-4 flex justify-end">
+        <SubmitButton className="border-coral-200 bg-coral-50 text-graphite-800 hover:border-coral-300 hover:bg-coral-100">Enregistrer le compte rendu</SubmitButton>
       </div>
     </ActionForm>
   );
@@ -150,9 +155,9 @@ export function ExceptionForm({ occurrence, scheduledDate }: { occurrence: Occur
       {occurrence.seriesId && <input type="hidden" name="series_id" value={occurrence.seriesId} />}
       {occurrence.occurrenceDate && <input type="hidden" name="occurrence_date" value={occurrence.occurrenceDate} />}
       <label className="label" htmlFor="exception-date">Date exceptionnelle</label>
-      <input id="exception-date" name="scheduled_date" type="date" required className="input" defaultValue={scheduledDate} />
+      <input id="exception-date" name="scheduled_date" type="date" required className="input bg-graphite-50/35" defaultValue={scheduledDate} />
       <p className="mt-1 text-xs text-graphite-400">Ce déplacement ne modifie pas le jour hebdomadaire du contrat.</p>
-      <div className="mt-3 flex justify-end"><SubmitButton>Enregistrer l'exception</SubmitButton></div>
+      <div className="mt-4 flex justify-end"><SubmitButton className="border-coral-200 bg-coral-50 text-graphite-800 hover:border-coral-300 hover:bg-coral-100">Enregistrer l'exception</SubmitButton></div>
     </ActionForm>
   );
 }
@@ -179,11 +184,19 @@ export function GoThereButton({
     : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`;
 
   return (
-    <div className="flex gap-2">
-      <a href={wazeHref} target="_blank" rel="noopener noreferrer" className="btn-primary">
-        🚗 Y aller (Waze)
+    <div className="grid grid-cols-2 gap-2 sm:flex">
+      <a href={wazeHref} target="_blank" rel="noopener noreferrer" className="btn-secondary min-w-0 border-pool-200 px-3 text-pool-800" aria-label="Ouvrir l'itinéraire dans Waze">
+        <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8">
+          <path d="M5 15.2V11a7 7 0 0 1 14 0v4.1a2.9 2.9 0 0 1-2.9 2.9H9.2L5 20v-4.8Z" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M9 11.5h.01M15 11.5h.01M9.5 15c1.4.9 3.6.9 5 0" strokeLinecap="round" />
+        </svg>
+        Waze
       </a>
-      <a href={mapsHref} target="_blank" rel="noopener noreferrer" className="btn-secondary">
+      <a href={mapsHref} target="_blank" rel="noopener noreferrer" className="btn-secondary min-w-0 px-3" aria-label="Ouvrir l'itinéraire dans Google Maps">
+        <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4 text-coral-600" fill="none" stroke="currentColor" strokeWidth="1.8">
+          <path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z" strokeLinecap="round" strokeLinejoin="round" />
+          <circle cx="12" cy="10" r="2.2" />
+        </svg>
         Maps
       </a>
     </div>

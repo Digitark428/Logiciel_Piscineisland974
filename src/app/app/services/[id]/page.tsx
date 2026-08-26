@@ -3,13 +3,14 @@ import { notFound } from "next/navigation";
 import { requirePermission, can } from "@/lib/auth/context";
 import { createClient } from "@/lib/supabase/server";
 import { signedUrls } from "@/lib/storage";
-import { Card, Badge, Avatar } from "@/components/ui";
 import { MemberIdentity } from "@/components/members/MemberIdentity";
+import { ServiceDetailItem, ServiceDetailSection, ServiceDetailView } from "@/components/services/ServiceDetailView";
 import { ExceptionForm, StatusActions, TasksChecklist, ReportForm, GoThereButton } from "./ServiceControls";
 import { clientName, formatDate, formatTime, formatDuration, SERVICE_STATUS_LABELS } from "@/lib/utils/format";
 import { formatMoneyCents } from "@/lib/utils/money";
 import type { ServiceTask } from "@/lib/db/types";
 import { serviceTypeLabel } from "@/lib/services/constants";
+import { serviceDetailEditAction } from "@/lib/services/detail";
 
 export default async function ServiceDetailPage({ params }: { params: { id: string } }) {
   const ctx = await requirePermission("services.view");
@@ -99,171 +100,99 @@ export default async function ServiceDetailPage({ params }: { params: { id: stri
   const canSensitive = can(ctx, "sensitive.view");
 
   return (
-    <div>
-      <Link href="/app/services" className="mb-4 inline-block text-sm text-graphite-500 hover:text-graphite-700">← Mes entretiens</Link>
-
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold tracking-tight text-graphite-900">{serviceTypeLabel(service.service_type)}</h1>
-            <Badge tone={service.status}>{SERVICE_STATUS_LABELS[service.status]}</Badge>
-          </div>
-          <p className="mt-1 text-sm text-graphite-500">
-            {formatDate(service.scheduled_date)}{service.scheduled_time ? ` à ${formatTime(service.scheduled_time)}` : ""} · {service.code}
-          </p>
-        </div>
-        {canEdit && (
-          <Link href={series?.recurrence_kind === "weekly_contract" ? `/app/services/contracts/${service.series_id}` : `/app/services/${service.id}/edit`} className="btn-secondary">
-            {series?.recurrence_kind === "weekly_contract" ? "Modifier le contrat" : "Modifier"}
-          </Link>
-        )}
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
-          <Card>
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <Avatar name={clientName(client ?? {})} size={44} />
-                <div>
-                  <Link href={`/app/clients/${client?.id}`} className="font-semibold text-graphite-900 hover:text-pool-700">{clientName(client ?? {})}</Link>
-                  <div className="text-sm text-graphite-500">{[client?.phone, pool?.name].filter(Boolean).join(" · ")}</div>
-                </div>
-              </div>
-              <GoThereButton address={address} lat={geoLat} lng={geoLng} />
-            </div>
-            {canSensitive && client?.access_info && (
-              <div className="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
-                <span className="font-medium">Accès :</span> {client.access_info}
-              </div>
-            )}
-          </Card>
-
-          <Card>
-            <h2 className="mb-4 text-lg font-semibold text-graphite-900">Tâches d'entretien</h2>
+    <ServiceDetailView
+      backHref="/app/services"
+      status={service.status}
+      statusLabel={SERVICE_STATUS_LABELS[service.status]}
+      meta={<>{formatDate(service.scheduled_date)}{service.scheduled_time ? ` à ${formatTime(service.scheduled_time)}` : ""} · {service.code}</>}
+      editAction={serviceDetailEditAction({
+        canEdit,
+        serviceId: service.id,
+        seriesId: service.series_id,
+        weeklyContract: series?.recurrence_kind === "weekly_contract",
+      })}
+      client={{ id: client?.id, name: clientName(client ?? {}), phone: client?.phone, context: pool?.name }}
+      navigation={<GoThereButton address={address} lat={geoLat} lng={geoLng} />}
+      statusActions={<StatusActions occurrence={occurrence} status={service.status} canComplete={canComplete} canEdit={canEdit} />}
+      accessInfo={canSensitive ? client?.access_info : null}
+      intervention={(
+        <div className="divide-y divide-graphite-100">
+          <ServiceDetailSection title="Tâches d'entretien" description="Cochez les opérations réalisées pendant ce passage.">
             <TasksChecklist serviceId={service.id} tasks={(tasks ?? []) as ServiceTask[]} editable={canComplete} />
-          </Card>
+          </ServiceDetailSection>
 
           {(clientNotes ?? []).length > 0 && (
-            <Card>
-              <h2 className="mb-4 text-lg font-semibold text-graphite-900">Notes du client</h2>
+            <ServiceDetailSection title="Notes du client">
               <ul className="space-y-3">
-                {(clientNotes ?? []).map((n: any) => (
-                  <li key={n.id} className={`rounded-lg p-3 ${n.is_important ? "bg-amber-50 ring-1 ring-amber-200" : "bg-graphite-50"}`}>
-                    <div className="flex items-center gap-2 text-xs text-graphite-400">
-                      <span>Note du client — {formatDate(n.created_at)}</span>
-                      {n.is_important && <span className="badge bg-amber-100 text-amber-800">Information importante</span>}
+                {(clientNotes ?? []).map((note: any) => (
+                  <li key={note.id} className={`rounded-xl border px-4 py-3 ${note.is_important ? "border-coral-200 bg-coral-50" : "border-graphite-100 bg-graphite-50/60"}`}>
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-graphite-400">
+                      <span>Reçue le {formatDate(note.created_at)}</span>
+                      {note.is_important && <span className="badge border-coral-200 bg-coral-100 text-coral-700">Information importante</span>}
                     </div>
-                    <p className="mt-1 whitespace-pre-wrap text-sm text-graphite-800">{n.content}</p>
+                    <p className="mt-1.5 whitespace-pre-wrap text-sm leading-6 text-graphite-800">{note.content}</p>
                   </li>
                 ))}
               </ul>
-            </Card>
+            </ServiceDetailSection>
           )}
 
-          <Card>
-            <h2 className="mb-4 text-lg font-semibold text-graphite-900">Compte-rendu</h2>
+          <ServiceDetailSection title="Compte rendu du passage" description="La note décrit cette occurrence ; le compte rendu consigne le travail réalisé.">
             {canComplete ? (
               <ReportForm occurrence={occurrence} report={service.report} notes={service.notes} />
             ) : (
-              <p className="whitespace-pre-wrap text-sm text-graphite-700">{service.report || "—"}</p>
+              <p className="whitespace-pre-wrap text-sm leading-6 text-graphite-700">{service.report || "Aucun compte rendu enregistré."}</p>
             )}
-          </Card>
+          </ServiceDetailSection>
         </div>
-
-        <div className="space-y-6">
-          <Card>
-            <h2 className="mb-4 text-base font-semibold text-graphite-900">Statut</h2>
-            <StatusActions occurrence={occurrence} status={service.status} canComplete={canComplete} canEdit={canEdit} />
-            {service.completed_at && (
-              <p className="mt-3 text-xs text-graphite-400">Terminée le {formatDate(service.completed_at)}</p>
-            )}
-          </Card>
-
+      )}
+      tracking={(
+        <div className="divide-y divide-graphite-100">
           {canEdit && service.kind === "recurring" && service.occurrence_date && series?.recurrence_kind === "weekly_contract" && (
-            <Card>
-              <h2 className="mb-3 text-base font-semibold text-graphite-900">Exception de cette semaine</h2>
-              <ExceptionForm occurrence={occurrence} scheduledDate={service.scheduled_date} />
-            </Card>
+            <ServiceDetailSection title="Exception de cette semaine" description="Déplacez uniquement ce passage sans modifier le rythme du contrat.">
+              <div className="max-w-md"><ExceptionForm occurrence={occurrence} scheduledDate={service.scheduled_date} /></div>
+            </ServiceDetailSection>
           )}
 
-          <Card>
-            <h2 className="mb-3 text-base font-semibold text-graphite-900">Suivi</h2>
-            <dl className="space-y-3 text-sm">
+          <ServiceDetailSection title="Contrat et documents">
+            <dl className="grid gap-6 sm:grid-cols-2">
               {ctx.isAdmin && financialAmountCents !== null && (
-                <div>
-                  <dt className="text-xs uppercase tracking-wide text-graphite-400">{service.kind === "recurring" ? "Contrat" : "Montant facturé"}</dt>
-                  <dd className="mt-0.5 font-semibold text-graphite-900">{formatMoneyCents(financialAmountCents)}{service.kind === "recurring" ? " / mois" : ""}</dd>
-                </div>
+                <ServiceDetailItem label={service.kind === "recurring" ? "Montant mensuel" : "Montant facturé"}>
+                  <span className="font-semibold text-graphite-900">{formatMoneyCents(financialAmountCents)}{service.kind === "recurring" ? " / mois" : ""}</span>
+                </ServiceDetailItem>
               )}
-              <div>
-                <dt className="text-xs uppercase tracking-wide text-graphite-400">Contrat lié</dt>
-                <dd className="mt-0.5 text-graphite-800">
-                  {contractDoc ? (
-                    contractDoc.url ? (
-                      <a href={contractDoc.url} target="_blank" rel="noopener noreferrer" className="text-pool-700 hover:underline">{contractDoc.name}</a>
-                    ) : contractDoc.name
-                  ) : (
-                    <span className="text-graphite-400">Aucun contrat associé</span>
-                  )}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-xs uppercase tracking-wide text-graphite-400">Facture liée</dt>
-                <dd className="mt-0.5 text-graphite-800">
-                  {invoiceDoc ? (
-                    invoiceDoc.url ? (
-                      <a href={invoiceDoc.url} target="_blank" rel="noopener noreferrer" className="text-pool-700 hover:underline">{invoiceDoc.name}</a>
-                    ) : invoiceDoc.name
-                  ) : (
-                    <span className="text-graphite-400">Aucune facture associée</span>
-                  )}
-                </dd>
-              </div>
-            </dl>
-          </Card>
-
-          <Card>
-            <h2 className="mb-3 text-base font-semibold text-graphite-900">Détails</h2>
-            <dl className="space-y-3 text-sm">
-              <div>
-                <dt className="text-xs uppercase tracking-wide text-graphite-400">Assigné à</dt>
-                <dd className="mt-0.5 flex items-center gap-2 text-graphite-800">
-                  {assignee ? <MemberIdentity member={assignee} avatarSize={24} nameClassName="text-sm" /> : "Non assigné"}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-xs uppercase tracking-wide text-graphite-400">Type</dt>
-                <dd className="mt-0.5 text-graphite-800">{service.kind === "recurring" ? "Passage récurrent" : "Entretien ponctuel"}</dd>
-              </div>
               {service.series_id && series?.recurrence_kind === "weekly_contract" && (
-                <div>
-                  <dt className="text-xs uppercase tracking-wide text-graphite-400">Contrat d'entretien</dt>
-                  <dd className="mt-0.5"><Link href={`/app/services/contracts/${service.series_id}`} className="text-pool-700 hover:underline">Voir le contrat</Link></dd>
-                </div>
+                <ServiceDetailItem label="Contrat d'entretien">
+                  <Link href={`/app/services/contracts/${service.series_id}`} className="font-medium text-pool-700 hover:underline">Voir le contrat</Link>
+                </ServiceDetailItem>
               )}
-              {service.duration_min && (
-                <div>
-                  <dt className="text-xs uppercase tracking-wide text-graphite-400">Durée estimée</dt>
-                  <dd className="mt-0.5 text-graphite-800">{formatDuration(service.duration_min)}</dd>
-                </div>
-              )}
-              {series?.notes && (
-                <div>
-                  <dt className="text-xs uppercase tracking-wide text-graphite-400">Commentaire général du contrat</dt>
-                  <dd className="mt-0.5 whitespace-pre-wrap text-graphite-800">{series.notes}</dd>
-                </div>
-              )}
-              {service.notes && !canComplete && (
-                <div>
-                  <dt className="text-xs uppercase tracking-wide text-graphite-400">Commentaire de ce passage</dt>
-                  <dd className="mt-0.5 whitespace-pre-wrap text-graphite-800">{service.notes}</dd>
-                </div>
-              )}
+              <ServiceDetailItem label="Contrat lié">
+                {contractDoc ? (
+                  contractDoc.url ? <a href={contractDoc.url} target="_blank" rel="noopener noreferrer" className="font-medium text-pool-700 hover:underline">{contractDoc.name}</a> : contractDoc.name
+                ) : <span className="text-graphite-400">Aucun contrat associé</span>}
+              </ServiceDetailItem>
+              <ServiceDetailItem label="Facture liée">
+                {invoiceDoc ? (
+                  invoiceDoc.url ? <a href={invoiceDoc.url} target="_blank" rel="noopener noreferrer" className="font-medium text-pool-700 hover:underline">{invoiceDoc.name}</a> : invoiceDoc.name
+                ) : <span className="text-graphite-400">Aucune facture associée</span>}
+              </ServiceDetailItem>
             </dl>
-          </Card>
+          </ServiceDetailSection>
         </div>
-      </div>
-    </div>
+      )}
+      details={(
+        <dl className="grid gap-x-8 gap-y-7 sm:grid-cols-2">
+          <ServiceDetailItem label="Assigné à">
+            {assignee ? <MemberIdentity member={assignee} avatarSize={30} nameClassName="text-sm" /> : "Non assigné"}
+          </ServiceDetailItem>
+          <ServiceDetailItem label="Prestation">{serviceTypeLabel(service.service_type)}</ServiceDetailItem>
+          <ServiceDetailItem label="Type">{service.kind === "recurring" ? "Passage récurrent" : "Entretien ponctuel"}</ServiceDetailItem>
+          {service.duration_min && <ServiceDetailItem label="Durée estimée">{formatDuration(service.duration_min)}</ServiceDetailItem>}
+          {service.completed_at && <ServiceDetailItem label="Clôture">Terminée le {formatDate(service.completed_at)}</ServiceDetailItem>}
+          {series?.notes && <ServiceDetailItem label="Commentaire général du contrat" className="sm:col-span-2"><span className="whitespace-pre-wrap">{series.notes}</span></ServiceDetailItem>}
+          {service.notes && !canComplete && <ServiceDetailItem label="Note propre à ce passage" className="sm:col-span-2"><span className="whitespace-pre-wrap">{service.notes}</span></ServiceDetailItem>}
+        </dl>
+      )}
+    />
   );
 }
