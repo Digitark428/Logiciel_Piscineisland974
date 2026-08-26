@@ -21,7 +21,6 @@ import { idle } from "@/lib/actions/result";
 import type { PlanningEvent } from "@/lib/db/types";
 import { planningTimeLabel } from "@/lib/planning-events";
 import { SubmitButton } from "@/components/forms/SubmitButton";
-import { cn } from "@/lib/utils/cn";
 
 interface DialogState {
   event: PlanningEvent | null;
@@ -127,7 +126,7 @@ export function PlanningEventProvider({ children, defaultDate }: { children: Rea
 export function AddPlanningEventButton({ date }: { date?: string }) {
   const { openCreate } = usePlanningEventDialog();
   return (
-    <button type="button" className="btn-secondary px-3" onClick={() => openCreate(date)}>
+    <button type="button" className="btn-secondary rounded-xl px-3.5 text-[13px] shadow-[0_1px_4px_rgba(24,58,89,0.035)]" onClick={() => openCreate(date)}>
       <span aria-hidden className="h-2 w-2 rounded-full bg-coral-500" />
       Ajouter un événement
     </button>
@@ -137,21 +136,34 @@ export function AddPlanningEventButton({ date }: { date?: string }) {
 export function PlanningEventButton({ event, compact = false }: { event: PlanningEvent; compact?: boolean }) {
   const { openEdit } = usePlanningEventDialog();
   const time = planningTimeLabel(event.start_time, event.end_time, event.all_day);
+
+  if (compact) {
+    return (
+      <button
+        type="button"
+        onClick={() => openEdit(event)}
+        className="group flex w-full items-center gap-1 rounded px-0.5 py-0.5 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-pool-500"
+        aria-label={`Consulter l'événement ${event.title}`}
+      >
+        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-coral-500" aria-hidden />
+        <span className="min-w-0 flex-1 truncate text-[11px] text-graphite-800">{event.title}</span>
+      </button>
+    );
+  }
+
   return (
     <button
       type="button"
       onClick={() => openEdit(event)}
-      className={cn(
-        "group w-full text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-pool-500",
-        compact
-          ? "flex items-center gap-1 rounded px-0.5 py-0.5"
-          : "flex items-center gap-2 rounded-lg border border-coral-100 bg-coral-50/45 px-2 py-1.5 hover:border-coral-200 hover:bg-coral-50",
-      )}
+      className="relative block w-full overflow-hidden rounded-[0.9rem] border border-coral-100/90 bg-gradient-to-br from-white to-coral-50/75 px-2.5 py-2.5 text-left shadow-[0_1px_2px_rgba(24,58,89,0.02)] transition hover:border-coral-200 hover:bg-coral-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-pool-500 focus-visible:ring-offset-2"
       aria-label={`Consulter l'événement ${event.title}`}
     >
-      <span className={cn("shrink-0 rounded-full bg-coral-500", compact ? "h-1.5 w-1.5" : "h-2 w-2")} />
-      {!compact && <span className="w-20 shrink-0 truncate text-[11px] font-medium text-coral-700">{time}</span>}
-      <span className={cn("min-w-0 flex-1 truncate text-graphite-800", compact ? "text-[11px]" : "text-sm font-medium")}>{event.title}</span>
+      <span className="absolute inset-y-2.5 left-0 w-0.5 rounded-r-full bg-coral-400" aria-hidden />
+      <span className="block truncate text-[13px] font-semibold leading-4 text-graphite-800">{event.title}</span>
+      <span className="mt-1 flex min-w-0 items-center gap-1.5">
+        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-coral-500" aria-hidden />
+        <span className="truncate text-[10px] font-medium text-coral-700">{time}</span>
+      </span>
     </button>
   );
 }

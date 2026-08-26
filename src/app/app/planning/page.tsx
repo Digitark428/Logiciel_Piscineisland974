@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requirePermission, can } from "@/lib/auth/context";
 import { createClient } from "@/lib/supabase/server";
-import { Card, PageHeader } from "@/components/ui";
+import { Card } from "@/components/ui";
 import { clientName, formatTime } from "@/lib/utils/format";
 import { dateOnlyToUtcDate, todayInReunion } from "@/lib/utils/date";
 import type { PlanningEvent, Task } from "@/lib/db/types";
@@ -30,6 +30,21 @@ const STATUS_DOT: Record<string, string> = {
   cancelled: "bg-graphite-300",
   todo: "bg-graphite-300",
   done: "bg-emerald-400",
+};
+
+const FILTER_TONES: Record<PlanningType, { active: string; dot: string }> = {
+  maintenance: {
+    active: "border-pool-200 bg-pool-50/90 text-pool-900 shadow-[0_1px_2px_rgba(24,58,89,0.025)]",
+    dot: "bg-pool-400",
+  },
+  task: {
+    active: "border-amber-200 bg-amber-50/80 text-amber-900 shadow-[0_1px_2px_rgba(24,58,89,0.025)]",
+    dot: "bg-amber-400",
+  },
+  event: {
+    active: "border-coral-200 bg-coral-50/90 text-graphite-900 shadow-[0_1px_2px_rgba(24,58,89,0.025)]",
+    dot: "bg-coral-500",
+  },
 };
 
 type PlanningTask = Pick<Task, "id" | "title" | "category" | "status" | "due_date" | "due_time">;
@@ -129,17 +144,20 @@ export default async function PlanningPage({ searchParams }: { searchParams: Sea
   return (
     <PlanningEventProvider defaultDate={toISO(anchor)}>
       <div>
-        <PageHeader
-          title="Planning"
-          description="Entretiens, tâches datées et événements personnels réunis dans une même vue."
-          action={<AddPlanningEventButton date={toISO(anchor)} />}
-        />
+        <header className="mb-7 flex flex-wrap items-start justify-between gap-4 sm:mb-8">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-[-0.035em] text-graphite-900 sm:text-[1.85rem]">Planning</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-graphite-500">Entretiens, tâches datées et événements personnels réunis dans une même vue.</p>
+          </div>
+          <AddPlanningEventButton date={toISO(anchor)} />
+        </header>
 
-        <fieldset className="mb-4">
+        <fieldset className="mb-5 rounded-[1.3rem] border border-graphite-100/80 bg-white/90 p-2.5 shadow-[0_1px_2px_rgba(24,58,89,0.02),0_7px_22px_rgba(24,58,89,0.025)] sm:mb-6 sm:p-3">
           <legend className="sr-only">Types d'éléments du planning</legend>
           <div className="flex flex-wrap gap-2">
             {availableTypes.map((type) => {
               const active = selected.has(type);
+              const tone = FILTER_TONES[type];
               const nextTypes = active
                 ? selectedTypes.length > 1 ? selectedTypes.filter((item) => item !== type) : selectedTypes
                 : [...selectedTypes, type];
@@ -149,32 +167,33 @@ export default async function PlanningPage({ searchParams }: { searchParams: Sea
                   prefetch={false}
                   href={planningHref(view, anchor, nextTypes)}
                   aria-pressed={active}
-                  className={`inline-flex min-h-11 items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition ${active ? "border-pool-300 bg-pool-50 text-graphite-900" : "border-graphite-100 bg-white text-graphite-500 hover:border-pool-200 hover:bg-graphite-50"}`}
+                  className={`inline-flex min-h-11 items-center gap-2 rounded-xl border px-3.5 py-2 text-[13px] font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-pool-500 focus-visible:ring-offset-2 ${active ? tone.active : "border-transparent bg-graphite-50/70 text-graphite-500 hover:border-graphite-100 hover:bg-white"}`}
                 >
-                  <span className={`h-2 w-2 rounded-full ${type === "event" ? "bg-coral-500" : type === "task" ? "bg-amber-400" : "bg-pool-400"}`} />
+                  <span className={`h-2 w-2 rounded-full ${tone.dot}`} aria-hidden />
                   {PLANNING_TYPE_LABELS[type]}
                 </Link>
               );
             })}
             {(["Chantier", "Dépannage"] as const).map((label) => (
-              <button key={label} type="button" disabled className="min-h-11 cursor-not-allowed rounded-xl border border-graphite-100 bg-white px-3 py-2 text-sm text-graphite-400 opacity-75">
-                {label} <span className="ml-1 text-[10px] uppercase">Bientôt</span>
+              <button key={label} type="button" disabled className="inline-flex min-h-11 cursor-not-allowed items-center gap-2 rounded-xl border border-transparent bg-graphite-50/60 px-3.5 py-2 text-[13px] text-graphite-400 opacity-70">
+                {label} <span className="rounded-md bg-graphite-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.08em]">Bientôt</span>
               </button>
             ))}
           </div>
         </fieldset>
 
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-[1.35rem] border border-graphite-100/80 bg-white/90 p-2.5 shadow-[0_1px_2px_rgba(24,58,89,0.02),0_8px_24px_rgba(24,58,89,0.025)] sm:mb-6 sm:p-3">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <Link prefetch={false} href={link(view, prev)} className="btn-secondary px-3" aria-label="Période précédente">‹</Link>
-            <Link prefetch={false} href={link(view, todayInReunion())} className="btn-secondary px-3">Aujourd'hui</Link>
-            <Link prefetch={false} href={link(view, next)} className="btn-secondary px-3" aria-label="Période suivante">›</Link>
-            <h2 className="min-w-0 basis-full text-base font-semibold capitalize text-graphite-900 sm:ml-2 sm:basis-auto sm:text-lg">{periodLabel(view, anchor)}</h2>
+            <Link prefetch={false} href={link(view, prev)} className="btn-secondary h-11 w-11 rounded-xl p-0 shadow-none" aria-label="Période précédente">‹</Link>
+            <Link prefetch={false} href={link(view, todayInReunion())} className="btn-secondary rounded-xl px-3.5 text-[13px] shadow-none">Aujourd'hui</Link>
+            <Link prefetch={false} href={link(view, next)} className="btn-secondary h-11 w-11 rounded-xl p-0 shadow-none" aria-label="Période suivante">›</Link>
+            <h2 className="min-w-0 basis-full px-1 pt-1 text-base font-semibold capitalize tracking-[-0.015em] text-graphite-800 sm:ml-2 sm:basis-auto sm:px-0 sm:pt-0 sm:text-lg">{periodLabel(view, anchor)}</h2>
           </div>
-          <div className="flex gap-1 rounded-xl border border-graphite-100 bg-white p-1 shadow-card">
+          <div className="flex gap-0.5 rounded-xl bg-graphite-50 p-1 ring-1 ring-inset ring-graphite-100" role="navigation" aria-label="Vue du planning">
             {(["day", "week", "month", "year"] as PlanningView[]).map((nextView) => (
               <Link key={nextView} prefetch={false} href={link(nextView, anchor)}
-                className={`rounded-lg px-2.5 py-2 text-xs font-medium transition sm:px-3 sm:text-sm ${view === nextView ? "bg-pool-50 text-graphite-900 ring-1 ring-inset ring-pool-200" : "text-graphite-600 hover:bg-graphite-50"}`}>
+                aria-current={view === nextView ? "page" : undefined}
+                className={`rounded-lg px-2.5 py-2 text-xs font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-pool-500 sm:px-3.5 sm:text-sm ${view === nextView ? "bg-white text-graphite-900 shadow-[0_1px_3px_rgba(24,58,89,0.08)] ring-1 ring-inset ring-graphite-100" : "text-graphite-500 hover:bg-white/70 hover:text-graphite-800"}`}>
                 {nextView === "day" ? "Jour" : nextView === "week" ? "Semaine" : nextView === "month" ? "Mois" : "Année"}
               </Link>
             ))}
@@ -192,10 +211,13 @@ export default async function PlanningPage({ searchParams }: { searchParams: Sea
 
 function ServiceRow({ service }: { service: MaintenanceOccurrence }) {
   return (
-    <Link prefetch={false} href={occurrenceHref(service)} className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-graphite-50">
-      <span className={`h-2 w-2 shrink-0 rounded-full ${STATUS_DOT[service.status]}`} />
-      {service.scheduledTime && <span className="w-12 shrink-0 text-xs text-graphite-400">{formatTime(service.scheduledTime)}</span>}
-      <span className="truncate text-graphite-800">{clientName(service.client ?? {})}</span>
+    <Link prefetch={false} href={occurrenceHref(service)} className="relative block overflow-hidden rounded-[0.9rem] border border-pool-100/90 bg-gradient-to-br from-white to-pool-50/70 px-2.5 py-2.5 shadow-[0_1px_2px_rgba(24,58,89,0.02)] transition hover:border-pool-200 hover:bg-pool-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-pool-500 focus-visible:ring-offset-2">
+      <span className="absolute inset-y-2.5 left-0 w-0.5 rounded-r-full bg-pool-400" aria-hidden />
+      <span className="block truncate text-[13px] font-semibold leading-4 text-graphite-800">{clientName(service.client ?? {})}</span>
+      <span className="mt-1 flex min-w-0 items-center gap-1.5">
+        <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${STATUS_DOT[service.status]}`} aria-hidden />
+        {service.scheduledTime && <span className="shrink-0 text-[10px] font-medium text-graphite-400">{formatTime(service.scheduledTime)}</span>}
+      </span>
     </Link>
   );
 }
@@ -203,10 +225,13 @@ function ServiceRow({ service }: { service: MaintenanceOccurrence }) {
 function TaskRow({ task }: { task: PlanningTask }) {
   const href = task.category === "personal" ? "/app/tasks/personal" : "/app/tasks/assign";
   return (
-    <Link prefetch={false} href={href} className="flex items-center gap-2 rounded-lg border border-amber-100 bg-amber-50/35 px-2 py-1.5 text-sm hover:bg-amber-50">
-      <span className={`h-2 w-2 shrink-0 rounded-full ${STATUS_DOT[task.status]}`} />
-      {task.due_time && <span className="w-12 shrink-0 text-xs text-graphite-400">{formatTime(task.due_time)}</span>}
-      <span className="truncate text-graphite-800">{task.title}</span>
+    <Link prefetch={false} href={href} className="relative block overflow-hidden rounded-[0.9rem] border border-amber-100/90 bg-gradient-to-br from-white to-amber-50/70 px-2.5 py-2.5 shadow-[0_1px_2px_rgba(24,58,89,0.02)] transition hover:border-amber-200 hover:bg-amber-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2">
+      <span className="absolute inset-y-2.5 left-0 w-0.5 rounded-r-full bg-amber-400" aria-hidden />
+      <span className="block truncate text-[13px] font-semibold leading-4 text-graphite-800">{task.title}</span>
+      <span className="mt-1 flex min-w-0 items-center gap-1.5">
+        <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${STATUS_DOT[task.status]}`} aria-hidden />
+        {task.due_time && <span className="shrink-0 text-[10px] font-medium text-graphite-400">{formatTime(task.due_time)}</span>}
+      </span>
     </Link>
   );
 }
@@ -219,11 +244,11 @@ function CalendarRow({ item }: { item: CalendarItem }) {
 
 function DayView({ items }: { items: CalendarItem[] }) {
   return (
-    <Card>
+    <Card className="min-h-[28rem] rounded-[1.5rem] border-graphite-100/90 bg-white p-4 shadow-[0_1px_2px_rgba(24,58,89,0.02),0_10px_30px_rgba(24,58,89,0.03)] sm:p-5">
       {items.length === 0 ? (
-        <p className="py-8 text-center text-sm text-graphite-400">Aucun élément ce jour.</p>
+        <p className="flex min-h-[22rem] items-center justify-center text-center text-sm text-graphite-400">Aucun élément ce jour.</p>
       ) : (
-        <div className="space-y-1.5">{items.map((item) => <CalendarRow key={calendarItemKey(item)} item={item} />)}</div>
+        <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">{items.map((item) => <CalendarRow key={calendarItemKey(item)} item={item} />)}</div>
       )}
     </Card>
   );
@@ -233,23 +258,31 @@ function WeekView({ start, byDate }: { start: Date; byDate: Map<string, Calendar
   const days = Array.from({ length: 7 }, (_, index) => addDays(start, index));
   const today = todayInReunion();
   return (
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-7">
+    <section className="overflow-hidden rounded-[1.55rem] border border-graphite-100/90 bg-graphite-100/60 shadow-[0_1px_2px_rgba(24,58,89,0.02),0_10px_30px_rgba(24,58,89,0.035)]" aria-label="Planning de la semaine">
+      <div className="grid gap-px sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
       {days.map((day) => {
         const iso = toISO(day);
         const list = byDate.get(iso) ?? [];
         return (
-          <div key={iso} className={`card p-3 ${iso === today ? "border-pool-300 bg-pool-50/30" : ""}`}>
-            <div className="mb-2 flex items-baseline justify-between">
-              <span className="text-xs font-semibold uppercase text-graphite-400">{weekdayShort(day)}</span>
-              <span className="text-lg font-bold text-graphite-800">{day.getUTCDate()}</span>
+          <section key={iso} className={`min-w-0 px-3 py-4 sm:min-h-[20rem] xl:min-h-[38rem] ${iso === today ? "bg-pool-50/55" : "bg-white"}`}>
+            <header className={`mb-3 border-b pb-3 text-center ${iso === today ? "border-pool-100" : "border-graphite-100/80"}`}>
+              <h3 className={`text-[10px] font-semibold uppercase tracking-[0.15em] ${iso === today ? "text-pool-700" : "text-graphite-400"}`}>{weekdayShort(day)}</h3>
+              <p className={`mt-1 text-2xl font-semibold leading-none tracking-[-0.04em] ${iso === today ? "text-pool-800" : "text-graphite-900"}`}>{day.getUTCDate()}</p>
+              {iso === today && (
+                <p className="mt-2 inline-flex items-center gap-1.5 text-[10px] font-medium text-pool-700">
+                  <span className="h-1.5 w-1.5 rounded-full bg-pool-500" aria-hidden />
+                  Aujourd'hui
+                </p>
+              )}
+            </header>
+            <div className="space-y-2.5">
+              {list.length === 0 ? <span className="flex min-h-24 items-center justify-center text-xs text-graphite-300">—</span> : list.map((item) => <CalendarRow key={calendarItemKey(item)} item={item} />)}
             </div>
-            <div className="space-y-1">
-              {list.length === 0 ? <span className="text-xs text-graphite-300">—</span> : list.map((item) => <CalendarRow key={calendarItemKey(item)} item={item} />)}
-            </div>
-          </div>
+          </section>
         );
       })}
-    </div>
+      </div>
+    </section>
   );
 }
 
@@ -259,18 +292,18 @@ function MonthView({ anchor, byDate, dayHref }: { anchor: Date; byDate: Map<stri
   const cells = Array.from({ length: 42 }, (_, index) => addDays(gridStart, index));
   const today = todayInReunion();
   return (
-    <Card className="p-2 sm:p-3">
-      <div className="mb-1 grid grid-cols-7 text-center text-[10px] font-semibold uppercase text-graphite-400 sm:text-xs">
-        {(["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"] as const).map((day) => <div key={day} className="py-1">{day}</div>)}
+    <Card className="overflow-hidden rounded-[1.5rem] border-graphite-100/90 bg-white p-2 shadow-[0_1px_2px_rgba(24,58,89,0.02),0_10px_30px_rgba(24,58,89,0.03)] sm:p-3">
+      <div className="mb-1 grid grid-cols-7 text-center text-[10px] font-semibold uppercase tracking-[0.08em] text-graphite-400 sm:text-xs">
+        {(["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"] as const).map((day) => <div key={day} className="py-2">{day}</div>)}
       </div>
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-px overflow-hidden rounded-xl bg-graphite-100/70 ring-1 ring-graphite-100/70">
         {cells.map((day) => {
           const iso = toISO(day);
           const list = byDate.get(iso) ?? [];
           const inMonth = day.getUTCMonth() === anchor.getUTCMonth();
           return (
-            <div key={iso} className={`min-h-[76px] min-w-0 rounded-lg border p-1 text-left sm:p-1.5 ${inMonth ? "border-graphite-100 bg-white" : "border-transparent bg-graphite-50/50"} ${iso === today ? "border-pool-300 bg-pool-50/30" : ""}`}>
-              <Link prefetch={false} href={dayHref(iso)} className={`inline-flex h-6 min-w-6 items-center justify-center rounded text-xs font-semibold hover:bg-pool-50 ${inMonth ? "text-graphite-700" : "text-graphite-300"}`}>
+            <div key={iso} className={`min-h-[80px] min-w-0 p-1 text-left sm:min-h-[88px] sm:p-1.5 ${inMonth ? "bg-white" : "bg-graphite-50/70"} ${iso === today ? "bg-pool-50/70" : ""}`}>
+              <Link prefetch={false} href={dayHref(iso)} className={`inline-flex h-6 min-w-6 items-center justify-center rounded-md text-xs font-semibold transition hover:bg-pool-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-pool-500 ${iso === today ? "bg-pool-100 text-pool-800" : inMonth ? "text-graphite-700" : "text-graphite-300"}`}>
                 {day.getUTCDate()}
               </Link>
               <div className="mt-0.5 space-y-0.5">
@@ -311,12 +344,12 @@ function YearView({ year, byDate, monthHref }: { year: number; byDate: Map<strin
     if (month !== undefined) counts[month] += list.length;
   }
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       {counts.map((count, index) => (
-        <Link key={monthName(index)} prefetch={false} href={monthHref(`${year}-${String(index + 1).padStart(2, "0")}-01`)} className="card p-5 transition hover:border-pool-200">
-          <div className="text-sm font-medium text-graphite-500">{monthName(index)}</div>
-          <div className="mt-1 text-3xl font-bold text-pool-600">{count}</div>
-          <div className="text-xs text-graphite-400">élément{count > 1 ? "s" : ""}</div>
+        <Link key={monthName(index)} prefetch={false} href={monthHref(`${year}-${String(index + 1).padStart(2, "0")}-01`)} className="rounded-[1.2rem] border border-graphite-100/90 bg-gradient-to-br from-white to-pool-50/45 p-5 shadow-[0_1px_2px_rgba(24,58,89,0.02),0_7px_22px_rgba(24,58,89,0.025)] transition hover:border-pool-200 hover:bg-pool-50/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-pool-500 focus-visible:ring-offset-2">
+          <div className="text-sm font-medium capitalize text-graphite-500">{monthName(index)}</div>
+          <div className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-pool-700">{count}</div>
+          <div className="mt-1 text-xs text-graphite-400">élément{count > 1 ? "s" : ""}</div>
         </Link>
       ))}
     </div>

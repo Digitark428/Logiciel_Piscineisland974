@@ -2,6 +2,13 @@
 
 > Ajouter une entrée courte après chaque intervention significative. Ne pas y dupliquer la documentation durable de `PROJECT_CONTEXT.md`.
 
+## 2026-08-26 — Codex — Refonte premium du Planning
+
+- **Hiérarchie :** en-tête plus respirant, filtres typés sous forme de chips, navigation temporelle unifiée et vues Jour/Semaine/Mois/Année réunies dans un contrôle segmenté compact.
+- **Calendrier :** la semaine devient une plaque commune de sept colonnes avec hauteur opérationnelle, séparations fines et colonne du jour actuel légèrement bleutée ; les vues Jour, Mois et Année reprennent les mêmes surfaces calmes.
+- **Éléments :** entretiens bleu glacier, tâches crème et événements corail dans des fiches compactes ; titres, horaires, statuts, destinations et modale d’événement restent inchangés fonctionnellement.
+- **Vérification :** typecheck valide, build de production réussi et 58 tests unitaires validés, dont les 9 tests de planning ; 19 tests d’intégration conditionnels aux secrets locaux ignorés.
+
 ## 2026-08-26 — Codex — Planning hebdomadaire premium des entretiens
 
 - **Surface hebdomadaire :** les sept jours, toujours ordonnés du lundi au dimanche, appartiennent désormais à une plaque commune lumineuse avec séparations fines, hauteur opérationnelle et mise en évidence discrète du jour actuel.
