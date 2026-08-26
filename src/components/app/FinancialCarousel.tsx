@@ -50,15 +50,38 @@ export function FinancialCarousel({ recurringCents, oneOffCents }: FinancialCaro
   };
 
   return (
-    <section className="card relative overflow-hidden" aria-label="Aperçu financier">
-      <div className="flex items-start justify-between gap-4 px-5 pb-1 pt-5 sm:px-6">
+    <section
+      className="relative overflow-hidden rounded-[1.6rem] border border-pool-100/80 bg-gradient-to-br from-white via-pool-50/60 to-pool-100/35 shadow-[0_1px_2px_rgba(24,58,89,0.02),0_14px_38px_rgba(24,58,89,0.035)]"
+      aria-label="Aperçu financier"
+    >
+      <div className="flex items-start justify-between gap-4 px-5 pb-1 pt-5 sm:px-8 sm:pt-7">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-pool-700">Aperçu financier</p>
+          <h2 className="text-xl font-semibold tracking-[-0.025em] text-graphite-900">Finances</h2>
           <p className="mt-1 text-sm text-graphite-500">Vos revenus estimés du mois</p>
         </div>
-        <div className="hidden items-center gap-1 sm:flex">
-          <button type="button" onClick={() => goTo(activeIndex - 1)} disabled={activeIndex === 0} className="btn-ghost h-9 w-9 p-0" aria-label="Carte financière précédente">←</button>
-          <button type="button" onClick={() => goTo(activeIndex + 1)} disabled={activeIndex === slides.length - 1} className="btn-ghost h-9 w-9 p-0" aria-label="Carte financière suivante">→</button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => goTo(activeIndex - 1)}
+            disabled={activeIndex === 0}
+            className="flex h-11 w-11 items-center justify-center rounded-full border border-white/80 bg-white/65 text-graphite-700 shadow-[0_1px_2px_rgba(24,58,89,0.04)] transition hover:border-pool-200 hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-pool-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-35"
+            aria-label="Carte financière précédente"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="m15 18-6-6 6-6" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            onClick={() => goTo(activeIndex + 1)}
+            disabled={activeIndex === slides.length - 1}
+            className="flex h-11 w-11 items-center justify-center rounded-full border border-white/80 bg-white/65 text-graphite-700 shadow-[0_1px_2px_rgba(24,58,89,0.04)] transition hover:border-pool-200 hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-pool-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-35"
+            aria-label="Carte financière suivante"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="m9 18 6-6-6-6" />
+            </svg>
+          </button>
         </div>
       </div>
 
@@ -70,30 +93,34 @@ export function FinancialCarousel({ recurringCents, oneOffCents }: FinancialCaro
         }}
         className="flex snap-x snap-mandatory overflow-x-auto scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
-        {slides.map((slide, index) => (
-          <article key={slide.title} className="min-w-full snap-start px-5 pb-5 pt-5 sm:px-6 sm:pb-6">
-            <div className={`rounded-2xl px-5 py-6 sm:px-7 sm:py-8 ${slide.future ? "bg-graphite-50" : "bg-pool-50"}`}>
-              <h2 className="text-base font-semibold text-graphite-900">{slide.title}</h2>
-              <p className={`mt-3 break-words font-bold tracking-tight text-graphite-900 ${slide.future ? "text-2xl sm:text-3xl" : "text-4xl sm:text-5xl"}`}>
+        {slides.map((slide) => (
+          <article key={slide.title} className="flex min-h-[15.5rem] min-w-full snap-start flex-col justify-center px-5 py-8 sm:min-h-[17rem] sm:px-8 sm:py-10">
+            <div className="max-w-3xl">
+              <h3 className="text-sm font-medium text-pool-800">{slide.title}</h3>
+              <p className={`mt-4 break-words font-semibold leading-none tracking-[-0.05em] text-graphite-900 ${slide.future ? "text-[2rem] sm:text-[2.6rem]" : "text-[3rem] sm:text-[3.5rem]"}`}>
                 {slide.value}
               </p>
-              {slide.suffix && <p className="mt-1 text-sm font-medium text-pool-700">{slide.suffix}</p>}
-              <p className="mt-4 text-sm text-graphite-500">{slide.detail}</p>
-            </div>
-            <div className="mt-4 flex items-center justify-center gap-2" aria-label={`Carte ${index + 1} sur ${slides.length}`}>
-              {slides.map((item, dotIndex) => (
-                <button
-                  key={item.title}
-                  type="button"
-                  onClick={() => goTo(dotIndex)}
-                  className={`h-2 rounded-full transition-all ${dotIndex === activeIndex ? "w-5 bg-pool-600" : "w-2 bg-graphite-200 hover:bg-graphite-300"}`}
-                  aria-label={`Afficher ${item.title}`}
-                  aria-current={dotIndex === activeIndex ? "true" : undefined}
-                />
-              ))}
+              {slide.suffix && <p className="mt-3 text-sm font-medium text-pool-800">{slide.suffix}</p>}
+              <p className="mt-5 text-sm leading-6 text-graphite-500">{slide.detail}</p>
             </div>
           </article>
         ))}
+      </div>
+
+      <div className="flex items-center justify-between border-t border-white/70 px-5 py-4 sm:px-8">
+        <p className="text-xs font-medium text-graphite-400">{activeIndex + 1} / {slides.length}</p>
+        <div className="flex items-center gap-2" aria-label={`Carte ${activeIndex + 1} sur ${slides.length}`}>
+          {slides.map((item, dotIndex) => (
+            <button
+              key={item.title}
+              type="button"
+              onClick={() => goTo(dotIndex)}
+              className={`h-1.5 rounded-full transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-pool-500 focus-visible:ring-offset-2 ${dotIndex === activeIndex ? "w-7 bg-pool-600" : "w-2.5 bg-graphite-200 hover:bg-graphite-300"}`}
+              aria-label={`Afficher ${item.title}`}
+              aria-current={dotIndex === activeIndex ? "true" : undefined}
+            />
+          ))}
+        </div>
       </div>
     </section>
   );

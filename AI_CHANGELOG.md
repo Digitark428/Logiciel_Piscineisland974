@@ -2,6 +2,13 @@
 
 > Ajouter une entrée courte après chaque intervention significative. Ne pas y dupliquer la documentation durable de `PROJECT_CONTEXT.md`.
 
+## 2026-08-26 — Codex — Refonte premium du dashboard
+
+- **Hiérarchie :** introduction recentrée sur la salutation et la date, trois indicateurs compacts aux nuances LETI, aperçu financier dominant et composition responsive distinguant clairement la journée, les tâches et l’activité récente.
+- **Finances :** quatre vues et leurs montants inchangés, avec un carrousel plus calme, un montant fortement hiérarchisé et des contrôles tactiles intégrés sans ajouter de filtre ni d’action.
+- **Périmètre :** aucune requête, donnée, permission, route, destination ou logique métier modifiée ; le shell, le header global et la navigation latérale restent intacts.
+- **Vérification :** typecheck valide, build de production réussi et 58 tests unitaires validés ; 19 tests d’intégration conditionnels aux secrets locaux ignorés.
+
 ## 2026-08-26 — Codex — Finition premium de l’App Icon LETI
 
 - **Centrage :** les icônes iOS, PWA et favicons sont désormais composées depuis la bounding box colorée réelle du symbole officiel, avec un très léger ajustement optique vers le haut et la gauche ; le padding asymétrique du PNG source ne pilote plus leur position.
