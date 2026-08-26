@@ -2,6 +2,13 @@
 
 > Ajouter une entrée courte après chaque intervention significative. Ne pas y dupliquer la documentation durable de `PROJECT_CONTEXT.md`.
 
+## 2026-08-26 — Codex — Icône mobile et installation PWA LETI
+
+- **Icônes :** nouvelle déclinaison 180, 192 et 512 px composée exclusivement avec le symbole officiel LETI, agrandi et centré sur le blanc cassé de la marque ; les fichiers finaux sont opaques pour éviter le fond noir appliqué par iOS aux transparences.
+- **Installation :** manifeste PWA avec nom LETI, lancement autonome sur `/app`, couleurs de marque et icônes haute définition ; métadonnées Apple explicites pour l’ajout à l’écran d’accueil.
+- **Périmètre :** aucune logique métier, donnée, route applicative ou permission modifiée.
+- **Vérification :** lint, typecheck, build de production et 58 tests unitaires validés ; manifeste statique généré avec les deux icônes PWA attendues.
+
 ## 2026-08-26 — Codex — Expérience d’apprentissage LETI IA
 
 - **Parcours :** l’entrée existante LETI IA reste marquée « En développement » mais devient cliquable, active sur sa route et ouvre uniquement `/app/leti-ia` dans le shell et le fondu de navigation existants.
