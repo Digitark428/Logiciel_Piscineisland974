@@ -2,6 +2,13 @@
 
 > Ajouter une entrée courte après chaque intervention significative. Ne pas y dupliquer la documentation durable de `PROJECT_CONTEXT.md`.
 
+## 2026-08-26 — Codex — Finition premium de l’App Icon LETI
+
+- **Centrage :** les icônes iOS, PWA et favicons sont désormais composées depuis la bounding box colorée réelle du symbole officiel, avec un très léger ajustement optique vers le haut et la gauche ; le padding asymétrique du PNG source ne pilote plus leur position.
+- **Finition :** master opaque 1024 px, fond blanc cassé à gradient radial imperceptible, micro-ombre diffuse et rééchantillonnage Lanczos sans altération du dessin, des proportions ni des couleurs du symbole LETI.
+- **Assets :** variantes 512, 192, 180, 64 et 32 px régénérées par un script local reproductible ; métadonnées Apple et manifeste PWA inchangés et toujours reliés aux mêmes URLs publiques.
+- **Périmètre :** aucune logique métier, navigation, donnée, authentification, route ou permission modifiée.
+
 ## 2026-08-26 — Codex — Nettoyage de marque et adresse publique LETI
 
 - **Identité installable :** paquet renommé `leti-app`, manifeste stabilisé avec l'identifiant `/app`, métadonnées Apple/HTML conservées sous LETI et URL canonique de l'accueil fixée à `https://leti-app-reunion.vercel.app`.
