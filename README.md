@@ -1,4 +1,4 @@
-# Piscine Island
+# LETI
 
 Logiciel SaaS **multi-tenant** de gestion pour piscinistes (TPE de 2 à 10 personnes).
 Simple, moderne, rapide, fiable — esprit Apple, univers piscine (blanc / graphite / bleu).
@@ -27,7 +27,6 @@ Voir [`ARCHITECTURE.md`](./ARCHITECTURE.md) pour la conception détaillée.
 - **Sauvegardes** automatiques quotidiennes (23h) + manuelles, organisées Année / Mois / Jour.
 - **Journal d'activité**, **paramètres** de l'entreprise, page **RGPD**.
 - **Super Admin** : console propriétaire séparée (`platform_admins`), vue globale, administration des espaces.
-- **Mode démo** : vrai workspace isolé, données réalistes, rôles Gérant/Membre, **réinitialisation**.
 
 ---
 
@@ -53,8 +52,6 @@ cp .env.example .env.local   # puis renseigner les valeurs (voir plus bas)
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Clé publique (anon) |
 | `SUPABASE_SERVICE_ROLE_KEY` | **Secret** — serveur uniquement, jamais commité |
 | `NEXT_PUBLIC_APP_URL` | URL de l'app (ex. `http://localhost:3000`) |
-| `DEMO_MANAGER_EMAIL` / `DEMO_MANAGER_PASSWORD` | Compte démo gérant |
-| `DEMO_MEMBER_EMAIL` / `DEMO_MEMBER_PASSWORD` | Compte démo membre |
 | `SUPERADMIN_EMAIL` / `SUPERADMIN_PASSWORD` | Compte Super Admin (optionnel) |
 | `CRON_SECRET` | Secret protégeant la route de sauvegarde |
 
@@ -71,12 +68,13 @@ supabase link --project-ref <votre-ref>
 supabase db push
 ```
 
-…ou en collant chaque fichier (dans l'ordre `0001` → `0007`) dans le **SQL Editor** de Supabase.
+…ou en utilisant le **SQL Editor** de Supabase. En production, ne jamais modifier une migration
+existante : toute évolution du schéma doit créer une nouvelle migration.
 
-Elles créent : tables, contraintes, index, **RLS** (deny-by-default), fonctions de provisioning,
-buckets Storage privés (`avatars`, `documents`, `backups`) et la fonction `seed_demo_data`.
+Elles créent notamment les tables, contraintes, index, politiques **RLS** (deny-by-default),
+fonctions de provisioning et buckets Storage privés (`avatars`, `documents`, `backups`).
 
-### 5. Bootstrap (Super Admin + démo)
+### 5. Bootstrap du Super Admin
 
 Une fois les migrations appliquées :
 
@@ -84,8 +82,7 @@ Une fois les migrations appliquées :
 npm run bootstrap
 ```
 
-Ce script (idempotent) crée le Super Admin, le workspace de démonstration (utilisateurs Auth,
-provisioning) et génère les données de démo. Réexécutable à volonté.
+Ce script idempotent crée ou met à jour le compte Super Admin. Il est réexécutable à volonté.
 
 ### 6. Lancer l'application
 
@@ -104,7 +101,7 @@ npm run dev      # http://localhost:3000
 | `npm run start` | Serveur de production |
 | `npm run typecheck` | Vérification TypeScript |
 | `npm run test` | Tests (Vitest) |
-| `npm run bootstrap` | Crée Super Admin + démo |
+| `npm run bootstrap` | Crée ou met à jour le Super Admin |
 
 ---
 

@@ -3,6 +3,7 @@ import "./globals.css";
 import { SplashScreen } from "@/components/SplashScreen";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://leti-app-reunion.vercel.app"),
   title: "LETI",
   applicationName: "LETI",
   description:

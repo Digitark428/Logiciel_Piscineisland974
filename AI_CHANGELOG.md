@@ -2,6 +2,13 @@
 
 > Ajouter une entrée courte après chaque intervention significative. Ne pas y dupliquer la documentation durable de `PROJECT_CONTEXT.md`.
 
+## 2026-08-26 — Codex — Nettoyage de marque et adresse publique LETI
+
+- **Identité installable :** paquet renommé `leti-app`, manifeste stabilisé avec l'identifiant `/app`, métadonnées Apple/HTML conservées sous LETI et URL canonique de l'accueil fixée à `https://leti-app-reunion.vercel.app`.
+- **Infrastructure Vercel :** même projet de production renommé `leti-app-reunion`, variable `NEXT_PUBLIC_APP_URL` alignée en Production et Preview, et quatre variables obsolètes de l'ancien mode démo supprimées.
+- **Documentation :** titres, descriptions, bootstrap et mémoire commune utilisent LETI ; seuls les identifiants historiques GitHub/Supabase et les migrations immuables conservent l'ancien nom à titre technique.
+- **Vérification :** lint sans erreur, typecheck valide, build de production réussi et 58 tests unitaires validés ; 19 tests d'intégration conditionnels aux secrets locaux ignorés.
+
 ## 2026-08-26 — Codex — Icône mobile et installation PWA LETI
 
 - **Icônes :** nouvelle déclinaison 180, 192 et 512 px composée exclusivement avec le symbole officiel LETI, agrandi et centré sur le blanc cassé de la marque ; les fichiers finaux sont opaques pour éviter le fond noir appliqué par iOS aux transparences.

@@ -1,8 +1,8 @@
 {
-  "name": "piscine-island",
+  "name": "leti-app",
   "version": "1.0.0",
   "private": true,
-  "description": "Piscine Island — Logiciel SaaS multi-tenant de gestion pour piscinistes",
+  "description": "LETI — Logiciel SaaS multi-tenant de gestion pour piscinistes",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

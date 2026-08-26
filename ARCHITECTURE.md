@@ -1,4 +1,4 @@
-# Piscine Island — Architecture technique
+# LETI — Architecture technique
 
 > SaaS multi-tenant de gestion pour piscinistes (TPE de 2 à 10 personnes).
 > Priorité : **Simplicité + Fiabilité + Sécurité + Confort d'utilisation**, esprit Apple.

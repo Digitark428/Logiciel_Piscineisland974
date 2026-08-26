@@ -64,9 +64,9 @@
 
 ## Cibles de production
 
-**Décision :** les changements publiés utilisent exclusivement la branche GitHub `claude/piscine-island-saas-cvvhln`, le projet Vercel `logiciel-piscineisland974-eu7f` et le projet Supabase `umrjrpbritekqcfqkhxz`.
+**Décision :** les changements publiés utilisent exclusivement la branche GitHub `claude/piscine-island-saas-cvvhln`, le projet Vercel `leti-app-reunion` et le projet Supabase `umrjrpbritekqcfqkhxz`. L'adresse publique et canonique est `https://leti-app-reunion.vercel.app` ; les identifiants historiques GitHub et Supabase restent inchangés pour éviter une migration d'infrastructure inutile.
 
-**Raison :** les anciens projets `piscineisland-logiciel` et leur base éventuelle sont obsolètes.
+**Raison :** LETI doit être la seule marque visible et installable, tout en préservant les ressources internes dont le renommage n'apporte aucun bénéfice utilisateur. Les anciens projets `piscineisland-logiciel` et leur base éventuelle sont obsolètes.
 
 ## Proximité Vercel et Supabase
 

@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
+    id: "/app",
     name: "LETI",
     short_name: "LETI",
     description: "LETI, logiciel pour piscinistes : simple et puissant.",

@@ -1,10 +1,10 @@
-# PROJECT_CONTEXT.md — Piscine Island
+# PROJECT_CONTEXT.md — LETI
 
 > Mémoire commune officielle de Codex et Claude Code. Elle contient uniquement l'état durable et vérifié du projet ; le détail des transmissions récentes est dans `AI_CHANGELOG.md`.
 
 ## Produit
 
-LETI est le nom visible du SaaS de gestion destiné aux piscinistes, principalement aux TPE de 2 à 10 personnes. Les noms historiques du dépôt et de l'infrastructure restent inchangés. Les priorités produit sont la simplicité, la fiabilité, la sécurité et une interface LETI claire (bleu nuit, accents aqua et corail mesuré).
+LETI est le nom du SaaS de gestion destiné aux piscinistes, principalement aux TPE de 2 à 10 personnes. Les identifiants historiques GitHub et Supabase restent techniques ; le projet et l'adresse publique Vercel portent désormais le nom LETI. Les priorités produit sont la simplicité, la fiabilité, la sécurité et une interface LETI claire (bleu nuit, accents aqua et corail mesuré).
 
 ## Stack et organisation
 
@@ -46,8 +46,8 @@ LETI est le nom visible du SaaS de gestion destiné aux piscinistes, principalem
 ## Intégrations et cibles autorisées
 
 - GitHub : `Digitark428/Logiciel_Piscineisland974`, branche de production `claude/piscine-island-saas-cvvhln`.
-- Vercel : `logiciel-piscineisland974-eu7f`, équipe `digitark428's projects` (`team_TpnBJ601cRvSklF9aTLzCa3R`), Functions principales en région `cdg1`.
-- Production : https://logiciel-piscineisland974-eu7f.vercel.app
+- Vercel : `leti-app-reunion`, équipe `digitark428's projects` (`team_TpnBJ601cRvSklF9aTLzCa3R`), Functions principales en région `cdg1`.
+- Production canonique : https://leti-app-reunion.vercel.app
 - Supabase : projet `Piscine Island`, ref `umrjrpbritekqcfqkhxz`, région `eu-west-3`.
 - Ne jamais utiliser l'ancien projet Vercel `piscineisland-logiciel` ni une éventuelle base Supabase associée.
 

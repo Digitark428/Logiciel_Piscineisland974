@@ -5,7 +5,7 @@
 > ⚠️ Aucun secret ici (mots de passe, service_role, clés) — ceux-ci vivent dans Vercel/Supabase.
 
 ## 1. Le projet
-**Piscine Island** — SaaS **multi-tenant** de gestion pour piscinistes (TPE 2–10 pers.).
+**LETI** — SaaS **multi-tenant** de gestion pour piscinistes (TPE 2–10 pers.).
 Priorité : simplicité, fiabilité, sécurité, confort. Esprit Apple (blanc / graphite / bleu piscine).
 Détails de conception : voir [`ARCHITECTURE.md`](./ARCHITECTURE.md). Mise en route : [`README.md`](./README.md).
 
@@ -16,15 +16,15 @@ Next.js 14 (App Router) · TypeScript strict · Supabase (Postgres + Auth + Stor
 
 ### ⭐ CIBLES À UTILISER (toujours celles-ci, ne jamais en changer sans que le propriétaire le demande)
 - **Supabase** : projet `Piscine Island` — ref **`umrjrpbritekqcfqkhxz`** — https://umrjrpbritekqcfqkhxz.supabase.co
-- **Vercel** : projet **`logiciel-piscineisland974-eu7f`** — équipe `digitark428's projects` (`team_TpnBJ601cRvSklF9aTLzCa3R`)
+- **Vercel** : projet **`leti-app-reunion`** — équipe `digitark428's projects` (`team_TpnBJ601cRvSklF9aTLzCa3R`)
 - **GitHub** : dépôt **`Digitark428/Logiciel_Piscineisland974`**, branche **`claude/piscine-island-saas-cvvhln`** (développer et pousser ICI)
-- **Prod (URL publique)** : https://logiciel-piscineisland974-eu7f.vercel.app
+- **Prod (URL publique canonique)** : https://leti-app-reunion.vercel.app
 
 ### ⛔ NE PAS UTILISER
 - L'ancien projet Vercel **`piscineisland-logiciel`** et son éventuelle base Supabase : c'est une **autre version obsolète**, à supprimer. Ne jamais y déployer ni y appliquer de migration.
 
 ### Notes
-- Chaque `git push` sur la branche ci-dessus → redéploiement Vercel automatique du projet `-eu7f`.
+- Chaque `git push` sur la branche ci-dessus → redéploiement Vercel automatique du projet `leti-app-reunion`.
 - Les **mots de passe / clés** sont dans le doc privé du propriétaire (hors dépôt) + Vercel + Supabase.
 - Connaître ces cibles ≠ y avoir accès : dans une **nouvelle session**, il faut que le propriétaire
   ait **connecté les connecteurs Supabase / Vercel** pour que les outils puissent agir dessus.
@@ -63,7 +63,7 @@ Next.js 14 (App Router) · TypeScript strict · Supabase (Postgres + Auth + Stor
    Vérifier concrètement les colonnes/fonctions créées (`execute_sql`) plutôt que supposer.
 3. **GitHub** : commit clair + push. Le fichier de migration est committé (repo et base synchro).
 4. **Vercel (PRODUCTION)** : la mise en ligne publique vient de la branche
-   `claude/piscine-island-saas-cvvhln` → l'URL `-eu7f`. Un push sur une **autre** branche ne fait
+   `claude/piscine-island-saas-cvvhln` → l'URL canonique LETI. Un push sur une **autre** branche ne fait
    qu'un déploiement **preview** (privé), **pas** la prod. Donc : amener les changements sur la
    branche de production, puis **vérifier que le déploiement passe `READY`** (`get_deployment`) et
    que l'alias public pointe bien dessus. **Le propriétaire a autorisé durablement ce déploiement
@@ -121,13 +121,13 @@ suppression d'un projet/déploiement, changement d'une cible d'infra). Là on pr
   intervenant photo+nom [+tél si `settings.portal_share_assignee_phone`], contact gérant, message d'accueil).
   **`service_client_notes`** : le client ajoute une note / « information importante » (écriture service_role,
   portée dérivée de la session portail), visible par l'équipe (fiche prestation) + notification.
-- **Carte** : marqueur SVG personnalisé (goutte/piscine, couleurs Piscine Island, teinté par statut, jamais rouge).
+- **Carte** : marqueur SVG personnalisé (goutte/piscine, couleurs LETI, teinté par statut, jamais rouge).
 - **Prestations** : nom du prestataire affiché dans la liste ; bouton « Démarrer » retiré (seulement « Terminer ») ;
   « Durée estimée » ; aide « Chaque retour à la ligne crée une nouvelle tâche ☑️ » sous les tâches d'entretien.
 - **Navigation** : entrées « Piscines », « Factures », « Contrats » retirées du menu (données pools conservées).
 
 ### Module « Assistance » (support intégré) — migration `0013`
-- **But** : le client final contacte le support Piscine Island depuis le **portail client**.
+- **But** : le client final contacte le support LETI depuis le **portail client**.
   Flux `Client (portail) → Supabase → Super Admin → réponse → Client`. Aucun WhatsApp, aucun Resend.
 - **Tables** : `support_conversations` (workspace_id, client_id, `category` bug/help/suggestion,
   `status` new/in_progress/resolved/closed, `context` jsonb, `*_last_seen_at`, `resolved_at`) et
@@ -156,20 +156,20 @@ suppression d'un projet/déploiement, changement d'une cible d'infra). Là on pr
 - **Vercel / Next.js** : le preset doit être Next.js — forcé via `vercel.json`
   (`framework/buildCommand/outputDirectory`). Sinon build « No Output Directory named public ».
 - **Middleware** : tolérant si `NEXT_PUBLIC_SUPABASE_URL/ANON_KEY` absents (évite un 500 global).
-- **Variables Vercel** : à cocher pour **Production + Preview + Development**. Les variables `DEMO_*`
-  ne sont plus utilisées (mode démo supprimé) et peuvent être retirées de Vercel.
+- **Variables Vercel** : les variables requises existent en **Production + Preview**. Les variables
+  obsolètes de l'ancien mode démo ont été retirées.
 - **Auth Supabase** : e-mail **unique au global** → en V1 un e-mail = un seul workspace.
 - **Mode démo supprimé** : ne plus référencer `seed_demo_data`, `is_demo`, ni de workspace de démonstration.
 
 ## 8. Commandes
 - `npm run dev` · `npm run build` · `npm run test` · `npm run typecheck`
-- `npm run bootstrap` : (re)crée Super Admin + workspace démo (nécessite les variables `.env`).
+- `npm run bootstrap` : crée ou met à jour le Super Admin (nécessite les variables `.env`).
 
 ## 9. État actuel
 V1 complète, **déployée et fonctionnelle** en production. Base Supabase créée, dernière migration appliquée `20260825064057_planning_events_grant_hardening`,
-sécurisée, avec Super Admin. **Mode démo entièrement retiré** (code + base). Reste (optionnel) :
-changer le mot de passe Super Admin, supprimer l'ancien projet Vercel `piscineisland-logiciel` + sa base,
-retirer les variables `DEMO_*` de Vercel, brancher un domaine perso.
+sécurisée, avec Super Admin. **Mode démo entièrement retiré** (code + base). Le projet Vercel et
+l'adresse publique canonique portent le nom LETI. Reste (optionnel) : changer le mot de passe Super Admin,
+supprimer l'ancien projet Vercel obsolète et sa base éventuelle, puis brancher un domaine personnalisé.
 
 ## 10. Évolutions prévues (non codées — architecture prête)
 Forfaits/abonnements, essai 14 j, paiement, e-mails (Resend), assistant IA, monitoring.

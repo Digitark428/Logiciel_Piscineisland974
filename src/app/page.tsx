@@ -1,5 +1,19 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
+
+export const metadata: Metadata = {
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    title: "LETI",
+    description: "LETI, logiciel pour piscinistes : simple et puissant.",
+    siteName: "LETI",
+    type: "website",
+    url: "/",
+  },
+};
 
 export default function HomePage() {
   return (

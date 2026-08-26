@@ -1,13 +1,13 @@
 # AGENTS.md — LETI
 
 ## Mission
-LETI est un SaaS multi-tenant de gestion pour piscinistes (TPE de 2 à 10 personnes). Les priorités sont la simplicité, la fiabilité, la sécurité et une interface sobre. Les noms historiques du dépôt et de l'infrastructure restent inchangés tant qu'une évolution technique distincte n'est pas demandée.
+LETI est un SaaS multi-tenant de gestion pour piscinistes (TPE de 2 à 10 personnes). Les priorités sont la simplicité, la fiabilité, la sécurité et une interface sobre. Les identifiants historiques GitHub et Supabase restent inchangés tant qu'une évolution technique distincte n'est pas demandée.
 
 Pour les détails de conception et l’historique, consulter `ARCHITECTURE.md`, `README.md` et `CLAUDE.md` seulement si la tâche le nécessite. Ne jamais inscrire de secret dans ce fichier ni dans le dépôt.
 
 ## LETI — Design System & UI Guidelines
 
-- **Marque visible :** LETI est la marque affichée à l'utilisateur. Ne jamais redessiner le logo : utiliser exclusivement les assets officiels de `public/leti/` et leurs recadrages techniques fidèles. Tout nouveau contenu visible remplace « Piscine Island » par « LETI » ; les identifiants techniques, cibles d'infrastructure et données existantes restent inchangés.
+- **Marque visible :** LETI est la marque affichée à l'utilisateur. Ne jamais redessiner le logo : utiliser exclusivement les assets officiels de `public/leti/` et leurs recadrages techniques fidèles. Tout nouveau contenu visible remplace l'ancien nom par « LETI » ; les identifiants GitHub et Supabase ainsi que les données existantes restent inchangés.
 - **Palette :** bleu nuit `#183A59` pour la structure et les textes, corail `#F48B82` comme accent mesuré, corail clair `#F7B7AE`, bleu piscine `#78D8EC`, bleu aqua `#5FC6E3` et blanc cassé `#F7F7F5`. L'interface reste majoritairement claire ; le corail n'est jamais un fond dominant.
 - **Fondations :** Inter (avec une pile système de repli), espacement 4/8/12/16/24/32, rayons 8 puis 14-16 px, bordures fines et ombres très douces. Réutiliser les tokens Tailwind et les composants partagés avant toute classe ou couleur locale.
 - **Composants :** `src/components/ui.tsx`, `AppShell` et les primitives `.card`, `.btn-*`, `.input`, `.label` constituent le socle. Une évolution d'usage commun se fait à la source, avec une action principale claire par zone.
@@ -21,8 +21,8 @@ Utiliser exclusivement ces ressources, sauf instruction explicite du propriétai
 
 - GitHub : `Digitark428/Logiciel_Piscineisland974`
 - Branche de production : `claude/piscine-island-saas-cvvhln`
-- Vercel : `logiciel-piscineisland974-eu7f` (équipe `digitark428's projects`, `team_TpnBJ601cRvSklF9aTLzCa3R`)
-- Production : https://logiciel-piscineisland974-eu7f.vercel.app
+- Vercel : `leti-app-reunion` (équipe `digitark428's projects`, `team_TpnBJ601cRvSklF9aTLzCa3R`)
+- Production : https://leti-app-reunion.vercel.app
 - Supabase : `Piscine Island`, ref `umrjrpbritekqcfqkhxz`, région `eu-west-3`
 
 Ne jamais utiliser l’ancien projet Vercel `piscineisland-logiciel` ni une éventuelle base Supabase associée : ils sont obsolètes.

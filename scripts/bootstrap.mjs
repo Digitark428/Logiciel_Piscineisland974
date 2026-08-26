@@ -1,4 +1,4 @@
-// Bootstrap Piscine Island : crée / met à jour le compte Super Admin.
+// Bootstrap LETI : crée / met à jour le compte Super Admin.
 // Prérequis : migrations SQL déjà appliquées (voir README).
 // Usage : node scripts/bootstrap.mjs
 // Variables d'environnement requises (voir .env.example) :
