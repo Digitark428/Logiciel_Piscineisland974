@@ -72,7 +72,7 @@ export function ServicesFilterPanel({
       <button
         ref={triggerRef}
         type="button"
-        className="btn-secondary px-3"
+        className="btn-secondary rounded-xl px-3.5 text-[13px] shadow-none"
         onClick={() => setOpen(true)}
         aria-expanded={open}
         aria-haspopup="dialog"

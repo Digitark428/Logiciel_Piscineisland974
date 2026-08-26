@@ -2,6 +2,13 @@
 
 > Ajouter une entrée courte après chaque intervention significative. Ne pas y dupliquer la documentation durable de `PROJECT_CONTEXT.md`.
 
+## 2026-08-26 — Codex — Planning hebdomadaire premium des entretiens
+
+- **Surface hebdomadaire :** les sept jours, toujours ordonnés du lundi au dimanche, appartiennent désormais à une plaque commune lumineuse avec séparations fines, hauteur opérationnelle et mise en évidence discrète du jour actuel.
+- **Fiches :** nom client prioritaire sur deux lignes au maximum, type, heure éventuelle et statut inchangés ; nuances bleu, pêche et menthe très légères selon l’état, états vides simplifiés et densité adaptée aux journées chargées.
+- **Navigation et responsive :** actions de création, semaine précédente/suivante, « Cette semaine », recherche et sélection mobile conservent leurs routes et comportements ; seul leur traitement visuel évolue.
+- **Vérification :** typecheck valide, build de production réussi et 58 tests unitaires validés ; 19 tests d’intégration conditionnels aux secrets locaux ignorés.
+
 ## 2026-08-26 — Codex — Refonte premium du dashboard
 
 - **Hiérarchie :** introduction recentrée sur la salutation et la date, trois indicateurs compacts aux nuances LETI, aperçu financier dominant et composition responsive distinguant clairement la journée, les tâches et l’activité récente.
