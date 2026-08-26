@@ -18,4 +18,16 @@ describe("Navigation applicative", () => {
   it("place Paramètres après Gestion dans le menu du compte", () => {
     expect(ACCOUNT_NAV_ITEMS.map((entry) => entry.label)).toEqual(["Gestion", "Paramètres"]);
   });
+
+  it("rend uniquement l’entrée existante LETI IA interactive pendant son développement", () => {
+    const futureItems = NAV_ITEMS.filter((entry) => !isNavGroup(entry) && entry.development);
+    const letiAi = futureItems.find((entry) => !isNavGroup(entry) && entry.href === "/app/leti-ia");
+
+    expect(letiAi && !isNavGroup(letiAi) ? letiAi.interactiveDuringDevelopment : false).toBe(true);
+    expect(
+      futureItems
+        .filter((entry) => !isNavGroup(entry) && entry.href !== "/app/leti-ia")
+        .every((entry) => !isNavGroup(entry) && !entry.interactiveDuringDevelopment),
+    ).toBe(true);
+  });
 });

@@ -2,6 +2,13 @@
 
 > Ajouter une entrée courte après chaque intervention significative. Ne pas y dupliquer la documentation durable de `PROJECT_CONTEXT.md`.
 
+## 2026-08-26 — Codex — Expérience d’apprentissage LETI IA
+
+- **Parcours :** l’entrée existante LETI IA reste marquée « En développement » mais devient cliquable, active sur sa route et ouvre uniquement `/app/leti-ia` dans le shell et le fondu de navigation existants.
+- **Expérience :** pictogramme officiel seul, composition blanche immersive, particules aqua/corail absorbées, filaments et mini-constellations Canvas, respiration discrète, phrase permanente, capsule et message de confiance ; aucune bibliothèque d’animation ajoutée.
+- **Contenu et accessibilité :** 180 sujets uniques répartis à 80 % métier et 20 % humour, rotation sans répétition récente, variations visuelles par catégorie, rendu responsive et constellation statique avec `prefers-reduced-motion`.
+- **Vérification :** typecheck, build de production et tests unitaires dédiés validés ; contrôle responsive authentifié et publication à finaliser.
+
 ## 2026-08-26 — Codex — Retour au fondu de navigation
 
 - **Transition :** suppression complète du glissement horizontal, du calcul avant/arrière, des distances CSS et des attributs directionnels. Toutes les vues `/app` utilisent désormais un fondu global court de 120 à 160 ms, sans déplacement du contenu ni du lien actif.

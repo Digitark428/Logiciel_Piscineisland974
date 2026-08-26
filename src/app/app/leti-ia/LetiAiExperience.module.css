@@ -1,0 +1,317 @@
+.page {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  min-height: calc(100dvh - 4.5rem);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 49% 47%, rgba(120, 216, 236, 0.11), transparent 24rem),
+    radial-gradient(circle at 18% 34%, rgba(95, 198, 227, 0.055), transparent 21rem),
+    radial-gradient(circle at 84% 62%, rgba(244, 139, 130, 0.045), transparent 19rem),
+    linear-gradient(180deg, #fff 0%, #fff 72%, rgba(241, 251, 253, 0.56) 100%);
+  color: var(--leti-navy);
+}
+
+.page::before,
+.page::after {
+  position: absolute;
+  z-index: -1;
+  width: 22rem;
+  height: 22rem;
+  border-radius: 999px;
+  content: "";
+  filter: blur(70px);
+  opacity: 0.11;
+  pointer-events: none;
+}
+
+.page::before {
+  top: 14%;
+  left: -9rem;
+  background: var(--leti-pool);
+}
+
+.page::after {
+  right: -11rem;
+  bottom: 6%;
+  background: var(--leti-coral-soft);
+}
+
+.activity {
+  z-index: 2;
+  display: flex;
+  min-height: 4.5rem;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.7rem;
+  padding: clamp(2rem, 5.8vh, 4.25rem) 1.5rem 0;
+  text-align: center;
+  font-size: clamp(0.82rem, 1.15vw, 0.98rem);
+  line-height: 1.55;
+}
+
+.activityDot {
+  width: 0.52rem;
+  height: 0.52rem;
+  flex: none;
+  margin-top: 0.42rem;
+  border-radius: 999px;
+  background: var(--leti-coral);
+  box-shadow: 0 0 0 0 rgba(var(--leti-coral-rgb), 0.24);
+  animation: activity-pulse 3.2s ease-out infinite;
+}
+
+.activityText {
+  min-width: 0;
+  max-width: min(48rem, calc(100vw - 5rem));
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+
+.activityTextHidden {
+  opacity: 0;
+  transform: translateY(3px);
+}
+
+.activityLabel {
+  color: #e97870;
+  font-weight: 650;
+}
+
+.activitySubject {
+  color: var(--leti-navy);
+  font-weight: 450;
+}
+
+.experience {
+  z-index: 1;
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 1rem clamp(1.25rem, 3vh, 2rem);
+}
+
+.field {
+  position: relative;
+  width: 100%;
+  height: clamp(17rem, 43vh, 28rem);
+  min-height: 17rem;
+}
+
+.canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.core {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  width: clamp(7.25rem, 12.5vw, 10.9rem);
+  aspect-ratio: 314 / 360;
+  place-items: center;
+  transform: translate(-50%, -48%);
+}
+
+.core::before {
+  position: absolute;
+  z-index: -1;
+  inset: -35%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(120, 216, 236, 0.17) 0%, rgba(95, 198, 227, 0.06) 38%, transparent 72%);
+  content: "";
+  opacity: 0.86;
+  animation: halo-breathe 7.2s ease-in-out infinite;
+}
+
+.symbol {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 12px 24px rgba(var(--leti-navy-rgb), 0.11));
+  animation: symbol-breathe 7.2s ease-in-out infinite;
+  will-change: transform, filter;
+}
+
+.symbolImage {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.symbolSheen {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(112deg, transparent 23%, rgba(255, 255, 255, 0.45) 45%, transparent 67%);
+  content: "";
+  -webkit-mask: url("/leti/leti-symbol-transparent.png") center / contain no-repeat;
+  mask: url("/leti/leti-symbol-transparent.png") center / contain no-repeat;
+  opacity: 0.18;
+  pointer-events: none;
+  transform: translateX(-55%);
+  animation: symbol-sheen 9s ease-in-out infinite;
+}
+
+.copy {
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: clamp(-1.25rem, -2vh, -0.55rem);
+  text-align: center;
+}
+
+.heading {
+  max-width: 46rem;
+  color: var(--leti-navy);
+  font-size: clamp(1.42rem, 2.45vw, 2.1rem);
+  font-weight: 680;
+  letter-spacing: -0.035em;
+  line-height: 1.27;
+  text-wrap: balance;
+}
+
+.headingLine {
+  display: block;
+}
+
+.availability {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  gap: 0.65rem;
+  margin-top: clamp(1.15rem, 2.7vh, 1.65rem);
+  border: 1px solid rgba(var(--leti-coral-rgb), 0.39);
+  border-radius: 999px;
+  padding: 0.62rem 1.25rem;
+  background: rgba(255, 246, 244, 0.58);
+  box-shadow: 0 5px 18px rgba(var(--leti-coral-rgb), 0.055);
+  color: #df6f68;
+  font-size: 0.9rem;
+  font-weight: 550;
+}
+
+.clock {
+  width: 1.06rem;
+  height: 1.06rem;
+}
+
+.trust {
+  z-index: 2;
+  padding: 0.4rem 1.25rem clamp(1.5rem, 4vh, 2.7rem);
+  color: rgba(var(--leti-navy-rgb), 0.49);
+  text-align: center;
+  font-size: clamp(0.74rem, 1.1vw, 0.85rem);
+  line-height: 1.55;
+}
+
+.trustLine {
+  display: block;
+}
+
+@keyframes activity-pulse {
+  0%, 44%, 100% { box-shadow: 0 0 0 0 rgba(var(--leti-coral-rgb), 0.25); opacity: 0.88; }
+  58% { box-shadow: 0 0 0 5px rgba(var(--leti-coral-rgb), 0); opacity: 1; }
+}
+
+@keyframes symbol-breathe {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 12px 24px rgba(var(--leti-navy-rgb), 0.1)); }
+  50% { transform: scale(1.015); filter: drop-shadow(0 15px 27px rgba(var(--leti-aqua-rgb), 0.15)); }
+}
+
+@keyframes halo-breathe {
+  0%, 100% { opacity: 0.68; transform: scale(0.98); }
+  50% { opacity: 0.93; transform: scale(1.025); }
+}
+
+@keyframes symbol-sheen {
+  0%, 24% { opacity: 0; transform: translateX(-58%); }
+  38% { opacity: 0.2; }
+  56%, 100% { opacity: 0; transform: translateX(58%); }
+}
+
+@media (max-width: 767px) {
+  .page::before,
+  .page::after {
+    width: 15rem;
+    height: 15rem;
+    filter: blur(54px);
+  }
+
+  .activity {
+    min-height: 5.25rem;
+    padding-top: clamp(1.65rem, 4.8vh, 2.5rem);
+    padding-inline: 1rem;
+  }
+
+  .activityText {
+    max-width: calc(100vw - 3.25rem);
+  }
+
+  .experience {
+    justify-content: flex-start;
+    padding-inline: 0.35rem;
+  }
+
+  .field {
+    height: clamp(16.25rem, 39vh, 21rem);
+    min-height: 16.25rem;
+  }
+
+  .copy {
+    margin-top: -0.6rem;
+    padding-inline: 0.8rem;
+  }
+
+  .headingLine {
+    display: inline;
+  }
+
+  .trust {
+    padding-top: 1.25rem;
+  }
+}
+
+@media (max-height: 720px) and (min-width: 768px) {
+  .activity {
+    min-height: 3.75rem;
+    padding-top: 1.5rem;
+  }
+
+  .field {
+    height: 17.5rem;
+    min-height: 17.5rem;
+  }
+
+  .availability {
+    margin-top: 0.9rem;
+  }
+
+  .trust {
+    padding-bottom: 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .activityDot,
+  .core::before,
+  .symbol,
+  .symbolSheen {
+    animation: none;
+  }
+
+  .activityText {
+    transition-duration: 80ms;
+    transform: none;
+  }
+
+  .symbol {
+    will-change: auto;
+  }
+}

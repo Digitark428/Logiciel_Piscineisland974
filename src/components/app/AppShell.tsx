@@ -65,7 +65,7 @@ function NavigationLinks({
   const renderItem = (item: NavItem, nested = false) => {
     const active = item.href === "/app" ? pathname === "/app" : pathname === item.href || pathname.startsWith(`${item.href}/`);
     const isPending = pendingHref === item.href;
-    if (item.development) {
+    if (item.development && !item.interactiveDuringDevelopment) {
       const tone = item.developmentTone === "aqua" ? "aqua" : "coral";
       return (
         <div
@@ -82,6 +82,39 @@ function NavigationLinks({
         </div>
       );
     }
+
+    if (item.development) {
+      const tone = item.developmentTone === "aqua" ? "aqua" : "coral";
+      return (
+        <Link
+          key={item.href}
+          href={item.href}
+          prefetch={false}
+          onClick={(event) => onNavigate(item.href, event)}
+          onPointerEnter={() => onPrefetch(item.href)}
+          onPointerLeave={() => onCancelPrefetch(item.href)}
+          onTouchStart={() => onPrefetch(item.href, true)}
+          onFocus={() => onPrefetch(item.href)}
+          onBlur={() => onCancelPrefetch(item.href)}
+          aria-current={active ? "page" : undefined}
+          className={cn(
+            "flex min-h-11 items-center gap-3 rounded-xl border-l-2 px-3 py-2.5 text-sm font-medium transition",
+            (active && !pendingHref) || isPending
+              ? "border-pool-400 bg-[linear-gradient(110deg,rgba(95,198,227,0.14),rgba(244,139,130,0.12))] text-graphite-900"
+              : "border-transparent text-graphite-600 hover:bg-pool-50 hover:text-graphite-900",
+            isPending && "opacity-80",
+          )}
+        >
+          <Icon name={item.icon} size={19} />
+          <span className="min-w-0 leading-tight">
+            <span className="block truncate">{item.label}</span>
+            {item.description && <span className="mt-0.5 block truncate text-[11px] font-normal text-graphite-500">{item.description}</span>}
+            <span className={cn("leti-development-badge mt-1 inline-flex rounded-lg px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide", tone === "aqua" && "leti-development-badge--aqua")}>En développement</span>
+          </span>
+        </Link>
+      );
+    }
+
     return (
       <Link
         key={item.href}
@@ -361,6 +394,7 @@ export function AppShell({
   const search = searchParams.toString();
   const routeKey = search ? `${pathname}?${search}` : pathname;
   const pendingPathname = pendingHref ? routePathname(pendingHref) : null;
+  const immersivePage = pathname === "/app/leti-ia";
 
   // Une destination n'est préchargée qu'après une intention brève et explicite.
   // Le dernier lien survolé gagne : déplacer le pointeur dans le menu ne lance pas
@@ -655,7 +689,10 @@ export function AppShell({
           </div>
         </header>
         <main
-          className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8 lg:py-10"
+          className={cn(
+            "mx-auto",
+            immersivePage ? "max-w-none p-0" : "max-w-6xl px-4 py-6 sm:px-6 sm:py-8 lg:py-10",
+          )}
           aria-busy={pendingHref !== null}
           onPointerOver={handleContentPointerOver}
           onPointerOut={handleContentPointerOut}

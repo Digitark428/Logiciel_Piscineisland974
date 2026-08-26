@@ -7,6 +7,7 @@ export interface NavItem {
   perm?: PermissionKey;
   adminOnly?: boolean;
   development?: boolean;
+  interactiveDuringDevelopment?: boolean;
   developmentTone?: "coral" | "aqua";
   description?: string;
 }
@@ -81,5 +82,13 @@ export const NAV_ITEMS: NavEntry[] = [
   { href: "/app/chantiers", label: "Mes chantiers", icon: "wrench", development: true, developmentTone: "coral" },
   { href: "/app/depannages", label: "Mes dépannages", icon: "wrench", development: true, developmentTone: "coral" },
   { href: "/app/comptabilite", label: "Gérer ma comptabilité", icon: "activity", development: true, developmentTone: "coral" },
-  { href: "/app/leti-ia", label: "LETI IA", icon: "sparkles", development: true, developmentTone: "aqua", description: "Accéder à la puissance LETI" },
+  {
+    href: "/app/leti-ia",
+    label: "LETI IA",
+    icon: "sparkles",
+    development: true,
+    interactiveDuringDevelopment: true,
+    developmentTone: "aqua",
+    description: "Accéder à la puissance LETI",
+  },
 ];
