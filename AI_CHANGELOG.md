@@ -7,7 +7,7 @@
 - **Parcours :** l’entrée existante LETI IA reste marquée « En développement » mais devient cliquable, active sur sa route et ouvre uniquement `/app/leti-ia` dans le shell et le fondu de navigation existants.
 - **Expérience :** pictogramme officiel seul, composition blanche immersive, particules aqua/corail absorbées, filaments et mini-constellations Canvas, respiration discrète, phrase permanente, capsule et message de confiance ; aucune bibliothèque d’animation ajoutée.
 - **Contenu et accessibilité :** 180 sujets uniques répartis à 80 % métier et 20 % humour, rotation sans répétition récente, variations visuelles par catégorie, rendu responsive et constellation statique avec `prefers-reduced-motion`.
-- **Vérification :** typecheck, build de production et tests unitaires dédiés validés ; contrôle responsive authentifié et publication à finaliser.
+- **Vérification :** lint, typecheck, build de production et 58 tests unitaires validés ; 19 tests d’intégration conditionnels ignorés. Contrôles navigateur à 375, 430, 768, 1280 et 1440 px sans débordement, erreur ni fuite visible ; production Vercel `READY` vérifiée.
 
 ## 2026-08-26 — Codex — Retour au fondu de navigation
 
