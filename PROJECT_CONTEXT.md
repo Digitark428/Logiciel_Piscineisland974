@@ -47,7 +47,7 @@ LETI est le nom du SaaS de gestion destiné aux piscinistes, principalement aux 
 
 - GitHub : `Digitark428/Logiciel_Piscineisland974`, branche de production `claude/piscine-island-saas-cvvhln`.
 - Vercel : `leti-app-reunion`, équipe `digitark428's projects` (`team_TpnBJ601cRvSklF9aTLzCa3R`), Functions principales en région `cdg1`.
-- Production canonique : https://leti-app-reunion.vercel.app
+- Production canonique : https://leti-app-reunion.vercel.app ; l'ancienne adresse Vercel redirige en 308 vers celle-ci pour préserver les favoris existants.
 - Supabase : projet `Piscine Island`, ref `umrjrpbritekqcfqkhxz`, région `eu-west-3`.
 - Ne jamais utiliser l'ancien projet Vercel `piscineisland-logiciel` ni une éventuelle base Supabase associée.
 

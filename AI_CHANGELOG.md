@@ -5,7 +5,7 @@
 ## 2026-08-26 — Codex — Nettoyage de marque et adresse publique LETI
 
 - **Identité installable :** paquet renommé `leti-app`, manifeste stabilisé avec l'identifiant `/app`, métadonnées Apple/HTML conservées sous LETI et URL canonique de l'accueil fixée à `https://leti-app-reunion.vercel.app`.
-- **Infrastructure Vercel :** même projet de production renommé `leti-app-reunion`, variable `NEXT_PUBLIC_APP_URL` alignée en Production et Preview, et quatre variables obsolètes de l'ancien mode démo supprimées.
+- **Infrastructure Vercel :** même projet de production renommé `leti-app-reunion`, nouvelle adresse publique ajoutée comme domaine de production, ancienne adresse redirigée en 308 pour préserver les favoris, variable `NEXT_PUBLIC_APP_URL` alignée en Production et Preview, et quatre variables obsolètes de l'ancien mode démo supprimées.
 - **Documentation :** titres, descriptions, bootstrap et mémoire commune utilisent LETI ; seuls les identifiants historiques GitHub/Supabase et les migrations immuables conservent l'ancien nom à titre technique.
 - **Vérification :** lint sans erreur, typecheck valide, build de production réussi et 58 tests unitaires validés ; 19 tests d'intégration conditionnels aux secrets locaux ignorés.
 
