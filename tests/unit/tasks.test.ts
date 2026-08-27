@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { adjacentTaskPriority, compareTasks, isTaskPriority, TASK_PRIORITIES } from "@/lib/tasks";
+import { adjacentTaskPriority, compareTasks, isTaskOverdue, isTaskPriority, TASK_PRIORITIES } from "@/lib/tasks";
 
 describe("To-do personnelle", () => {
   it("expose les priorités dans l'ordre métier exact", () => {
@@ -24,5 +24,14 @@ describe("To-do personnelle", () => {
     expect(adjacentTaskPriority("very_urgent", "up")).toBe("very_urgent");
     expect(adjacentTaskPriority("very_urgent", "down")).toBe("urgent");
     expect(adjacentTaskPriority("not_urgent", "down")).toBe("not_urgent");
+  });
+
+  it("détermine le retard uniquement avec une échéance passée et un état ouvert", () => {
+    const today = "2026-08-27";
+    expect(isTaskOverdue({ status: "todo", due_date: "2026-08-26" }, today)).toBe(true);
+    expect(isTaskOverdue({ status: "in_progress", due_date: "2026-08-26" }, today)).toBe(true);
+    expect(isTaskOverdue({ status: "done", due_date: "2026-08-26" }, today)).toBe(false);
+    expect(isTaskOverdue({ status: "todo", due_date: today }, today)).toBe(false);
+    expect(isTaskOverdue({ status: "todo", due_date: null }, today)).toBe(false);
   });
 });

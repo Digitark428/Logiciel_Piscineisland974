@@ -11,6 +11,7 @@ LETI est le nom du SaaS de gestion destiné aux piscinistes, principalement aux 
 - Next.js 14 avec App Router, TypeScript strict, Tailwind CSS et Vitest.
 - Supabase fournit PostgreSQL, Auth, Storage et les politiques RLS.
 - Les routes sont dans `src/app/`; les composants réutilisables dans `src/components/`.
+- Toutes les véritables cases à cocher utilisent `src/components/ui/Checkbox.tsx`, source unique du design LETI : menthe pour une action terminée et bleu piscine pour une simple sélection, sans remplacer les interrupteurs métier.
 - Les actions serveur sont organisées par domaine dans `src/lib/actions/` et retournent le format `ActionResult`.
 - Les clients Supabase sont dans `src/lib/supabase/`; `admin.ts` utilise le service role côté serveur uniquement.
 - Les migrations SQL sont numérotées dans `supabase/migrations/` ; la dernière migration appliquée est `20260825064057_planning_events_grant_hardening` (fichier local `20260825064042_planning_events_grant_hardening.sql`).

@@ -85,3 +85,9 @@
 **Décision :** toutes les vues internes `/app`, présentes et futures, utilisent le wrapper global `AdaptiveRouteTransition` dans `AppShell`. Les liens internes déclenchent un feedback immédiat ; le shell reste monté, l'entrée utilise uniquement un fondu court sans translation, la durée dépend du temps réellement observé et le skeleton reste invisible pendant les 300 premières millisecondes. Aucun délai d'affichage artificiel n'est ajouté, et l'animation est neutralisée avec `prefers-reduced-motion`.
 
 **Raison :** absorber les micro-latences sans ralentir les routes rapides ni accentuer visuellement leur délai, éviter les écrans blancs et garantir automatiquement une sensation cohérente sur les futures navigations LETI.
+
+## Checkbox officielle LETI
+
+**Décision :** toute véritable case à cocher présente ou future utilise le composant partagé `src/components/ui/Checkbox.tsx`. L’état coché est menthe lorsqu’il représente l’achèvement d’une tâche et bleu piscine lorsqu’il représente uniquement une sélection ; les interrupteurs ON/OFF restent des switches lorsqu’ils existent.
+
+**Raison :** conserver une seule source de vérité accessible pour la forme, le focus, les états checked, disabled et indeterminate, sans disperser de styles locaux ni créer d’ambiguïté métier.

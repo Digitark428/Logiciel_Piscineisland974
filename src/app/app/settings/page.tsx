@@ -3,6 +3,7 @@ import { requirePermission } from "@/lib/auth/context";
 import { PageHeader, Card } from "@/components/ui";
 import { ActionForm } from "@/components/forms/ActionForm";
 import { SubmitButton } from "@/components/forms/SubmitButton";
+import { Checkbox } from "@/components/ui/Checkbox";
 import { updateWorkspace } from "@/lib/actions/workspace";
 
 export default async function SettingsPage() {
@@ -69,11 +70,11 @@ export default async function SettingsPage() {
           <h3 className="mb-1 text-sm font-semibold uppercase tracking-wide text-graphite-400">Portail client</h3>
           <p className="mb-4 text-xs text-graphite-400">Choisissez les informations rendues visibles à vos clients.</p>
           <label className="flex items-start gap-3">
-            <input
-              type="checkbox"
+            <Checkbox
               name="portal_share_assignee_phone"
               defaultChecked={Boolean((w.settings as Record<string, unknown>)?.portal_share_assignee_phone)}
-              className="mt-0.5 h-5 w-5 rounded border-graphite-300 text-pool-600"
+              tone="selection"
+              className="-my-2 -ml-2"
             />
             <span className="text-sm text-graphite-700">
               Afficher le téléphone de l'intervenant sur la fiche d'intervention du client.

@@ -40,6 +40,13 @@ export interface SortableTask {
   created_at?: string | null;
 }
 
+export function isTaskOverdue(
+  task: Pick<SortableTask, "status" | "due_date">,
+  today: string,
+): boolean {
+  return task.status !== "done" && Boolean(task.due_date && task.due_date < today);
+}
+
 /** Tâches ouvertes, puis échéance complète, puis date de création. */
 export function compareTasks(left: SortableTask, right: SortableTask): number {
   const statusOrder = Number(left.status === "done") - Number(right.status === "done");

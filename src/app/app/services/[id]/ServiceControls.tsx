@@ -4,6 +4,7 @@ import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ActionForm } from "@/components/forms/ActionForm";
 import { SubmitButton } from "@/components/forms/SubmitButton";
+import { Checkbox } from "@/components/ui/Checkbox";
 import { saveServiceReport, setServiceStatus, setWeeklyOccurrenceStatus, toggleServiceTask, updateOccurrenceException } from "@/lib/actions/services";
 import type { ServiceStatus, ServiceTask } from "@/lib/db/types";
 
@@ -94,8 +95,7 @@ export function TasksChecklist({
       {tasks.map((t) => (
         <li key={t.id}>
           <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-xl border border-transparent bg-graphite-50 px-3.5 py-2.5 transition hover:border-pool-100 hover:bg-pool-50/60">
-            <input
-              type="checkbox"
+            <Checkbox
               checked={doneById[t.id] ?? t.done}
               disabled={!editable || pendingId === t.id}
               onChange={async (e) => {
@@ -116,7 +116,7 @@ export function TasksChecklist({
                   setPendingId(null);
                 }
               }}
-              className="h-5 w-5 rounded border-graphite-300 text-pool-600"
+              className="-my-2 -ml-2"
             />
             <span className={(doneById[t.id] ?? t.done) ? "text-graphite-400 line-through" : "text-graphite-800"}>{t.label}</span>
           </label>

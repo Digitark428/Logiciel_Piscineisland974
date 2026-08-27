@@ -1,9 +1,8 @@
 "use client";
 
-import { type FormEvent, useEffect, useState, useTransition } from "react";
+import { type FormEvent, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useFormState } from "react-dom";
-import { setTaskStatus, deleteTask } from "@/lib/actions/tasks";
 import {
   createTeamNote,
   createTeamNoteComment,
@@ -13,97 +12,8 @@ import {
 } from "@/lib/actions/teamNotes";
 import { SubmitButton } from "@/components/forms/SubmitButton";
 import { idle } from "@/lib/actions/result";
-import { formatDate, formatDateTime, formatRelative, formatTime } from "@/lib/utils/format";
+import { formatDateTime, formatRelative } from "@/lib/utils/format";
 import { MemberIdentity, type MemberIdentityData } from "@/components/members/MemberIdentity";
-
-export interface TaskItem {
-  id: string;
-  title: string;
-  description: string | null;
-  category: string;
-  status: string;
-  due_date: string | null;
-  due_time?: string | null;
-  created_at?: string;
-}
-
-export function TaskRow({
-  task,
-  canToggle,
-  canDelete,
-  assignee,
-  assigneeAvatarUrl,
-}: {
-  task: TaskItem;
-  canToggle: boolean;
-  canDelete: boolean;
-  assignee?: MemberIdentityData | null;
-  assigneeAvatarUrl?: string | null;
-}) {
-  const [pending, start] = useTransition();
-  const router = useRouter();
-  const serverDone = task.status === "done";
-  const [done, setDone] = useState(serverDone);
-
-  useEffect(() => setDone(serverDone), [serverDone]);
-
-  return (
-    <li className="flex items-start gap-3 py-3">
-      <input
-        type="checkbox"
-        checked={done}
-        disabled={!canToggle || pending}
-        aria-label={`${done ? "Rouvrir" : "Terminer"} la tâche « ${task.title} »`}
-        onChange={(event) => {
-          const nextDone = event.currentTarget.checked;
-          setDone(nextDone);
-          start(async () => {
-            try {
-              const result = await setTaskStatus(task.id, nextDone ? "done" : "todo");
-              if (!result.ok) {
-                setDone(!nextDone);
-                window.alert(result.message ?? "Action impossible.");
-              }
-            } catch {
-              setDone(!nextDone);
-              window.alert("Action impossible. Vérifiez votre connexion puis réessayez.");
-            }
-          });
-        }}
-        className="mt-0.5 h-5 w-5 rounded border-graphite-300 text-pool-600"
-      />
-      <div className="min-w-0 flex-1">
-        <div className={`font-medium ${done ? "text-graphite-400 line-through" : "text-graphite-900"}`}>{task.title}</div>
-        {task.description && <div className="text-sm text-graphite-500">{task.description}</div>}
-        {task.due_date && (
-          <div className="mt-1 text-xs text-graphite-500">
-            Échéance : {formatDate(task.due_date)}{task.due_time ? ` à ${formatTime(task.due_time)}` : ""}
-          </div>
-        )}
-        {assignee && (
-          <MemberIdentity
-            member={assignee}
-            avatarUrl={assigneeAvatarUrl}
-            avatarSize={28}
-            className="mt-2"
-            nameClassName="text-xs"
-          />
-        )}
-      </div>
-      {canDelete && (
-        <button
-          type="button"
-          disabled={pending}
-          className="btn-ghost min-h-11 min-w-11 p-1 text-graphite-300 hover:text-red-500"
-          aria-label="Supprimer"
-          onClick={() => start(async () => { if (confirm("Supprimer cette tâche ?")) { await deleteTask(task.id); router.refresh(); } })}
-        >
-          ✕
-        </button>
-      )}
-    </li>
-  );
-}
 
 interface NoteItem {
   id: string;

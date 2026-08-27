@@ -2,6 +2,13 @@
 
 > Ajouter une entrée courte après chaque intervention significative. Ne pas y dupliquer la documentation durable de `PROJECT_CONTEXT.md`.
 
+## 2026-08-27 — Codex — Tâches attribuées et Checkbox officielle LETI
+
+- **Tâches attribuées :** liste désormais prioritaire, en-tête dédié, filtres Toutes/En cours/Terminées/En retard avec compteurs instantanés, fiches compactes avec identité métier, échéance et traitements pastel pour les états actif, terminé et retardé.
+- **Attribution :** formulaire existant déplacé dans un drawer droit accessible et responsive ; création, fermeture automatique, rafraîchissement RSC, cases de statut et suppression conservent les mêmes actions et permissions.
+- **Design system :** composant natif partagé `Checkbox` avec cible tactile, focus, hover, disabled et indeterminate ; les huit usages existants ont été migrés, en menthe pour l’achèvement et en bleu LETI pour la sélection, sans modifier leur logique.
+- **Vérification :** lint, typecheck et build de production valides, 65 tests unitaires réussis et 19 tests d’intégration conditionnels ignorés ; contrôle navigateur à 375, 768 et 1440 px sans débordement ni erreur, avec filtres, drawer, Échap, focus et variantes Checkbox vérifiés.
+
 ## 2026-08-27 — Codex — Refonte premium de la to-do personnelle
 
 - **Expérience :** la liste devient l’élément principal, avec en-tête dédié, trois groupes de priorité toujours visibles, compteurs instantanés, lignes compactes et formulaire déplacé dans un tiroir accessible responsive ; la sous-navigation horizontale redondante est retirée des écrans Tâches & Notes.

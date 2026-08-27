@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { addPortalServiceNote } from "@/lib/actions/portalNotes";
+import { Checkbox } from "@/components/ui/Checkbox";
 
 export function PortalServiceNote({ token, serviceId }: { token: string; serviceId: string }) {
   const [content, setContent] = useState("");
@@ -36,11 +37,11 @@ export function PortalServiceNote({ token, serviceId }: { token: string; service
         placeholder="Ex : Le code du portail a changé, il est désormais 4589. Merci de passer par l'entrée arrière."
       />
       <label className="flex items-center gap-2 text-sm text-graphite-600">
-        <input
-          type="checkbox"
+        <Checkbox
           checked={important}
           onChange={(e) => setImportant(e.target.checked)}
-          className="h-4 w-4 rounded border-graphite-300 text-pool-600"
+          tone="selection"
+          className="-my-2 -ml-2"
         />
         Information importante (nouveau code, changement d'accès…)
       </label>

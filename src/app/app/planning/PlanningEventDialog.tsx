@@ -21,6 +21,7 @@ import { idle } from "@/lib/actions/result";
 import type { PlanningEvent } from "@/lib/db/types";
 import { planningTimeLabel } from "@/lib/planning-events";
 import { SubmitButton } from "@/components/forms/SubmitButton";
+import { Checkbox } from "@/components/ui/Checkbox";
 
 interface DialogState {
   event: PlanningEvent | null;
@@ -215,7 +216,7 @@ function EventForm({ event, date, onClose }: { event: PlanningEvent | null; date
           <input id="planning-event-date" name="event_date" type="date" required className="input" defaultValue={event?.event_date ?? date} />
         </div>
         <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-xl border border-graphite-200 bg-graphite-50 px-3 py-2 text-sm font-medium text-graphite-700">
-          <input name="all_day" type="checkbox" checked={allDay} onChange={(change) => setAllDay(change.target.checked)} className="h-4 w-4 accent-pool-600" />
+          <Checkbox name="all_day" checked={allDay} onChange={(change) => setAllDay(change.target.checked)} tone="selection" className="-my-2 -ml-2" />
           Toute la journée
         </label>
         {!allDay && (

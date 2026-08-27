@@ -13,6 +13,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useFormState } from "react-dom";
 import { SubmitButton } from "@/components/forms/SubmitButton";
+import { Checkbox } from "@/components/ui/Checkbox";
 import {
   createTask,
   deleteTask,
@@ -119,8 +120,7 @@ function PersonalTaskRow({
 
   return (
     <li className={`group flex items-start gap-3 rounded-2xl border border-white/80 bg-white px-3 py-3 shadow-[0_8px_24px_rgba(37,48,55,0.045)] transition sm:px-4 ${busy ? "opacity-60" : "hover:-translate-y-px hover:shadow-[0_10px_28px_rgba(37,48,55,0.075)]"}`}>
-      <input
-        type="checkbox"
+      <Checkbox
         checked={done}
         disabled={statusPending}
         aria-label={`${done ? "Rouvrir" : "Terminer"} la tâche « ${task.title} »`}
@@ -140,7 +140,7 @@ function PersonalTaskRow({
             }
           });
         }}
-        className="mt-1 h-5 w-5 shrink-0 rounded-md border-graphite-300 text-pool-600 focus:ring-pool-400"
+        className="-my-1 -ml-2"
       />
 
       <div className="min-w-0 flex-1">

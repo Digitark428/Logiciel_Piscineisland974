@@ -5,6 +5,7 @@ import { ActionForm } from "@/components/forms/ActionForm";
 import { SubmitButton } from "@/components/forms/SubmitButton";
 import { setClientPortal, regeneratePortalToken } from "@/lib/actions/clients";
 import { Card } from "@/components/ui";
+import { Checkbox } from "@/components/ui/Checkbox";
 
 export function ClientPortalCard({
   clientId,
@@ -29,7 +30,7 @@ export function ClientPortalCard({
       <ActionForm action={setClientPortal} className="mt-4 space-y-4" successMessage="Enregistré.">
         <input type="hidden" name="clientId" value={clientId} />
         <label className="flex items-center gap-3">
-          <input type="checkbox" name="enabled" defaultChecked={enabled} className="h-5 w-5 rounded border-graphite-300 text-pool-600" />
+          <Checkbox name="enabled" defaultChecked={enabled} tone="selection" className="-my-2 -ml-2" />
           <span className="text-sm font-medium text-graphite-800">Activer l'accès client</span>
         </label>
         <div>
