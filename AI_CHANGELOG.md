@@ -2,6 +2,13 @@
 
 > Ajouter une entrée courte après chaque intervention significative. Ne pas y dupliquer la documentation durable de `PROJECT_CONTEXT.md`.
 
+## 2026-08-27 — Codex — Refonte premium de la to-do personnelle
+
+- **Expérience :** la liste devient l’élément principal, avec en-tête dédié, trois groupes de priorité toujours visibles, compteurs instantanés, lignes compactes et formulaire déplacé dans un tiroir accessible responsive ; la sous-navigation horizontale redondante est retirée des écrans Tâches & Notes.
+- **Priorités :** toutes les tâches personnelles, terminées ou non, peuvent passer de « Très urgent » à « Urgent » ou « Pas urgent » par glisser-déposer souris/tactile, avec alternative clavier, mise à jour optimiste, persistance serveur limitée au propriétaire et retour arrière explicite en cas d’échec.
+- **Sécurité :** aucun schéma ni droit n’est élargi ; l’action vérifie workspace, catégorie personnelle et créateur, et le scénario d’intégration RLS couvre désormais la modification de priorité par le propriétaire ainsi que le refus pour un autre membre.
+- **Vérification :** lint et typecheck valides, 62 tests unitaires validés et 19 tests d’intégration conditionnels ignorés ; contrôle navigateur à 375, 768 et 1440 px sans débordement, overlay ni erreur console, avec tiroir, Échap, restitution du focus et rollback clavier vérifiés.
+
 ## 2026-08-26 — Codex — Refonte premium des fiches d’entretien
 
 - **Gabarit partagé :** les entretiens ponctuels, passages récurrents enregistrés et occurrences hebdomadaires futures utilisent désormais le même en-tête, bandeau opérationnel et navigation interne « Intervention / Suivi & contrat / Détails ».

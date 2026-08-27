@@ -21,6 +21,18 @@ export function isTaskPriority(value: unknown): value is TaskPriority {
   return value === "not_urgent" || value === "urgent" || value === "very_urgent";
 }
 
+export function adjacentTaskPriority(
+  priority: TaskPriority,
+  direction: "up" | "down",
+): TaskPriority {
+  const currentIndex = TASK_PRIORITIES.findIndex((item) => item.value === priority);
+  const nextIndex = Math.min(
+    TASK_PRIORITIES.length - 1,
+    Math.max(0, currentIndex + (direction === "up" ? -1 : 1)),
+  );
+  return TASK_PRIORITIES[nextIndex].value;
+}
+
 export interface SortableTask {
   status: string;
   due_date: string | null;

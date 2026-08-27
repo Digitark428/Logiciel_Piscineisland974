@@ -76,6 +76,29 @@ export async function setTaskStatus(id: string, status: "todo" | "in_progress" |
   return ok();
 }
 
+export async function updatePersonalTaskPriority(id: string, priority: unknown): Promise<ActionResult> {
+  const res = await actionContext();
+  if ("error" in res) return res.error;
+  if (!isTaskPriority(priority)) return fail("Le niveau d'importance est invalide.");
+
+  const { ctx } = res;
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("tasks")
+    .update({ priority })
+    .eq("id", id)
+    .eq("workspace_id", ctx.workspace.id)
+    .eq("category", "personal")
+    .eq("created_by", ctx.membership.id)
+    .select("id")
+    .maybeSingle();
+
+  if (error || !data) return fail("Déplacement impossible.");
+  revalidateTaskViews();
+  revalidatePath("/app");
+  return ok("Priorité mise à jour.");
+}
+
 export async function deleteTask(id: string): Promise<ActionResult> {
   const res = await actionContext();
   if ("error" in res) return res.error;

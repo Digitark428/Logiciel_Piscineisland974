@@ -298,8 +298,22 @@ describe.skipIf(!READY)("Isolation multi-tenant (RLS)", () => {
     expect(employeeTask.data?.priority).toBe("very_urgent");
     expect(employeeTask.data?.due_time).toBe("07:30:00");
 
+    const ownPriorityUpdate = await asEmployee.from("tasks")
+      .update({ priority: "not_urgent" })
+      .eq("id", employeeTask.data!.id)
+      .select("priority")
+      .single();
+    expect(ownPriorityUpdate.error).toBeNull();
+    expect(ownPriorityUpdate.data?.priority).toBe("not_urgent");
+
     const adminRead = await asA.from("tasks").select("id").eq("id", employeeTask.data!.id);
     expect(adminRead.data ?? []).toHaveLength(0);
+
+    const adminPriorityUpdate = await asA.from("tasks")
+      .update({ priority: "urgent" })
+      .eq("id", employeeTask.data!.id)
+      .select("id");
+    expect(adminPriorityUpdate.data ?? []).toHaveLength(0);
 
     const invalidPriority = await asEmployee.from("tasks").insert({
       workspace_id: A.workspaceId,
