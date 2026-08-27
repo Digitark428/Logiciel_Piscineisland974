@@ -13,6 +13,7 @@ import {
   SUPPORT_MESSAGE_MAX,
 } from "@/lib/assistance";
 import type { SupportAuthorType, SupportCategory, SupportStatus } from "@/lib/db/types";
+import { useExternalOverlayState } from "./useExternalOverlayState";
 
 interface SupportMessage {
   id: string;
@@ -70,6 +71,7 @@ export function AppSupportWidget({ initiallyOpen = false }: { initiallyOpen?: bo
   const [pending, startTransition] = useTransition();
   const panelRef = useRef<HTMLElement>(null);
   const launcherRef = useRef<HTMLButtonElement>(null);
+  const overlay = useExternalOverlayState();
 
   const active = useMemo(
     () => data.conversations.find((conversation) => conversation.id === activeId) ?? null,
@@ -166,17 +168,20 @@ export function AppSupportWidget({ initiallyOpen = false }: { initiallyOpen?: bo
 
   return (
     <>
-      {!open && (
+      {!open && !overlay.hidden && (
         <button
           ref={launcherRef}
           type="button"
           onClick={openPanel}
           aria-label="Ouvrir l'aide et les retours"
-          className="leti-support-launcher fixed bottom-5 right-5 z-30 flex items-center gap-2 rounded-full px-4 py-3 text-sm font-semibold transition active:scale-[0.985]"
-          style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
+          className={`leti-support-launcher fixed bottom-5 right-5 z-[var(--leti-layer-floating)] flex items-center gap-2 rounded-full px-4 py-3 text-sm font-semibold transition active:scale-[0.985] ${overlay.shifted ? "leti-support-launcher--shifted" : ""}`}
+          style={{
+            paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))",
+            ...(overlay.drawerWidth ? { "--leti-active-drawer-width": overlay.drawerWidth } : {}),
+          } as React.CSSProperties}
         >
           <span aria-hidden="true" className="text-base leading-none">💬</span>
-          <span className="hidden sm:inline">Aide & retours</span>
+          <span className="leti-support-label hidden sm:inline">Aide & retours</span>
         </button>
       )}
 
@@ -184,12 +189,14 @@ export function AppSupportWidget({ initiallyOpen = false }: { initiallyOpen?: bo
         <>
           <div
             aria-hidden="true"
+            data-leti-overlay="modal"
+            data-leti-overlay-owner="support"
             onMouseDown={closePanel}
-            className={`fixed inset-0 z-40 cursor-default bg-graphite-950/10 transition duration-200 ${blurEnabled ? "backdrop-blur-[2px] opacity-100" : "backdrop-blur-none opacity-0"}`}
+            className={`fixed inset-0 z-[var(--leti-layer-modal)] cursor-default bg-graphite-950/10 transition duration-200 ${blurEnabled ? "backdrop-blur-[2px] opacity-100" : "backdrop-blur-none opacity-0"}`}
           />
           <section
             ref={panelRef}
-            className="fixed inset-x-2 bottom-[max(0.5rem,env(safe-area-inset-bottom))] top-[max(0.5rem,env(safe-area-inset-top))] z-50 mx-auto flex w-auto max-w-sm flex-col overflow-hidden rounded-2xl border border-graphite-100 bg-white shadow-float sm:inset-x-auto sm:bottom-5 sm:right-5 sm:top-auto sm:max-h-[85dvh] sm:w-[370px]"
+            className="fixed inset-x-2 bottom-[max(0.5rem,env(safe-area-inset-bottom))] top-[max(0.5rem,env(safe-area-inset-top))] z-[calc(var(--leti-layer-modal)+1)] mx-auto flex w-auto max-w-sm flex-col overflow-hidden rounded-2xl border border-graphite-100 bg-white shadow-float sm:inset-x-auto sm:bottom-5 sm:right-5 sm:top-auto sm:max-h-[85dvh] sm:w-[370px]"
             role="dialog"
             aria-modal="true"
             tabIndex={-1}

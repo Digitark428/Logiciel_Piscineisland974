@@ -444,7 +444,7 @@ function CommunityPostCard({
           {post.canDelete && (
             <details className="community-post-menu relative -mr-1">
               <summary className="flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-full text-xl tracking-widest text-graphite-500 transition hover:bg-graphite-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-pool-400" aria-label="Actions de la publication">•••</summary>
-              <div className="absolute right-0 top-11 z-10 min-w-44 rounded-xl border border-graphite-100 bg-white p-1.5 shadow-float">
+              <div data-leti-overlay="popover" className="absolute right-0 top-11 z-[var(--leti-layer-popover)] min-w-44 rounded-xl border border-graphite-100 bg-white p-1.5 shadow-float">
                 <button type="button" disabled={pending} onClick={remove} className="flex min-h-10 w-full items-center rounded-lg px-3 text-left text-sm font-medium text-red-700 hover:bg-red-50">Supprimer la publication</button>
               </div>
             </details>

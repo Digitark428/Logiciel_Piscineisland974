@@ -22,6 +22,15 @@ import type { PlanningEvent } from "@/lib/db/types";
 import { planningTimeLabel } from "@/lib/planning-events";
 import { SubmitButton } from "@/components/forms/SubmitButton";
 import { Checkbox } from "@/components/ui/Checkbox";
+import { OverlayPortal } from "@/components/ui/OverlayPortal";
+import { Avatar } from "@/components/ui";
+
+export interface PlanningMemberOption {
+  id: string;
+  label: string;
+  roleLabel: string;
+  avatarUrl: string | null;
+}
 
 interface DialogState {
   event: PlanningEvent | null;
@@ -31,6 +40,9 @@ interface DialogState {
 interface PlanningEventContextValue {
   openCreate: (date?: string) => void;
   openEdit: (event: PlanningEvent) => void;
+  members: PlanningMemberOption[];
+  canAssign: boolean;
+  currentMembershipId: string;
 }
 
 const PlanningEventContext = createContext<PlanningEventContextValue | null>(null);
@@ -41,7 +53,19 @@ function usePlanningEventDialog(): PlanningEventContextValue {
   return value;
 }
 
-export function PlanningEventProvider({ children, defaultDate }: { children: ReactNode; defaultDate: string }) {
+export function PlanningEventProvider({
+  children,
+  defaultDate,
+  members,
+  canAssign,
+  currentMembershipId,
+}: {
+  children: ReactNode;
+  defaultDate: string;
+  members: PlanningMemberOption[];
+  canAssign: boolean;
+  currentMembershipId: string;
+}) {
   const [dialog, setDialog] = useState<DialogState | null>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const openerRef = useRef<HTMLElement | null>(null);
@@ -74,7 +98,7 @@ export function PlanningEventProvider({ children, defaultDate }: { children: Rea
       }
       if (event.key !== "Tab" || !dialogRef.current) return;
       const focusable = Array.from(dialogRef.current.querySelectorAll<HTMLElement>(
-        "button:not([disabled]), input:not([disabled]), textarea:not([disabled])",
+        "button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled])",
       ));
       if (focusable.length === 0) return;
       const first = focusable[0];
@@ -96,12 +120,14 @@ export function PlanningEventProvider({ children, defaultDate }: { children: Rea
   }, [close, dialog]);
 
   return (
-    <PlanningEventContext.Provider value={{ openCreate, openEdit }}>
+    <PlanningEventContext.Provider value={{ openCreate, openEdit, members, canAssign, currentMembershipId }}>
       {children}
       {dialog && (
+        <OverlayPortal>
         <div
-          className="fixed inset-0 z-[70] flex items-end justify-center bg-graphite-950/35 p-2 backdrop-blur-[2px] sm:items-center sm:p-6"
+          className="fixed inset-0 z-[var(--leti-layer-modal)] flex items-end justify-center bg-graphite-950/35 p-2 backdrop-blur-[2px] sm:items-center sm:p-6"
           onMouseDown={close}
+          data-leti-overlay="modal"
         >
           <div
             ref={dialogRef}
@@ -119,6 +145,7 @@ export function PlanningEventProvider({ children, defaultDate }: { children: Rea
             />
           </div>
         </div>
+        </OverlayPortal>
       )}
     </PlanningEventContext.Provider>
   );
@@ -135,8 +162,9 @@ export function AddPlanningEventButton({ date }: { date?: string }) {
 }
 
 export function PlanningEventButton({ event, compact = false }: { event: PlanningEvent; compact?: boolean }) {
-  const { openEdit } = usePlanningEventDialog();
+  const { openEdit, members } = usePlanningEventDialog();
   const time = planningTimeLabel(event.start_time, event.end_time, event.all_day);
+  const assignee = members.find((member) => member.id === event.assigned_membership_id);
 
   if (compact) {
     return (
@@ -148,6 +176,7 @@ export function PlanningEventButton({ event, compact = false }: { event: Plannin
       >
         <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-coral-500" aria-hidden />
         <span className="min-w-0 flex-1 truncate text-[11px] text-graphite-800">{event.title}</span>
+        {assignee ? <span className="sr-only"> — {assignee.label}</span> : null}
       </button>
     );
   }
@@ -165,11 +194,15 @@ export function PlanningEventButton({ event, compact = false }: { event: Plannin
         <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-coral-500" aria-hidden />
         <span className="truncate text-[10px] font-medium text-coral-700">{time}</span>
       </span>
+      <span className="mt-1.5 block truncate text-[10px] text-graphite-500">
+        {assignee ? assignee.label : "Aucune personne assignée"}
+      </span>
     </button>
   );
 }
 
 function EventForm({ event, date, onClose }: { event: PlanningEvent | null; date: string; onClose: () => void }) {
+  const { members, canAssign, currentMembershipId } = usePlanningEventDialog();
   const router = useRouter();
   const action = event ? updatePlanningEvent : createPlanningEvent;
   const [state, formAction] = useFormState(action, idle);
@@ -177,6 +210,9 @@ function EventForm({ event, date, onClose }: { event: PlanningEvent | null; date
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deleting, startDeleting] = useTransition();
+  const [assignedMembershipId, setAssignedMembershipId] = useState(event?.assigned_membership_id ?? "");
+  const selectedMember = members.find((member) => member.id === assignedMembershipId) ?? null;
+  const editable = !event || event.owner_membership_id === currentMembershipId;
 
   useEffect(() => {
     if (!state.ok) return;
@@ -188,8 +224,8 @@ function EventForm({ event, date, onClose }: { event: PlanningEvent | null; date
     <>
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
-          <div className="leti-eyebrow">Événement personnel</div>
-          <h2 className="mt-1 text-lg font-semibold text-graphite-900">{event ? "Modifier l'événement" : "Ajouter un événement"}</h2>
+          <div className="leti-eyebrow">Événement du planning</div>
+          <h2 className="mt-1 text-lg font-semibold text-graphite-900">{event ? editable ? "Modifier l'événement" : "Détail de l’événement" : "Ajouter un événement"}</h2>
         </div>
         <button type="button" className="btn-ghost h-11 w-11 shrink-0 p-0" onClick={onClose} aria-label="Fermer">✕</button>
       </div>
@@ -205,6 +241,7 @@ function EventForm({ event, date, onClose }: { event: PlanningEvent | null; date
             id="planning-event-title"
             name="title"
             required
+            disabled={!editable}
             maxLength={240}
             className="input"
             defaultValue={event?.title ?? ""}
@@ -213,21 +250,55 @@ function EventForm({ event, date, onClose }: { event: PlanningEvent | null; date
         </div>
         <div>
           <label htmlFor="planning-event-date" className="label">Date</label>
-          <input id="planning-event-date" name="event_date" type="date" required className="input" defaultValue={event?.event_date ?? date} />
+          <input id="planning-event-date" name="event_date" type="date" required disabled={!editable} className="input" defaultValue={event?.event_date ?? date} />
         </div>
-        <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-xl border border-graphite-200 bg-graphite-50 px-3 py-2 text-sm font-medium text-graphite-700">
-          <Checkbox name="all_day" checked={allDay} onChange={(change) => setAllDay(change.target.checked)} tone="selection" className="-my-2 -ml-2" />
+        <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-xl border border-graphite-200 bg-graphite-50 px-3 py-2 text-sm font-medium text-graphite-700 has-[:disabled]:cursor-default has-[:disabled]:opacity-70">
+          <Checkbox name="all_day" checked={allDay} disabled={!editable} onChange={(change) => setAllDay(change.target.checked)} tone="selection" className="-my-2 -ml-2" />
           Toute la journée
         </label>
         {!allDay && (
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label htmlFor="planning-event-start" className="label">Début</label>
-              <input id="planning-event-start" name="start_time" type="time" required className="input" defaultValue={event?.start_time?.slice(0, 5) ?? "09:00"} />
+              <input id="planning-event-start" name="start_time" type="time" required disabled={!editable} className="input" defaultValue={event?.start_time?.slice(0, 5) ?? "09:00"} />
             </div>
             <div>
               <label htmlFor="planning-event-end" className="label">Fin</label>
-              <input id="planning-event-end" name="end_time" type="time" required className="input" defaultValue={event?.end_time?.slice(0, 5) ?? "10:00"} />
+              <input id="planning-event-end" name="end_time" type="time" required disabled={!editable} className="input" defaultValue={event?.end_time?.slice(0, 5) ?? "10:00"} />
+            </div>
+          </div>
+        )}
+        {(canAssign || event?.assigned_membership_id) && (
+          <div>
+            <label htmlFor="planning-event-assignee" className="label">Personne concernée</label>
+            {canAssign && editable ? (
+              <select
+                id="planning-event-assignee"
+                name="assigned_membership_id"
+                className="input"
+                value={assignedMembershipId}
+                onChange={(change) => setAssignedMembershipId(change.target.value)}
+              >
+                <option value="">Aucune personne assignée</option>
+                {members.map((member) => (
+                  <option key={member.id} value={member.id}>{member.label} — {member.roleLabel}</option>
+                ))}
+              </select>
+            ) : (
+              <input type="hidden" name="assigned_membership_id" value={assignedMembershipId} />
+            )}
+            <div className="mt-2 flex min-h-11 items-center gap-3 rounded-xl border border-graphite-100 bg-graphite-50/70 px-3 py-2">
+              {selectedMember ? (
+                <>
+                  <Avatar name={selectedMember.label} src={selectedMember.avatarUrl} size={32} />
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-medium text-graphite-800">{selectedMember.label}</span>
+                    <span className="block truncate text-xs text-graphite-400">{selectedMember.roleLabel}</span>
+                  </span>
+                </>
+              ) : (
+                <span className="text-sm text-graphite-400">Aucune personne assignée</span>
+              )}
             </div>
           </div>
         )}
@@ -239,17 +310,18 @@ function EventForm({ event, date, onClose }: { event: PlanningEvent | null; date
             rows={3}
             maxLength={4000}
             className="input resize-none"
+            disabled={!editable}
             defaultValue={event?.description ?? ""}
             placeholder="Ajoutez uniquement le détail utile…"
           />
         </div>
-        <div className="flex items-center justify-between gap-3 border-t border-graphite-100 pt-4">
-          <button type="button" className="btn-ghost px-3" onClick={onClose}>Annuler</button>
-          <SubmitButton>{event ? "Enregistrer" : "Ajouter"}</SubmitButton>
+        <div className="flex items-center justify-end gap-3 border-t border-graphite-100 pt-4">
+          <button type="button" className={editable ? "btn-ghost px-3" : "btn-secondary px-3"} onClick={onClose}>{editable ? "Annuler" : "Fermer"}</button>
+          {editable ? <SubmitButton>{event ? "Enregistrer" : "Ajouter"}</SubmitButton> : null}
         </div>
       </form>
 
-      {event && (
+      {event && editable && (
         <div className="mt-4 border-t border-graphite-100 pt-4">
           {!confirmDelete ? (
             <button type="button" className="text-sm font-medium text-red-600 hover:text-red-700" onClick={() => setConfirmDelete(true)}>
@@ -257,7 +329,7 @@ function EventForm({ event, date, onClose }: { event: PlanningEvent | null; date
             </button>
           ) : (
             <div className="rounded-xl bg-red-50 p-3 ring-1 ring-red-200">
-              <p className="text-sm text-red-800">Supprimer définitivement cet événement personnel ?</p>
+              <p className="text-sm text-red-800">Supprimer définitivement cet événement ?</p>
               {deleteError && <p className="mt-1 text-xs text-red-700" role="status">{deleteError}</p>}
               <div className="mt-3 flex justify-end gap-2">
                 <button type="button" className="btn-secondary" disabled={deleting} onClick={() => setConfirmDelete(false)}>Conserver</button>

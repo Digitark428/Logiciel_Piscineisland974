@@ -64,6 +64,7 @@ export const ACCOUNT_NAV_ITEMS: NavEntry[] = [
 
 export const NAV_ITEMS: NavEntry[] = [
   { href: "/app", label: "Tableau de bord", icon: "home" },
+  { href: "/app/clients", label: "Mes clients", icon: "users", perm: "clients.view" },
   { href: "/app/services", label: "Mes entretiens", icon: "wrench", perm: "services.view" },
   { href: "/app/planning", label: "Planning", icon: "calendar", perm: "planning.view" },
   {
@@ -76,12 +77,10 @@ export const NAV_ITEMS: NavEntry[] = [
       { href: "/app/tasks/notes", label: "Notes d'équipe", icon: "community", perm: "tasks.view" },
     ],
   },
-  { href: "/app/community", label: "Entre nous", icon: "community", perm: "community.view" },
   { href: "/app/map", label: "Carte", icon: "map", perm: "map.view" },
-  { href: "/app/clients", label: "Clients", icon: "users", perm: "clients.view" },
+  { href: "/app/community", label: "Entre nous", icon: "community", perm: "community.view" },
   { href: "/app/chantiers", label: "Mes chantiers", icon: "wrench", development: true, developmentTone: "coral" },
   { href: "/app/depannages", label: "Mes dépannages", icon: "wrench", development: true, developmentTone: "coral" },
-  { href: "/app/comptabilite", label: "Gérer ma comptabilité", icon: "activity", development: true, developmentTone: "coral" },
   {
     href: "/app/leti-ia",
     label: "LETI IA",

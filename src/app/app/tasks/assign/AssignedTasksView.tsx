@@ -11,6 +11,7 @@ import { useFormState } from "react-dom";
 import { SubmitButton } from "@/components/forms/SubmitButton";
 import { MemberIdentity, type MemberIdentityData } from "@/components/members/MemberIdentity";
 import { Checkbox } from "@/components/ui/Checkbox";
+import { OverlayPortal } from "@/components/ui/OverlayPortal";
 import { createTask, deleteTask, setTaskStatus } from "@/lib/actions/tasks";
 import { idle } from "@/lib/actions/result";
 import { compareTasks, isTaskOverdue } from "@/lib/tasks";
@@ -214,7 +215,14 @@ function AssignedTaskDrawer({
   }, [state, router, close]);
 
   return (
-    <div ref={dialogRef} className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-labelledby="assigned-task-drawer-title">
+    <OverlayPortal>
+    <div
+      ref={dialogRef}
+      className="fixed inset-0 z-[var(--leti-layer-drawer)]"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="assigned-task-drawer-title"
+    >
       <button
         type="button"
         tabIndex={-1}
@@ -222,7 +230,7 @@ function AssignedTaskDrawer({
         onClick={close}
         className={`absolute inset-0 bg-graphite-950/25 backdrop-blur-[2px] transition-opacity duration-200 motion-reduce:transition-none ${entered ? "opacity-100" : "opacity-0"}`}
       />
-      <aside className={`absolute inset-y-0 right-0 flex w-[min(100%,440px)] flex-col bg-white shadow-[-24px_0_70px_rgba(32,45,52,0.16)] transition-transform duration-200 ease-out motion-reduce:transition-none ${entered ? "translate-x-0" : "translate-x-full"}`}>
+      <aside data-leti-overlay="drawer" data-leti-overlay-side="right" className={`absolute inset-y-0 right-0 flex w-[var(--leti-drawer-width)] flex-col bg-white shadow-[-24px_0_70px_rgba(32,45,52,0.16)] transition-transform duration-200 ease-out motion-reduce:transition-none ${entered ? "translate-x-0" : "translate-x-full"}`}>
         <div className="flex items-start justify-between gap-4 border-b border-graphite-100 px-5 py-5 sm:px-7">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-pool-600">Nouvelle mission</p>
@@ -267,6 +275,7 @@ function AssignedTaskDrawer({
         </form>
       </aside>
     </div>
+    </OverlayPortal>
   );
 }
 

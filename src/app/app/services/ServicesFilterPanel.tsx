@@ -89,17 +89,18 @@ export function ServicesFilterPanel({
         <>
           <button
             type="button"
-            className="fixed inset-0 z-40 cursor-default bg-graphite-950/20 backdrop-blur-[1px] sm:bg-transparent sm:backdrop-blur-none"
+            className="fixed inset-0 z-[var(--leti-layer-drawer)] cursor-default bg-graphite-950/20 backdrop-blur-[1px] sm:bg-transparent sm:backdrop-blur-none"
             onClick={close}
             aria-label="Fermer les filtres"
           />
           <form
             ref={panelRef}
             action="/app/services"
+            data-leti-overlay="popover"
             role="dialog"
             aria-modal="true"
             aria-label="Recherche et filtres des entretiens"
-            className="fixed inset-x-2 bottom-[max(0.5rem,env(safe-area-inset-bottom))] z-50 rounded-2xl border border-graphite-200 bg-white p-4 shadow-float sm:absolute sm:inset-x-auto sm:bottom-auto sm:right-0 sm:top-full sm:mt-2 sm:w-[26rem]"
+            className="fixed inset-x-2 bottom-[max(0.5rem,env(safe-area-inset-bottom))] z-[var(--leti-layer-popover)] rounded-2xl border border-graphite-200 bg-white p-4 shadow-float sm:absolute sm:inset-x-auto sm:bottom-auto sm:right-0 sm:top-full sm:mt-2 sm:w-[26rem]"
           >
             <input type="hidden" name="date" value={date} />
             <div className="mb-3 flex items-center justify-between gap-3">

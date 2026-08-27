@@ -12,6 +12,7 @@ import {
   type TouchEvent,
 } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Logo } from "@/components/Logo";
 import { Avatar } from "@/components/ui";
@@ -287,8 +288,8 @@ function ProfileMenu({
         )}
       >
         <Avatar name={userName} src={avatarUrl} size={34} />
-        <span className="hidden sm:block">
-          <span className="block text-sm font-semibold leading-tight text-graphite-900">{userName}</span>
+        <span className="hidden max-w-32 sm:block">
+          <span className="block truncate text-sm font-semibold leading-tight text-graphite-900">{userName}</span>
           <span className="block text-xs leading-tight text-graphite-400">{roleLabel}</span>
         </span>
         <span aria-hidden className={cn("hidden text-xs text-graphite-400 transition-transform sm:inline", open && "rotate-180")}>⌄</span>
@@ -298,7 +299,8 @@ function ProfileMenu({
         <nav
           id="leti-profile-menu"
           aria-label="Menu du profil"
-          className="absolute right-0 top-full z-50 mt-2 w-[min(19rem,calc(100vw-2rem))] rounded-2xl border border-graphite-100 bg-white p-2 shadow-float"
+          data-leti-overlay="popover"
+          className="absolute right-0 top-full z-[var(--leti-layer-popover)] mt-2 w-[min(19rem,calc(100vw-2rem))] rounded-2xl border border-graphite-100 bg-white p-2 shadow-float"
         >
           <div className="mb-2 border-b border-graphite-100 px-3 py-2 sm:hidden">
             <div className="truncate text-sm font-semibold text-graphite-900">{userName}</div>
@@ -349,12 +351,39 @@ function ProfileMenu({
   );
 }
 
+function CompanyBrand({ logoUrl, canManage }: { logoUrl: string | null; canManage: boolean }) {
+  if (logoUrl) {
+    return (
+      <div className="leti-company-brand" aria-label="Logo de l’entreprise">
+        <Image
+          src={logoUrl}
+          alt="Logo de l’entreprise"
+          width={360}
+          height={96}
+          sizes="(max-width: 767px) 72px, (max-width: 1023px) 132px, 180px"
+          className="h-full w-full object-contain"
+        />
+      </div>
+    );
+  }
+
+  if (!canManage) return null;
+  return (
+    <Link href="/app/settings#company-logo" prefetch={false} className="leti-company-logo-action" aria-label="Ajouter le logo de mon entreprise">
+      <Icon name="upload" size={16} />
+      <span className="hidden md:inline">Ajouter le logo de mon entreprise</span>
+    </Link>
+  );
+}
+
 export function AppShell({
   items,
   accountItems,
   profileHref,
   workspaceName,
   companyCode,
+  workspaceLogoUrl,
+  canManageBranding,
   userName,
   avatarUrl,
   roleLabel,
@@ -366,6 +395,8 @@ export function AppShell({
   profileHref: string | null;
   workspaceName: string;
   companyCode: string;
+  workspaceLogoUrl: string | null;
+  canManageBranding: boolean;
   userName: string;
   avatarUrl?: string | null;
   roleLabel: string;
@@ -587,8 +618,8 @@ export function AppShell({
   return (
     <div className="min-h-screen bg-graphite-50" onClickCapture={handleInternalNavigation}>
       {/* Sidebar desktop */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-graphite-100 bg-white lg:flex">
-        <div className="flex h-[4.5rem] items-center px-5">
+      <aside className="fixed inset-y-0 left-0 z-[var(--leti-layer-sidebar)] hidden w-64 flex-col border-r border-graphite-100 bg-white lg:flex">
+        <div className="flex h-[var(--leti-header-height)] items-center px-5">
           <Link
             href="/app"
             prefetch={false}
@@ -619,7 +650,7 @@ export function AppShell({
 
       {/* Drawer mobile */}
       {open && (
-        <div className="leti-mobile-drawer fixed inset-0 lg:hidden">
+        <div className="leti-mobile-drawer fixed inset-0 lg:hidden" data-leti-overlay="drawer" data-leti-overlay-side="left">
           <button type="button" className="absolute inset-0 cursor-default bg-graphite-950/25" onClick={closeDrawer} aria-label="Fermer le menu" />
           <aside ref={mobileDrawerRef} role="dialog" aria-modal="true" aria-label="Navigation principale" className="absolute inset-y-0 left-0 flex w-72 max-w-[85%] flex-col bg-white shadow-float">
             <div className="flex h-[var(--leti-header-height)] items-center justify-between px-5">
@@ -649,6 +680,9 @@ export function AppShell({
           <button ref={mobileMenuButtonRef} onClick={() => setOpen(true)} className="btn-ghost p-2 lg:hidden" aria-label="Menu">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
           </button>
+          <div className="leti-company-brand-slot">
+            <CompanyBrand logoUrl={workspaceLogoUrl} canManage={canManageBranding} />
+          </div>
           <div className="ml-auto flex items-center gap-2">
             <Link
               href="/app/notifications"

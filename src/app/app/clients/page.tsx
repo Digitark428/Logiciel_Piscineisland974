@@ -32,7 +32,7 @@ export default async function ClientsPage({
   return (
     <div>
       <PageHeader
-        title="Clients"
+        title="Mes clients"
         description="Consultez et gérez les coordonnées et informations de vos clients."
         subtitle={`${clients?.length ?? 0} ${showArchived ? "archivé(s)" : "actif(s)"}`}
         action={

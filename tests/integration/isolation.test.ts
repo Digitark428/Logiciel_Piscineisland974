@@ -352,6 +352,33 @@ describe.skipIf(!READY)("Isolation multi-tenant (RLS)", () => {
     expect(adminRead.data ?? []).toHaveLength(0);
     expect(otherWorkspaceRead.data ?? []).toHaveLength(0);
 
+    const assignedEvent = await asA.from("planning_events").insert({
+      workspace_id: A.workspaceId,
+      owner_membership_id: A.membershipId,
+      assigned_membership_id: A.employeeMembershipId,
+      title: "Rendez-vous affecté par le gérant",
+      event_date: "2026-08-26",
+      all_day: true,
+    }).select("id").single();
+    expect(assignedEvent.error).toBeNull();
+
+    const [assignedRead, assignedCannotEdit] = await Promise.all([
+      asEmployee.from("planning_events").select("id").eq("id", assignedEvent.data!.id),
+      asEmployee.from("planning_events").update({ title: "Modification interdite" }).eq("id", assignedEvent.data!.id).select("id"),
+    ]);
+    expect(assignedRead.data).toHaveLength(1);
+    expect(assignedCannotEdit.data ?? []).toHaveLength(0);
+
+    const employeeAssignment = await asEmployee.from("planning_events").insert({
+      workspace_id: A.workspaceId,
+      owner_membership_id: A.employeeMembershipId,
+      assigned_membership_id: A.membershipId,
+      title: "Affectation non autorisée",
+      event_date: "2026-08-26",
+      all_day: true,
+    });
+    expect(employeeAssignment.error).toBeTruthy();
+
     const reassign = await asEmployee.from("planning_events")
       .update({ owner_membership_id: A.membershipId })
       .eq("id", employeeEvent.data!.id)
@@ -366,6 +393,16 @@ describe.skipIf(!READY)("Isolation multi-tenant (RLS)", () => {
       all_day: true,
     });
     expect(crossTenantGuard.error).toBeTruthy();
+
+    const crossTenantAssigneeGuard = await admin!.from("planning_events").insert({
+      workspace_id: A.workspaceId,
+      owner_membership_id: A.membershipId,
+      assigned_membership_id: B.membershipId,
+      title: "Affectation inter-espace",
+      event_date: "2026-08-25",
+      all_day: true,
+    });
+    expect(crossTenantAssigneeGuard.error).toBeTruthy();
   });
 
   it("les interactions de notes restent isolées et l'auteur est dérivé du compte connecté", async () => {

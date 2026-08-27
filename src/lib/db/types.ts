@@ -210,11 +210,12 @@ export interface Task {
   updated_at: string;
 }
 
-/** Événement manuel strictement personnel à un membership dans un espace. */
+/** Événement manuel créé par un membership, éventuellement associé à un collègue du même espace. */
 export interface PlanningEvent {
   id: string;
   workspace_id: string;
   owner_membership_id: string;
+  assigned_membership_id: string | null;
   title: string;
   event_date: string;
   start_time: string | null;

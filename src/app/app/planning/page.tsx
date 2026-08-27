@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requirePermission, can } from "@/lib/auth/context";
 import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui";
-import { clientName, formatTime } from "@/lib/utils/format";
+import { clientName, formatTime, memberJobTitle, memberName } from "@/lib/utils/format";
 import { dateOnlyToUtcDate, todayInReunion } from "@/lib/utils/date";
 import type { PlanningEvent, Task } from "@/lib/db/types";
 import { getMaintenanceOccurrences, occurrenceHref, type MaintenanceOccurrence } from "@/lib/services/queries";
@@ -14,9 +14,12 @@ import {
 } from "@/lib/planning-events";
 import {
   AddPlanningEventButton,
+  type PlanningMemberOption,
   PlanningEventButton,
   PlanningEventProvider,
 } from "./PlanningEventDialog";
+import { signedUrls } from "@/lib/storage";
+import type { Membership } from "@/lib/db/types";
 import {
   type PlanningView, parseAnchor, rangeFor, navFor, toISO,
   addDays, startOfWeek, startOfMonth, weekdayShort, monthName, periodLabel,
@@ -48,6 +51,7 @@ const FILTER_TONES: Record<PlanningType, { active: string; dot: string }> = {
 };
 
 type PlanningTask = Pick<Task, "id" | "title" | "category" | "status" | "due_date" | "due_time">;
+type PlanningMemberRow = Pick<Membership, "id" | "role" | "first_name" | "last_name" | "email" | "photo_path" | "job_title">;
 type CalendarItem =
   | { kind: "maintenance"; service: MaintenanceOccurrence }
   | { kind: "task"; task: PlanningTask }
@@ -89,14 +93,28 @@ export default async function PlanningPage({ searchParams }: { searchParams: Sea
     if (!selected.has("event")) return [];
     const { data } = await supabase
       .from("planning_events")
-      .select("id,workspace_id,owner_membership_id,title,event_date,start_time,end_time,all_day,description,created_at,updated_at")
+      .select("id,workspace_id,owner_membership_id,assigned_membership_id,title,event_date,start_time,end_time,all_day,description,created_at,updated_at")
       .eq("workspace_id", ctx.workspace.id)
-      .eq("owner_membership_id", ctx.membership.id)
+      .or(`owner_membership_id.eq.${ctx.membership.id},assigned_membership_id.eq.${ctx.membership.id}`)
       .gte("event_date", startIso)
       .lte("event_date", endIso)
       .order("event_date")
       .order("start_time");
     return (data ?? []) as PlanningEvent[];
+  };
+
+  const loadMembers = async (): Promise<PlanningMemberRow[]> => {
+    // Seul le gérant reçoit la liste destinée au combobox. Pour un membre,
+    // son identité suffit à libeller les événements qui lui sont assignés.
+    if (!ctx.isAdmin) return [ctx.membership];
+    const { data } = await supabase
+      .from("memberships")
+      .select("id,role,first_name,last_name,email,photo_path,job_title")
+      .eq("workspace_id", ctx.workspace.id)
+      .eq("status", "active")
+      .order("first_name")
+      .order("last_name");
+    return (data ?? []) as PlanningMemberRow[];
   };
 
   const loadTasks = async (): Promise<PlanningTask[]> => {
@@ -112,7 +130,7 @@ export default async function PlanningPage({ searchParams }: { searchParams: Sea
     return (data ?? []) as PlanningTask[];
   };
 
-  const [services, events, tasks] = await Promise.all([
+  const [services, events, tasks, members] = await Promise.all([
     selected.has("maintenance")
       ? getMaintenanceOccurrences(supabase, {
           workspaceId: ctx.workspace.id,
@@ -123,7 +141,15 @@ export default async function PlanningPage({ searchParams }: { searchParams: Sea
       : Promise.resolve([]),
     loadEvents(),
     loadTasks(),
+    loadMembers(),
   ]);
+  const memberAvatarUrls = await signedUrls("avatars", members.map((member) => member.photo_path));
+  const planningMembers: PlanningMemberOption[] = members.map((member) => ({
+    id: member.id,
+    label: memberName(member),
+    roleLabel: memberJobTitle(member) ?? (member.role === "admin" ? "Gérant" : "Membre"),
+    avatarUrl: member.photo_path ? memberAvatarUrls.get(member.photo_path) ?? null : null,
+  }));
 
   const byDate = new Map<string, CalendarItem[]>();
   const addItem = (date: string, item: CalendarItem) => {
@@ -142,7 +168,12 @@ export default async function PlanningPage({ searchParams }: { searchParams: Sea
   const next = navFor(view, anchor, 1);
 
   return (
-    <PlanningEventProvider defaultDate={toISO(anchor)}>
+    <PlanningEventProvider
+      defaultDate={toISO(anchor)}
+      members={planningMembers}
+      canAssign={ctx.isAdmin}
+      currentMembershipId={ctx.membership.id}
+    >
       <div>
         <header className="mb-7 flex flex-wrap items-start justify-between gap-4 sm:mb-8">
           <div>

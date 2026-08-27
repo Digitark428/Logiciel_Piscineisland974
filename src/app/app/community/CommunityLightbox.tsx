@@ -101,6 +101,7 @@ export function CommunityLightbox({
   return createPortal(
     <div
       className="community-lightbox fixed inset-0 flex items-center justify-center bg-graphite-700/45 p-2 backdrop-blur-[2px] sm:p-6"
+      data-leti-overlay="lightbox"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}

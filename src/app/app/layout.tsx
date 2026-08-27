@@ -5,6 +5,7 @@ import { AppShell } from "@/components/app/AppShell";
 import { DeferredAppSupportWidget } from "@/components/app/DeferredAppSupportWidget";
 import { ACCOUNT_NAV_ITEMS, filterNavEntries, NAV_ITEMS, type NavItem } from "@/components/app/nav";
 import { memberJobTitle, memberName } from "@/lib/utils/format";
+import { workspaceLogoPath } from "@/lib/workspace-logo";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const ctx = await requireContext();
@@ -29,9 +30,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   // Ces deux lectures ne dépendent pas l'une de l'autre et ne doivent pas
   // retarder mutuellement l'affichage initial de l'application.
-  const [{ count }, avatarUrl] = await Promise.all([
+  const [{ count }, avatarUrl, workspaceLogoUrl] = await Promise.all([
     notifQuery,
     signedUrl("avatars", ctx.membership.photo_path),
+    signedUrl("workspace-assets", workspaceLogoPath(ctx.workspace.settings)),
   ]);
 
   return (
@@ -42,6 +44,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         profileHref={ctx.isAdmin ? `/app/team/${ctx.membership.id}` : null}
         workspaceName={ctx.workspace.name}
         companyCode={ctx.workspace.company_code}
+        workspaceLogoUrl={workspaceLogoUrl}
+        canManageBranding={ctx.isAdmin}
         userName={memberName(ctx.membership)}
         avatarUrl={avatarUrl}
         roleLabel={memberJobTitle(ctx.membership) ?? "Membre"}

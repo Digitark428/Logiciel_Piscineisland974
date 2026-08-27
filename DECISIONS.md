@@ -58,9 +58,15 @@
 
 ## Événements personnels du planning
 
-**Décision :** les événements personnels vivent dans `planning_events`, séparés des entretiens et des tâches. Ils sont rattachés à la fois au `workspace_id` et au `owner_membership_id`; leur CRUD est strictement réservé à ce propriétaire authentifié, y compris face au gérant ou à un collègue du même workspace. Les tâches datées restent seulement consultables depuis le planning et continuent d'être modifiées depuis leur écran dédié.
+**Décision :** les événements du planning vivent dans `planning_events`, séparés des entretiens et des tâches. Ils sont rattachés au `workspace_id` et à leur `owner_membership_id`; seul cet auteur authentifié peut les modifier ou les supprimer. Un administrateur auteur peut sélectionner un `assigned_membership_id` actif de son propre workspace : cette personne peut alors consulter l’événement, sans pouvoir l’éditer. L’assignation reste nullable pour préserver tous les événements historiques. Les tâches datées restent seulement consultables depuis le planning et continuent d'être modifiées depuis leur écran dédié.
 
-**Raison :** préserver la confidentialité individuelle, empêcher toute relation inter-tenant et garder une source métier unique pour chaque type d'élément du planning.
+**Raison :** permettre au gérant d’associer explicitement un rendez-vous à un membre sans élargir l’édition, empêcher toute relation inter-tenant et garder une source métier unique pour chaque type d’élément du planning.
+
+## Logo d’entreprise dans le shell
+
+**Décision :** le logo personnalisé est administré uniquement par un rôle autorisé, stocké dans le bucket privé `workspace-assets` sous un chemin propre au workspace et référencé par `workspaces.settings.company_logo_path`. Toute source SVG, PNG ou JPEG est validée puis normalisée côté serveur en WebP avant stockage ; les membres reçoivent seulement une URL signée.
+
+**Raison :** fournir une identité commune à toute l’entreprise sans ajouter de champ de schéma superflu, exposer un bucket public ou laisser passer des fichiers actifs/non maîtrisés dans le header permanent.
 
 ## Cibles de production
 

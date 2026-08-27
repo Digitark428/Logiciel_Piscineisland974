@@ -116,7 +116,7 @@ export default async function ServicesPage({ searchParams }: { searchParams: Sea
         <h1 className="text-2xl font-semibold tracking-[-0.035em] text-graphite-900 sm:text-[1.85rem]">Mes entretiens</h1>
         {canCreate && (
           <div className="flex shrink-0 gap-2">
-            <Link prefetch={false} href="/app/services/new?kind=contract" className="btn-primary rounded-xl px-3 text-[13px] shadow-[0_2px_7px_rgba(244,139,130,0.12)] sm:px-4" title="Nouveau contrat">+ Contrat</Link>
+            <Link prefetch={false} href="/app/services/new?kind=contract" className="btn-coral-soft rounded-xl px-3 text-[13px] sm:px-4" title="Nouveau contrat">+ Contrat</Link>
             <Link prefetch={false} href="/app/services/new?kind=one_off" className="btn-secondary rounded-xl px-3 text-[13px] shadow-none sm:px-4" title="Nouvel entretien ponctuel">+ Ponctuel</Link>
           </div>
         )}

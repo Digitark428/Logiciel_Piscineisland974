@@ -300,6 +300,7 @@ export function LearningField({ category }: { category: LearningCategory }) {
     <div className={styles.field} aria-hidden="true">
       <canvas ref={canvasRef} className={styles.canvas} />
       <div className={styles.core}>
+        <div className={styles.corePulse}>
         <div className={styles.symbol}>
           <Image
             src="/leti/leti-symbol-transparent.png"
@@ -311,6 +312,7 @@ export function LearningField({ category }: { category: LearningCategory }) {
             className={styles.symbolImage}
           />
           <span className={styles.symbolSheen} />
+        </div>
         </div>
       </div>
     </div>

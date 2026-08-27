@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { LearningField } from "./LearningField";
 import { LEARNING_PHRASES } from "./learningPhrases";
 import styles from "./LetiAiExperience.module.css";
+import { LETI_AI_PHRASE_DELAY_MIN, LETI_AI_PHRASE_DELAY_RANGE } from "./learningTiming";
 
 const RECENT_PHRASE_LIMIT = 10;
 
@@ -40,7 +41,7 @@ export function LetiAiExperience() {
           setPhraseVisible(true);
           if (!cancelled) scheduleRotation();
         }, 240);
-      }, 2800 + Math.random() * 1100);
+      }, LETI_AI_PHRASE_DELAY_MIN + Math.random() * LETI_AI_PHRASE_DELAY_RANGE);
     };
 
     scheduleRotation();

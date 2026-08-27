@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useState } from "react";
+import { useExternalOverlayState } from "./useExternalOverlayState";
 
 const AppSupportWidget = dynamic(
   () => import("./AppSupportWidget").then((module) => module.AppSupportWidget),
@@ -18,8 +19,10 @@ const AppSupportWidget = dynamic(
  */
 export function DeferredAppSupportWidget() {
   const [requested, setRequested] = useState(false);
+  const overlay = useExternalOverlayState();
 
   if (requested) return <AppSupportWidget initiallyOpen />;
+  if (overlay.hidden) return null;
 
   return (
     <button
@@ -30,11 +33,14 @@ export function DeferredAppSupportWidget() {
       onTouchStart={preloadSupportWidget}
       aria-label="Ouvrir l'aide et les retours"
       aria-haspopup="dialog"
-      className="leti-support-launcher fixed bottom-5 right-5 z-30 flex items-center gap-2 rounded-full px-4 py-3 text-sm font-semibold transition active:scale-[0.985]"
-      style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
+      className={`leti-support-launcher fixed bottom-5 right-5 z-[var(--leti-layer-floating)] flex items-center gap-2 rounded-full px-4 py-3 text-sm font-semibold transition active:scale-[0.985] ${overlay.shifted ? "leti-support-launcher--shifted" : ""}`}
+      style={{
+        paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))",
+        ...(overlay.drawerWidth ? { "--leti-active-drawer-width": overlay.drawerWidth } : {}),
+      } as React.CSSProperties}
     >
       <span aria-hidden="true" className="text-base leading-none">💬</span>
-      <span className="hidden sm:inline">Aide & retours</span>
+      <span className="leti-support-label hidden sm:inline">Aide & retours</span>
     </button>
   );
 }
@@ -46,9 +52,9 @@ function preloadSupportWidget() {
 function SupportLoadingPanel() {
   return (
     <>
-      <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-40 bg-graphite-950/10 backdrop-blur-[2px]" />
+      <div aria-hidden="true" data-leti-overlay="modal" data-leti-overlay-owner="support" className="pointer-events-none fixed inset-0 z-[var(--leti-layer-modal)] bg-graphite-950/10 backdrop-blur-[2px]" />
       <section
-        className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-50 mx-auto flex w-auto max-w-sm items-center gap-3 rounded-2xl border border-graphite-100 bg-white p-4 shadow-float sm:inset-x-auto sm:bottom-5 sm:right-5 sm:w-[370px]"
+        className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-[calc(var(--leti-layer-modal)+1)] mx-auto flex w-auto max-w-sm items-center gap-3 rounded-2xl border border-graphite-100 bg-white p-4 shadow-float sm:inset-x-auto sm:bottom-5 sm:right-5 sm:w-[370px]"
         role="dialog"
         tabIndex={-1}
         autoFocus

@@ -78,7 +78,7 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
 
   return (
     <div>
-      <Link href="/app/clients" className="mb-4 inline-block text-sm text-graphite-500 hover:text-graphite-700">← Clients</Link>
+      <Link href="/app/clients" className="mb-4 inline-block text-sm text-graphite-500 hover:text-graphite-700">← Mes clients</Link>
 
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-center gap-4">

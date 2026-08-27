@@ -5,10 +5,16 @@ import { ActionForm } from "@/components/forms/ActionForm";
 import { SubmitButton } from "@/components/forms/SubmitButton";
 import { Checkbox } from "@/components/ui/Checkbox";
 import { updateWorkspace } from "@/lib/actions/workspace";
+import { signedUrl } from "@/lib/storage";
+import { workspaceLogoPath } from "@/lib/workspace-logo";
+import { WorkspaceLogoSettings } from "./WorkspaceLogoSettings";
+
+export const maxDuration = 30;
 
 export default async function SettingsPage() {
   const ctx = await requirePermission("settings.manage");
   const w = ctx.workspace;
+  const logoUrl = await signedUrl("workspace-assets", workspaceLogoPath(w.settings));
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -23,6 +29,8 @@ export default async function SettingsPage() {
           <div className="text-sm text-graphite-400">Communiquez ce code à vos employés pour se connecter.</div>
         </div>
       </Card>
+
+      <WorkspaceLogoSettings logoUrl={logoUrl} />
 
       <ActionForm action={updateWorkspace} successMessage="Paramètres enregistrés.">
         <div className="card p-6">

@@ -8,11 +8,21 @@ describe("Navigation applicative", () => {
     expect(management && isNavGroup(management) ? management.children.map((item) => item.label) : []).toEqual(["Documents", "Sauvegardes"]);
   });
 
-  it("allège la barre latérale sans Gestion ni Paramètres", () => {
+  it("respecte l’ordre produit et masque les entrées retirées", () => {
     const labels = NAV_ITEMS.map((entry) => entry.label);
-    expect(labels).not.toContain("Gestion");
-    expect(labels).not.toContain("Paramètres");
-    expect(labels.slice(-4)).toEqual(["Mes chantiers", "Mes dépannages", "Gérer ma comptabilité", "LETI IA"]);
+    expect(labels).toEqual([
+      "Tableau de bord",
+      "Mes clients",
+      "Mes entretiens",
+      "Planning",
+      "Tâches & Notes",
+      "Carte",
+      "Entre nous",
+      "Mes chantiers",
+      "Mes dépannages",
+      "LETI IA",
+    ]);
+    expect(labels).not.toContain("Gérer ma comptabilité");
   });
 
   it("place Paramètres après Gestion dans le menu du compte", () => {

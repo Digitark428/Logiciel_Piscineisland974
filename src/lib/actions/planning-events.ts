@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { actionContext } from "@/lib/actions/helpers";
 import { fail, ok, type ActionResult } from "@/lib/actions/result";
-import { can } from "@/lib/auth/context";
+import { can, type SessionContext } from "@/lib/auth/context";
 import { isValidPlanningDate, isValidPlanningTime } from "@/lib/planning-events";
 import { createClient } from "@/lib/supabase/server";
 
@@ -54,6 +54,27 @@ async function planningContext() {
   return result;
 }
 
+async function planningAssignee(
+  ctx: SessionContext,
+  formData: FormData,
+): Promise<{ ok: true; membershipId: string | null } | { ok: false; result: ActionResult }> {
+  const membershipId = text(formData.get("assigned_membership_id"));
+  if (!membershipId) return { ok: true, membershipId: null };
+  if (!UUID.test(membershipId)) return { ok: false, result: fail("La personne concernée est invalide.") };
+  if (!ctx.isAdmin) return { ok: false, result: fail("Seul le gérant peut affecter un événement à un membre.") };
+
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("memberships")
+    .select("id")
+    .eq("id", membershipId)
+    .eq("workspace_id", ctx.workspace.id)
+    .eq("status", "active")
+    .maybeSingle();
+  if (!data) return { ok: false, result: fail("Cette personne n’appartient pas à votre entreprise.") };
+  return { ok: true, membershipId: data.id };
+}
+
 export async function createPlanningEvent(_previous: ActionResult, formData: FormData): Promise<ActionResult> {
   const result = await planningContext();
   if ("error" in result) return result.error;
@@ -61,12 +82,15 @@ export async function createPlanningEvent(_previous: ActionResult, formData: For
   if (!parsed.ok) return parsed.result;
 
   const { ctx } = result;
+  const assignee = await planningAssignee(ctx, formData);
+  if (!assignee.ok) return assignee.result;
   const supabase = createClient();
   const { data, error } = await supabase
     .from("planning_events")
     .insert({
       workspace_id: ctx.workspace.id,
       owner_membership_id: ctx.membership.id,
+      assigned_membership_id: assignee.membershipId,
       ...parsed.value,
     })
     .select("id")
@@ -86,10 +110,12 @@ export async function updatePlanningEvent(_previous: ActionResult, formData: For
   if (!parsed.ok) return parsed.result;
 
   const { ctx } = result;
+  const assignee = await planningAssignee(ctx, formData);
+  if (!assignee.ok) return assignee.result;
   const supabase = createClient();
   const { data, error } = await supabase
     .from("planning_events")
-    .update(parsed.value)
+    .update({ ...parsed.value, assigned_membership_id: assignee.membershipId })
     .eq("id", id)
     .eq("workspace_id", ctx.workspace.id)
     .eq("owner_membership_id", ctx.membership.id)

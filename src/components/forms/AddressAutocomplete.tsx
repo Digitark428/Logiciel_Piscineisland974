@@ -179,7 +179,7 @@ export function AddressAutocomplete({
           </span>
         )}
         {open && suggestions.length > 0 && (
-          <ul className="absolute z-20 mt-1 max-h-72 w-full overflow-auto rounded-lg border border-graphite-100 bg-white shadow-float">
+          <ul data-leti-overlay="popover" className="absolute z-[var(--leti-layer-popover)] mt-1 max-h-72 w-full overflow-auto rounded-lg border border-graphite-100 bg-white shadow-float">
             {suggestions.map((s, i) => (
               <li key={`${s.label}-${i}`}>
                 <button

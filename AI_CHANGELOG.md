@@ -2,6 +2,14 @@
 
 > Ajouter une entrée courte après chaque intervention significative. Ne pas y dupliquer la documentation durable de `PROJECT_CONTEXT.md`.
 
+## 2026-08-27 — Codex — Cohérence globale LETI, marque entreprise et Planning assignable
+
+- **Navigation et header :** ordre principal stabilisé de « Tableau de bord » à « LETI IA », « Mes clients » généralisé et comptabilité retirée de l’interface ; le header accueille désormais le logo privé de l’entreprise, réellement centré, normalisé en WebP sans déformation, administrable par un gérant et animé par un flare CSS discret respectant `prefers-reduced-motion`.
+- **Overlays et design system :** dimensions et couches du shell centralisées ; drawers/modales passent par Portal et déclarent leur nature, ce qui décale automatiquement « Aide & retours » devant un drawer droit ou le masque sur mobile et devant les overlays bloquants. La variante partagée `coral-soft` remplace les aplats corail des actions standard, notamment « + Contrat », sans toucher aux actions destructives.
+- **Planning et LETI IA :** un gérant peut associer un membre réel de son entreprise à un événement ; l’assigné dispose d’une lecture seule, l’auteur conserve l’édition et les événements historiques restent non assignés. Les phrases LETI IA tournent 1,5× plus vite et le symbole pulse calmement toutes les 3 secondes.
+- **Sécurité et migration :** bucket privé `workspace-assets`, policies Storage, colonne nullable `planning_events.assigned_membership_id`, trigger tenant et RLS créateur/assigné ajoutés par `20260827133712_workspace_branding_and_planning_assignees`, appliquée en production sous la version Supabase `20260827181403`. Transaction RLS réelle validée puis nettoyée, sans donnée de test persistante.
+- **Vérification :** lint, typecheck, build de production et 79 tests actifs validés ; contrôles navigateur à 390, 430 et 1 440 px confirmant centrage exact, absence de chevauchement, modal Planning, palette corail et animations, sans erreur console. Les 19 tests d’intégration conditionnels restent ignorés sans secrets dédiés.
+
 ## 2026-08-27 — Codex — Refonte premium d’Entre nous et pipeline photo universel
 
 - **Expérience sociale :** feed recentré, composeur compact, insertion immédiate, cartes premium, mosaïques 1 à 4+, réactions légères et commentaires différés ; galerie responsive et recherche/pagination existantes conservées.

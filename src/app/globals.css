@@ -28,8 +28,14 @@
   --leti-motion-normal: 160ms;
   --leti-motion-ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
   --leti-header-height: 4.5rem;
+  --leti-drawer-width: min(100vw, 27.5rem);
+  --leti-overlay-gap: 1.25rem;
+  --leti-layer-content: 0;
   --leti-layer-header: 20;
+  --leti-layer-sidebar: 25;
+  --leti-layer-floating: 30;
   --leti-layer-drawer: 40;
+  --leti-layer-popover: 50;
   --leti-layer-modal: 70;
   --leti-layer-lightbox: 120;
   --leti-layer-splash: 140;
@@ -75,21 +81,26 @@ body {
     transform: scale(0.985);
   }
 
-  .btn-primary {
-    @apply btn text-graphite-900;
-    border-color: rgba(var(--leti-coral-rgb), 0.68);
-    background: var(--leti-coral);
-    box-shadow: 0 1px 2px rgba(var(--leti-navy-rgb), 0.045);
+  .btn-primary,
+  .btn-coral-soft {
+    @apply btn;
+    border-color: rgba(var(--leti-coral-rgb), 0.3);
+    background: var(--leti-coral-soft-surface);
+    color: #984841;
+    box-shadow: 0 1px 2px rgba(var(--leti-navy-rgb), 0.025);
   }
 
-  .btn-primary:not(:disabled):is(:hover, :focus-visible) {
-    border-color: rgba(var(--leti-coral-rgb), 0.82);
-    background: #f6a197;
-    box-shadow: 0 2px 6px rgba(var(--leti-coral-rgb), 0.14);
+  .btn-primary:not(:disabled):is(:hover, :focus-visible),
+  .btn-coral-soft:not(:disabled):is(:hover, :focus-visible) {
+    border-color: rgba(var(--leti-coral-rgb), 0.46);
+    background: var(--leti-coral-soft-hover);
+    color: #7e3b36;
+    box-shadow: 0 2px 6px rgba(var(--leti-coral-rgb), 0.08);
   }
 
-  .btn-primary:not(:disabled):active {
-    background: var(--leti-coral);
+  .btn-primary:not(:disabled):active,
+  .btn-coral-soft:not(:disabled):active {
+    background: rgba(var(--leti-coral-rgb), 0.22);
   }
 
   .btn-secondary {
@@ -246,6 +257,80 @@ body {
   border-color: rgba(var(--leti-aqua-rgb), 0.54);
   background: var(--leti-aqua-soft-surface);
   box-shadow: 0 6px 18px rgba(var(--leti-aqua-rgb), 0.13);
+}
+
+.leti-support-launcher--shifted {
+  right: calc(var(--leti-active-drawer-width, var(--leti-drawer-width)) + var(--leti-overlay-gap));
+}
+
+.leti-company-brand-slot {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  max-width: min(11.25rem, calc(100vw - 31rem));
+  transform: translate(-50%, -50%);
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.leti-company-brand {
+  position: relative;
+  display: flex;
+  width: 11.25rem;
+  max-width: 100%;
+  height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 0.6rem;
+  padding: 0.15rem 0.25rem;
+  isolation: isolate;
+}
+
+.leti-company-brand > img {
+  position: relative;
+  z-index: 1;
+}
+
+.leti-company-brand::after {
+  position: absolute;
+  z-index: 2;
+  top: -45%;
+  bottom: -45%;
+  left: -42%;
+  width: 18%;
+  transform: translateX(-260%) rotate(16deg);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.48), transparent);
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+  animation: leti-company-logo-flare 7s ease-in-out infinite;
+}
+
+.leti-company-logo-action {
+  display: inline-flex;
+  min-height: 2.25rem;
+  align-items: center;
+  gap: 0.45rem;
+  border: 1px solid rgba(var(--leti-aqua-rgb), 0.24);
+  border-radius: 0.75rem;
+  padding: 0.35rem 0.65rem;
+  background: rgba(var(--leti-aqua-rgb), 0.065);
+  color: var(--leti-navy);
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: auto;
+}
+
+.leti-company-logo-action:is(:hover, :focus-visible) {
+  border-color: rgba(var(--leti-aqua-rgb), 0.42);
+  background: var(--leti-aqua-soft-surface);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(var(--leti-aqua-rgb), 0.14);
 }
 
 .leti-notification-bell {
@@ -465,6 +550,46 @@ a[data-leti-navigation-pending="true"] {
   to { opacity: 0; visibility: hidden; }
 }
 
+@keyframes leti-company-logo-flare {
+  0%, 78% { opacity: 0; transform: translateX(-260%) rotate(16deg); }
+  81% { opacity: 0.24; }
+  91% { opacity: 0; transform: translateX(760%) rotate(16deg); }
+  100% { opacity: 0; transform: translateX(760%) rotate(16deg); }
+}
+
+@media (max-width: 1023px) {
+  .leti-company-brand-slot {
+    max-width: 8.25rem;
+  }
+
+  .leti-company-brand {
+    width: 8.25rem;
+    height: 2.25rem;
+  }
+
+  .leti-support-launcher--shifted .leti-support-label {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .leti-company-brand-slot {
+    max-width: 4.5rem;
+  }
+
+  .leti-company-brand {
+    width: 4.5rem;
+    height: 2rem;
+    padding-inline: 0.1rem;
+  }
+}
+
+@media (max-width: 419px) {
+  .leti-company-brand-slot {
+    display: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   :where(button, a.btn) {
     transition-duration: 0ms;
@@ -481,6 +606,10 @@ a[data-leti-navigation-pending="true"] {
   .leti-hero-slogan::after {
     animation-duration: 1ms;
     animation-delay: 0ms;
+  }
+
+  .leti-company-brand::after {
+    animation: none;
   }
 
   .leti-notification-bell {

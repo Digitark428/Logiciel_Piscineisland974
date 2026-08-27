@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { archiveClient, deleteClientPermanently } from "@/lib/actions/clients";
+import { OverlayPortal } from "@/components/ui/OverlayPortal";
 
 export function ArchiveButton({ clientId, archived }: { clientId: string; archived: boolean }) {
   const [pending, start] = useTransition();
@@ -78,7 +79,8 @@ export function DeleteClientButton({ clientId }: { clientId: string }) {
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+        <OverlayPortal>
+        <div className="fixed inset-0 z-[var(--leti-layer-modal)] flex items-center justify-center px-4" data-leti-overlay="modal">
           <button type="button" className="absolute inset-0 cursor-default bg-graphite-900/50" onClick={() => !pending && close()} aria-label="Fermer la confirmation" />
           <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="delete-client-title" className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-float">
             <div className="mb-2 flex items-center gap-2">
@@ -117,6 +119,7 @@ export function DeleteClientButton({ clientId }: { clientId: string }) {
             </div>
           </div>
         </div>
+        </OverlayPortal>
       )}
     </>
   );
