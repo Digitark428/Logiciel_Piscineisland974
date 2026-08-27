@@ -2,6 +2,13 @@
 
 > Ajouter une entrée courte après chaque intervention significative. Ne pas y dupliquer la documentation durable de `PROJECT_CONTEXT.md`.
 
+## 2026-08-27 — Codex — Refonte premium des Notes d’équipe
+
+- **Flux :** en-tête dédié, composeur compact dépliable et fiches professionnelles donnant la priorité au message, à l’identité métier et aux compteurs discrets ; une note exécutée reste visible avec une surface menthe et le statut « Traité ».
+- **Interactions :** publication, lecture, exécution et commentaires disposent d’un retour optimiste avec rollback sur erreur ; lecteurs, exécutions et commentaires restent chargés à la demande dans un fil inline léger, sans rechargement complet.
+- **Périmètre :** actions serveur, permissions, RLS, suppression, données et historique inchangés ; aucune migration Supabase.
+- **Vérification :** lint, typecheck et build de production valides, 68 tests unitaires réussis et 19 tests d’intégration conditionnels ignorés ; contrôle navigateur à 375, 768 et 1440 px sans débordement, overlay ni cible tactile inférieure à 44 px, avec composeur et commentaires dépliés vérifiés.
+
 ## 2026-08-27 — Codex — Tâches attribuées et Checkbox officielle LETI
 
 - **Tâches attribuées :** liste désormais prioritaire, en-tête dédié, filtres Toutes/En cours/Terminées/En retard avec compteurs instantanés, fiches compactes avec identité métier, échéance et traitements pastel pour les états actif, terminé et retardé.

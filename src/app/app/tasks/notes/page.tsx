@@ -1,9 +1,7 @@
-import { Card } from "@/components/ui";
 import { requirePermission } from "@/lib/auth/context";
 import { signedUrls } from "@/lib/storage";
 import { createClient } from "@/lib/supabase/server";
-import { memberName } from "@/lib/utils/format";
-import { TeamNoteForm, TeamNoteItem } from "../TasksClient";
+import { TeamNotesView } from "./TeamNotesView";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +24,10 @@ export default async function TeamNotesPage() {
     .order("created_at", { ascending: false });
 
   const normalized = (notes ?? []).map((note: any) => ({ ...note, author: relationOne(note.author) }));
-  const avatarByPath = await signedUrls("avatars", normalized.map((note: any) => note.author?.photo_path));
+  const avatarByPath = await signedUrls("avatars", [
+    ...normalized.map((note: any) => note.author?.photo_path),
+    ctx.membership.photo_path,
+  ]);
   const noteItems = normalized.map((note: any) => ({
     id: note.id,
     author: note.author ?? { first_name: null, last_name: null, email: "Membre", role: null, job_title: null },
@@ -40,24 +41,11 @@ export default async function TeamNotesPage() {
   }));
 
   return (
-    <Card>
-      <h2 className="text-lg font-semibold text-graphite-900">Notes d'équipe</h2>
-      <p className="mt-1 text-sm text-graphite-500">Communication interne visible par toute l'équipe.</p>
-      <div className="mt-5"><TeamNoteForm /></div>
-      {noteItems.length === 0 ? (
-        <p className="py-8 text-center text-sm text-graphite-400">Aucune note d'équipe.</p>
-      ) : (
-        <ul className="mt-5 divide-y divide-graphite-100 border-t border-graphite-100">
-          {noteItems.map((note) => (
-            <TeamNoteItem
-              key={note.id}
-              note={note}
-              currentMembershipId={ctx.membership.id}
-              currentMemberName={memberName(ctx.membership)}
-            />
-          ))}
-        </ul>
-      )}
-    </Card>
+    <TeamNotesView
+      initialNotes={noteItems}
+      currentMembershipId={ctx.membership.id}
+      currentMember={ctx.membership}
+      currentMemberAvatarUrl={ctx.membership.photo_path ? avatarByPath.get(ctx.membership.photo_path) ?? null : null}
+    />
   );
 }
