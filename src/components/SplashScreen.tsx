@@ -32,7 +32,7 @@ export function SplashScreen() {
 
   return (
     <div
-      className={`leti-splash ${leaving ? "leti-splash-leaving" : ""} pointer-events-none fixed inset-0 z-[100] grid place-items-center bg-graphite-50`}
+      className={`leti-splash ${leaving ? "leti-splash-leaving" : ""} pointer-events-none fixed inset-0 grid place-items-center bg-graphite-50`}
       aria-hidden="true"
     >
       <div className="leti-splash-content flex flex-col items-center">

@@ -17,8 +17,17 @@ import { normalizeCommunitySearch } from "@/lib/community-search";
 import {
   COMMUNITY_REACTIONS,
   type CommunityCursor,
+  type CommunityFeedItem,
+  type CommunityPendingUpload,
   type CommunityReactionKind,
+  type CommunityUploadRequest,
+  type CommunityUploadTicket,
 } from "@/lib/community-types";
+import {
+  COMMUNITY_MAX_IMAGES,
+  COMMUNITY_MAX_SOURCE_BYTES,
+  normalizeCommunityImage,
+} from "@/lib/community-media";
 
 const postIdSchema = z.string().uuid();
 const commentSchema = z.string().trim().min(1, "Le commentaire est vide.").max(4000, "Commentaire trop long.");
@@ -27,30 +36,56 @@ const cursorSchema = z.object({
   createdAt: z.string().refine((value) => !Number.isNaN(Date.parse(value)), "Curseur invalide."),
   id: z.string().uuid(),
 });
+const uploadRequestSchema = z.array(z.object({
+  name: z.string().trim().min(1).max(255),
+  size: z.number().int().positive().max(COMMUNITY_MAX_SOURCE_BYTES),
+  type: z.string().max(120),
+})).min(1).max(COMMUNITY_MAX_IMAGES);
+const pendingUploadSchema = z.array(z.object({
+  path: z.string().min(1).max(500),
+  originalName: z.string().trim().min(1).max(255),
+})).max(COMMUNITY_MAX_IMAGES);
 
-function isValidImage(type: string, buffer: Buffer): boolean {
-  if (type === "image/png") return buffer.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
-  if (type === "image/jpeg") return buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
-  return type === "image/webp" && buffer.subarray(0, 4).toString("ascii") === "RIFF" && buffer.subarray(8, 12).toString("ascii") === "WEBP";
+export type CommunityUploadSessionResult = ActionResult & { uploads?: CommunityUploadTicket[] };
+export type CreateCommunityPostResult = ActionResult & { post?: CommunityFeedItem; skippedCount?: number };
+
+function isScopedTemporaryPath(path: string, workspaceId: string, membershipId: string): boolean {
+  const prefix = `${workspaceId}/temp/${membershipId}/`;
+  if (!path.startsWith(prefix)) return false;
+  const suffix = path.slice(prefix.length);
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\/[0-3]-[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(suffix);
 }
 
-function extensionFor(type: string): "png" | "jpg" | "webp" {
-  if (type === "image/png") return "png";
-  if (type === "image/webp") return "webp";
-  return "jpg";
-}
-
-/** Ne dépend pas du constructeur global File, absent de certains runtimes Node. */
-function isUploadedFile(value: FormDataEntryValue): value is File {
-  return typeof value !== "string"
-    && typeof (value as { arrayBuffer?: unknown }).arrayBuffer === "function"
-    && typeof (value as { size?: unknown }).size === "number";
-}
-
-/** Crée un statut et, optionnellement, jusqu'à quatre photos privées optimisées côté navigateur. */
-export async function createCommunityPost(formData: FormData): Promise<ActionResult> {
+/** Prépare des URLs à usage court : les fichiers lourds vont directement vers Storage. */
+export async function createCommunityUploadSession(rawFiles: CommunityUploadRequest[]): Promise<CommunityUploadSessionResult> {
   try {
-    return await createCommunityPostImpl(formData);
+    const res = await actionContext();
+    if ("error" in res) return res.error;
+    const { ctx } = res;
+    if (!can(ctx, "community.publish")) return fail("Vous n'êtes pas autorisé à publier dans Entre nous.");
+    const parsed = uploadRequestSchema.safeParse(rawFiles);
+    if (!parsed.success) return fail(`Ajoutez entre 1 et ${COMMUNITY_MAX_IMAGES} photos de moins de 35 Mo.`);
+
+    const admin = createAdminClient();
+    const sessionId = crypto.randomUUID();
+    const uploads: CommunityUploadTicket[] = [];
+    for (const [index] of parsed.data.entries()) {
+      const path = `${ctx.workspace.id}/temp/${ctx.membership.id}/${sessionId}/${index}-${crypto.randomUUID()}`;
+      const { data, error } = await admin.storage.from("community-media").createSignedUploadUrl(path);
+      if (error || !data?.token) return fail("Impossible de préparer l'envoi des photos.");
+      uploads.push({ path, token: data.token });
+    }
+    return { ...ok(), uploads };
+  } catch (error) {
+    console.error("[community.upload-session] failed", error instanceof Error ? error.message : String(error));
+    return fail("Impossible de préparer l'envoi des photos.");
+  }
+}
+
+/** Crée un statut après validation et normalisation serveur de chaque photo. */
+export async function createCommunityPost(input: { content: string; uploads: CommunityPendingUpload[] }): Promise<CreateCommunityPostResult> {
+  try {
+    return await createCommunityPostImpl(input);
   } catch (error) {
     // Un retour ActionResult évite une erreur cliente opaque si Storage ou le runtime échoue.
     console.error("[community.create] publication failed", error instanceof Error ? error.message : String(error));
@@ -58,29 +93,45 @@ export async function createCommunityPost(formData: FormData): Promise<ActionRes
   }
 }
 
-async function createCommunityPostImpl(formData: FormData): Promise<ActionResult> {
+async function createCommunityPostImpl(input: { content: string; uploads: CommunityPendingUpload[] }): Promise<CreateCommunityPostResult> {
   const res = await actionContext();
   if ("error" in res) return res.error;
   const { ctx } = res;
   if (!can(ctx, "community.publish")) return fail("Vous n'êtes pas autorisé à publier dans Entre nous.");
 
-  const parsed = contentSchema.safeParse(String(formData.get("content") ?? ""));
+  const parsed = contentSchema.safeParse(input.content ?? "");
   if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? "Statut invalide.");
   const content = parsed.data || null;
-  const files = formData.getAll("images").filter((value): value is File => isUploadedFile(value) && value.size > 0);
-  if (!content && files.length === 0) return fail("Ajoutez un statut ou au moins une photo.");
-  if (files.length > 4) return fail("Vous pouvez ajouter jusqu'à 4 photos.");
-
-  const prepared: Array<{ file: File; buffer: Buffer }> = [];
-  for (const file of files) {
-    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) return fail("Utilisez une photo JPEG, PNG ou WebP.");
-    if (file.size > 5 * 1024 * 1024) return fail("Une photo dépasse 5 Mo après optimisation.");
-    const buffer = Buffer.from(await file.arrayBuffer());
-    if (!isValidImage(file.type, buffer)) return fail("Une image sélectionnée est invalide.");
-    prepared.push({ file, buffer });
+  const uploads = pendingUploadSchema.safeParse(input.uploads);
+  if (!uploads.success) return fail("La sélection de photos est invalide.");
+  if (!content && uploads.data.length === 0) return fail("Ajoutez un statut ou au moins une photo.");
+  if (uploads.data.some((item) => !isScopedTemporaryPath(item.path, ctx.workspace.id, ctx.membership.id))) {
+    return fail("La sélection de photos a expiré. Sélectionnez-les à nouveau.");
   }
+  if (new Set(uploads.data.map((item) => item.path)).size !== uploads.data.length) return fail("La sélection contient un doublon.");
 
   const admin = createAdminClient();
+  const temporaryPaths = uploads.data.map((item) => item.path);
+  const prepared: Array<{ buffer: Buffer; contentType: "image/webp" }> = [];
+  let skippedCount = 0;
+  try {
+    for (const [index, item] of uploads.data.entries()) {
+      try {
+        const { data, error } = await admin.storage.from("community-media").download(item.path);
+        if (error || !data) throw new Error("download-failed");
+        const source = Buffer.from(await data.arrayBuffer());
+        const normalized = await normalizeCommunityImage(source);
+        prepared.push({ buffer: normalized.buffer, contentType: normalized.contentType });
+      } catch (error) {
+        console.warn("[community.media] skipped", index, error instanceof Error ? error.message : String(error));
+        skippedCount += 1;
+      }
+    }
+  } finally {
+    if (temporaryPaths.length > 0) await admin.storage.from("community-media").remove(temporaryPaths);
+  }
+  if (!content && prepared.length === 0) return fail("Impossible de traiter cette photo. Essayez une autre image.");
+
   const postId = crypto.randomUUID();
   const { error: postError } = await admin.from("community_posts").insert({
     id: postId,
@@ -93,10 +144,10 @@ async function createCommunityPostImpl(formData: FormData): Promise<ActionResult
   const uploadedPaths: string[] = [];
   try {
     for (const [position, item] of prepared.entries()) {
-      const path = `${ctx.workspace.id}/posts/${postId}/${position}-${Date.now()}.${extensionFor(item.file.type)}`;
+      const path = `${ctx.workspace.id}/posts/${postId}/${position}-${crypto.randomUUID()}.webp`;
       const { error: uploadError } = await admin.storage
         .from("community-media")
-        .upload(path, item.buffer, { contentType: item.file.type, upsert: false });
+        .upload(path, item.buffer, { contentType: item.contentType, cacheControl: "31536000", upsert: false });
       if (uploadError) throw new Error("upload");
       uploadedPaths.push(path);
 
@@ -122,7 +173,17 @@ async function createCommunityPostImpl(formData: FormData): Promise<ActionResult
   });
   revalidatePath("/app/community");
   revalidatePath("/app/community/gallery");
-  return ok("Publication ajoutée.");
+  let post: CommunityFeedItem | undefined;
+  try {
+    const latest = await getCommunityFeedPage(ctx, 5);
+    post = latest.items.find((item) => item.id === postId);
+  } catch {
+    // La publication existe déjà : un échec de rafraîchissement ne doit pas la signaler comme perdue.
+  }
+  const message = skippedCount > 0
+    ? `Publication ajoutée. ${skippedCount} photo${skippedCount > 1 ? "s n'ont" : " n'a"} pas pu être traitée.`
+    : "Publication ajoutée.";
+  return { ...ok(message), post, skippedCount };
 }
 
 export async function deleteCommunityPost(id: string): Promise<ActionResult> {

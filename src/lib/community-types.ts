@@ -50,3 +50,19 @@ export interface CommunityCommentItem {
   authorAvatarUrl: string | null;
   canDelete: boolean;
 }
+
+export interface CommunityUploadRequest {
+  name: string;
+  size: number;
+  type: string;
+}
+
+export interface CommunityUploadTicket {
+  path: string;
+  token: string;
+}
+
+export interface CommunityPendingUpload {
+  path: string;
+  originalName: string;
+}

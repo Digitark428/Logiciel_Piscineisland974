@@ -17,12 +17,12 @@ export default async function CommunityGalleryPage({ searchParams }: { searchPar
     <div>
       <PageHeader
         title="Galerie photos"
-        description="Toutes les photos partagées par votre équipe, sans doublon et dans leur publication d'origine."
+        description="Toutes les photos partagées par votre équipe."
         action={<Link href={feedHref} prefetch={false} className="btn-secondary">Retour à Entre nous</Link>}
       />
-      <form method="get" className="mb-5 flex flex-wrap gap-2" role="search">
+      <form method="get" className="community-search mb-5 flex max-w-3xl flex-wrap gap-2" role="search">
         <label htmlFor="gallery-search" className="sr-only">Rechercher dans la galerie</label>
-        <input id="gallery-search" name="q" defaultValue={searchParams.q ?? ""} className="input min-w-0 flex-1" placeholder="Rechercher un mot, #hashtag ou auteur…" />
+        <input id="gallery-search" name="q" defaultValue={searchParams.q ?? ""} className="input min-w-0 flex-1 bg-white/90" placeholder="Rechercher un mot, #hashtag ou auteur…" />
         <button type="submit" className="btn-secondary">Rechercher</button>
         {searchQuery && <Link href="/app/community/gallery" className="btn-ghost">Effacer</Link>}
       </form>

@@ -1,17 +1,19 @@
 "use client";
 
-import { FormEvent, useEffect, useState, useTransition } from "react";
+import { FormEvent, useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { MemberIdentity } from "@/components/members/MemberIdentity";
 import {
   createCommunityComment,
   createCommunityPost,
+  createCommunityUploadSession,
   deleteCommunityComment,
   deleteCommunityPost,
   loadMoreCommunityPosts,
   toggleCommunityReaction,
 } from "@/lib/actions/community";
+import { createClient } from "@/lib/supabase/client";
 import {
   COMMUNITY_REACTIONS,
   type CommunityCommentItem,
@@ -20,6 +22,7 @@ import {
 } from "@/lib/community-types";
 import { formatDateTime, formatRelative } from "@/lib/utils/format";
 import { communityTextParts } from "@/lib/community-search";
+import { CommunityLightbox, type CommunityLightboxPhoto } from "./CommunityLightbox";
 
 const REACTION_LABELS: Record<CommunityReactionKind, { emoji: string; label: string }> = {
   like: { emoji: "👍", label: "J'aime" },
@@ -27,26 +30,10 @@ const REACTION_LABELS: Record<CommunityReactionKind, { emoji: string; label: str
   laugh: { emoji: "😂", label: "Mort de rire" },
 };
 
-const OUTPUT_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
-const SOURCE_IMAGE_TYPES = new Set(["image/avif", "image/gif", "image/heic", "image/heif", "image/jpeg", "image/png", "image/webp"]);
-const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
-const IMAGE_ATTEMPTS = [
-  { longestSide: 2048, quality: 0.82 },
-  { longestSide: 1800, quality: 0.8 },
-  { longestSide: 1600, quality: 0.78 },
-  { longestSide: 1400, quality: 0.76 },
-  { longestSide: 1200, quality: 0.74 },
-];
+const MAX_IMAGES = 4;
+const MAX_SOURCE_BYTES = 35 * 1024 * 1024;
 
-function isImageSource(file: File): boolean {
-  return SOURCE_IMAGE_TYPES.has(file.type.toLowerCase()) || /\.(avif|gif|heic|heif|jpe?g|png|webp)$/i.test(file.name);
-}
-
-function imageExtension(type: string): "jpg" | "png" | "webp" {
-  if (type === "image/png") return "png";
-  if (type === "image/webp") return "webp";
-  return "jpg";
-}
+type SelectedPhoto = { id: string; file: File; previewUrl: string };
 
 export function CommunityFeed({
   initialItems,
@@ -64,6 +51,11 @@ export function CommunityFeed({
   const [loadingMore, startLoadMore] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
 
+  useEffect(() => {
+    setPosts(initialItems);
+    setHasMore(initialHasMore);
+  }, [initialHasMore, initialItems]);
+
   const loadMore = () => {
     const last = posts.at(-1);
     if (!last) return;
@@ -74,14 +66,17 @@ export function CommunityFeed({
         setMessage(result.message);
         return;
       }
-      setPosts((current) => [...current, ...result.items]);
+      setPosts((current) => [...current, ...result.items.filter((item) => !current.some((post) => post.id === item.id))]);
       setHasMore(result.hasMore);
     });
   };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
-      <PostComposer canPublish={canPublish} />
+    <div className="mx-auto max-w-[820px] space-y-5 sm:space-y-6">
+      <PostComposer
+        canPublish={canPublish}
+        onCreated={(post) => setPosts((current) => [post, ...current.filter((item) => item.id !== post.id)])}
+      />
       {posts.length === 0 ? (
         <div className="card px-6 py-14 text-center">
           <div className="text-3xl">💬</div>
@@ -91,7 +86,15 @@ export function CommunityFeed({
           </p>
         </div>
       ) : (
-        posts.map((post) => <CommunityPostCard key={post.id} post={post} canPublish={canPublish} onReaction={setPosts} />)
+        posts.map((post) => (
+          <CommunityPostCard
+            key={post.id}
+            post={post}
+            canPublish={canPublish}
+            onPostsChange={setPosts}
+            onDeleted={(id) => setPosts((current) => current.filter((item) => item.id !== id))}
+          />
+        ))
       )}
 
       {message && <p className="text-center text-sm text-red-600" role="status">{message}</p>}
@@ -106,99 +109,210 @@ export function CommunityFeed({
   );
 }
 
-function PostComposer({ canPublish }: { canPublish: boolean }) {
+function PostComposer({ canPublish, onCreated }: { canPublish: boolean; onCreated: (post: CommunityFeedItem) => void }) {
   const router = useRouter();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const selectedRef = useRef<SelectedPhoto[]>([]);
+  const [expanded, setExpanded] = useState(false);
   const [pending, start] = useTransition();
   const [content, setContent] = useState("");
-  const [files, setFiles] = useState<File[]>([]);
-  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const [photos, setPhotos] = useState<SelectedPhoto[]>([]);
+  const [progress, setProgress] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
-  useEffect(() => () => previewUrls.forEach((url) => URL.revokeObjectURL(url)), [previewUrls]);
+  useEffect(() => {
+    selectedRef.current = photos;
+  }, [photos]);
+  useEffect(() => () => selectedRef.current.forEach((photo) => URL.revokeObjectURL(photo.previewUrl)), []);
+
+  const clearPhotos = () => {
+    photos.forEach((photo) => URL.revokeObjectURL(photo.previewUrl));
+    setPhotos([]);
+    if (inputRef.current) inputRef.current.value = "";
+  };
 
   const pickImages = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSuccess(false);
     const picked = Array.from(event.target.files ?? []);
-    const imageFiles = picked.filter(isImageSource);
-    const next = imageFiles.slice(0, 4);
-    previewUrls.forEach((url) => URL.revokeObjectURL(url));
-    setFiles(next);
-    setPreviewUrls(next.map((file) => URL.createObjectURL(file)));
-    if (imageFiles.length !== picked.length) setMessage("Seuls les fichiers image peuvent être ajoutés.");
-    else if (imageFiles.length > 4) setMessage("Seules les 4 premières photos ont été retenues.");
+    // Le sélecteur fournit un indice d'usage, mais certains Android renvoient un MIME vide
+    // ou générique : seule la validation binaire serveur décide si le fichier est une image.
+    const valid = picked.filter((file) => file.size > 0 && file.size <= MAX_SOURCE_BYTES);
+    const available = Math.max(0, MAX_IMAGES - photos.length);
+    const retained = valid.slice(0, available).map((file) => ({ id: crypto.randomUUID(), file, previewUrl: URL.createObjectURL(file) }));
+    setPhotos((current) => [...current, ...retained]);
+    setExpanded(true);
+    if (valid.length !== picked.length) setMessage("Certaines images n'ont pas été retenues. Chaque photo doit peser moins de 35 Mo.");
+    else if (valid.length > available) setMessage(`Vous pouvez ajouter jusqu'à ${MAX_IMAGES} photos.`);
+    else setMessage(null);
+    event.target.value = "";
+  };
+
+  const removePhoto = (id: string) => {
+    setPhotos((current) => {
+      const removed = current.find((photo) => photo.id === id);
+      if (removed) URL.revokeObjectURL(removed.previewUrl);
+      return current.filter((photo) => photo.id !== id);
+    });
   };
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!content.trim() && files.length === 0) return;
+    if (!content.trim() && photos.length === 0) return;
     setMessage(null);
+    setSuccess(false);
     start(async () => {
       try {
-        const optimized = await Promise.all(files.map(optimizeImage));
-        const formData = new FormData();
-        formData.set("content", content);
-        optimized.forEach((file) => formData.append("images", file));
-        const result = await createCommunityPost(formData);
-        if (!result?.ok) {
-          setMessage(result?.message ?? "La publication n'a pas abouti. Réessayez dans quelques instants.");
+        let uploaded: Array<{ path: string; originalName: string }> = [];
+        let uploadFailures = 0;
+        if (photos.length > 0) {
+          setProgress("Préparation des photos…");
+          const session = await createCommunityUploadSession(photos.map(({ file }) => ({ name: file.name || "photo", size: file.size, type: file.type })));
+          if (!session.ok || !session.uploads || session.uploads.length !== photos.length) {
+            setMessage(session.message ?? "Impossible de préparer les photos.");
+            return;
+          }
+
+          const supabase = createClient();
+          let completed = 0;
+          const results = await Promise.all(photos.map(async (photo, index) => {
+            const ticket = session.uploads![index];
+            const { error } = await supabase.storage.from("community-media").uploadToSignedUrl(
+              ticket.path,
+              ticket.token,
+              photo.file,
+              { contentType: photo.file.type || "application/octet-stream", cacheControl: "300", upsert: false },
+            );
+            completed += 1;
+            setProgress(`Envoi des photos… ${completed}/${photos.length}`);
+            return error ? null : { path: ticket.path, originalName: photo.file.name || "photo" };
+          }));
+          uploaded = results.filter((item): item is { path: string; originalName: string } => item !== null);
+          uploadFailures = photos.length - uploaded.length;
+          if (uploaded.length === 0 && !content.trim()) {
+            setMessage("Impossible d'envoyer cette photo. Vérifiez votre connexion et réessayez.");
+            return;
+          }
+        }
+
+        setProgress(photos.length > 0 ? "Optimisation des photos…" : "Publication…");
+        const result = await createCommunityPost({ content, uploads: uploaded });
+        if (!result.ok) {
+          setMessage(result.message ?? "La publication n'a pas abouti. Réessayez dans quelques instants.");
           return;
         }
+        if (result.post) onCreated(result.post);
         setContent("");
-        previewUrls.forEach((url) => URL.revokeObjectURL(url));
-        setFiles([]);
-        setPreviewUrls([]);
+        clearPhotos();
+        setExpanded(false);
+        setSuccess(true);
+        const totalSkipped = uploadFailures + (result.skippedCount ?? 0);
+        setMessage(totalSkipped > 0
+          ? `Publication ajoutée. ${totalSkipped} photo${totalSkipped > 1 ? "s n'ont" : " n'a"} pas pu être traitée.`
+          : "Publication ajoutée.");
         router.refresh();
-      } catch (error) {
-        setMessage(error instanceof Error ? error.message : "Impossible de préparer les photos.");
+      } catch {
+        setMessage("Impossible de publier pour le moment. Réessayez dans quelques instants.");
+      } finally {
+        setProgress(null);
       }
     });
   };
 
+  if (!expanded) {
+    return (
+      <div>
+        <div className="community-composer card flex items-center gap-2 p-3 sm:p-4">
+          <button
+            type="button"
+            onClick={() => setExpanded(true)}
+            disabled={!canPublish}
+            className="min-h-11 min-w-0 flex-1 rounded-xl bg-graphite-50 px-4 text-left text-sm text-graphite-500 ring-1 ring-inset ring-graphite-100 transition hover:bg-pool-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-pool-400 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {canPublish ? "Partager quelque chose avec l'équipe…" : "La publication est réservée aux membres autorisés."}
+          </button>
+          {canPublish && (
+            <button type="button" onClick={() => inputRef.current?.click()} className="community-photo-action min-h-11 shrink-0 rounded-xl px-3 text-sm font-semibold text-pool-800 sm:px-4">
+              <span aria-hidden>▧</span> <span className="hidden sm:inline">Photos</span>
+            </button>
+          )}
+          <input ref={inputRef} type="file" accept="image/*,.avif,.heic,.heif" multiple className="sr-only" disabled={!canPublish} onChange={pickImages} />
+        </div>
+        {message && <p className={`mt-2 px-2 text-sm ${success ? "text-emerald-700" : "text-red-600"}`} role="status">{message}</p>}
+      </div>
+    );
+  }
+
   return (
-    <form onSubmit={submit} className="card p-4 sm:p-5">
+    <form onSubmit={submit} className="community-composer card p-4 sm:p-5">
       <label htmlFor="community-content" className="sr-only">Votre publication</label>
       <textarea
         id="community-content"
         value={content}
         onChange={(event) => setContent(event.target.value)}
         disabled={!canPublish || pending}
-        rows={3}
+        rows={4}
         maxLength={2000}
-        className="input resize-none border-0 bg-graphite-50 focus:ring-1"
-        placeholder={canPublish ? "Partagez un moment avec l'équipe…" : "La publication est réservée aux membres autorisés."}
+        autoFocus
+        className="input resize-none border-0 bg-graphite-50 text-[15px] leading-6 focus:ring-1"
+        placeholder="Partager quelque chose avec l'équipe…"
       />
-      <p className="mt-2 text-xs text-graphite-400">Astuce : ajoutez un hashtag, par exemple <span className="font-medium text-pool-700">#installation</span>, pour retrouver facilement ce sujet.</p>
-      {previewUrls.length > 0 && (
+      <p className="mt-2 text-xs text-graphite-400">Ajoutez un hashtag comme <span className="font-medium text-pool-700">#installation</span> pour retrouver facilement ce moment.</p>
+      {photos.length > 0 && (
         <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {previewUrls.map((url, index) => (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img key={url} src={url} alt={`Photo sélectionnée ${index + 1}`} className="aspect-square w-full rounded-xl object-cover ring-1 ring-graphite-100" />
+          {photos.map((photo, index) => (
+            <PhotoPreview key={photo.id} photo={photo} index={index} onRemove={() => removePhoto(photo.id)} disabled={pending} />
           ))}
         </div>
       )}
-      {message && <p className="mt-2 text-sm text-red-600" role="status">{message}</p>}
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-graphite-100 pt-3">
-        <label className={`inline-flex cursor-pointer items-center gap-2 text-sm font-medium ${canPublish ? "text-pool-700 hover:text-pool-800" : "text-graphite-400"}`}>
-          <span aria-hidden>▧</span> Ajouter des photos
-          <input type="file" accept="image/*,.heic,.heif" multiple className="sr-only" disabled={!canPublish || pending} onChange={pickImages} />
-        </label>
-        {canPublish && (
-          <button type="submit" className="btn-primary" disabled={pending || (!content.trim() && files.length === 0)}>
-            {pending ? "Publication…" : "Publier"}
+      {message && <p className={`mt-3 text-sm ${success ? "text-emerald-700" : "text-red-600"}`} role="status">{message}</p>}
+      {progress && <p className="mt-3 text-sm font-medium text-pool-800" role="status">{progress}</p>}
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-graphite-100 pt-3">
+        <div className="flex items-center gap-1">
+          <button type="button" onClick={() => inputRef.current?.click()} className="community-photo-action min-h-11 rounded-xl px-3 text-sm font-semibold text-pool-800" disabled={pending || photos.length >= MAX_IMAGES}>
+            <span aria-hidden>▧</span> Photos <span className="text-xs font-normal text-graphite-400">{photos.length}/{MAX_IMAGES}</span>
           </button>
-        )}
+          {!content && photos.length === 0 && (
+            <button type="button" className="btn-ghost min-h-11 px-3 text-sm" onClick={() => setExpanded(false)} disabled={pending}>Annuler</button>
+          )}
+        </div>
+        <button type="submit" className="community-publish-button min-h-11 rounded-xl px-5 text-sm font-semibold text-graphite-900" disabled={pending || (!content.trim() && photos.length === 0)}>
+          {pending ? "Publication…" : "Publier"}
+        </button>
       </div>
+      <input ref={inputRef} type="file" accept="image/*,.avif,.heic,.heif" multiple className="sr-only" disabled={!canPublish || pending} onChange={pickImages} />
     </form>
+  );
+}
+
+function PhotoPreview({ photo, index, onRemove, disabled }: { photo: SelectedPhoto; index: number; onRemove: () => void; disabled: boolean }) {
+  const [readable, setReadable] = useState(true);
+  return (
+    <figure className="relative aspect-square overflow-hidden rounded-xl bg-pool-50 ring-1 ring-graphite-100">
+      {readable ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={photo.previewUrl} alt={`Photo sélectionnée ${index + 1}`} className="h-full w-full object-cover" onError={() => setReadable(false)} />
+      ) : (
+        <div className="flex h-full flex-col items-center justify-center px-2 text-center text-xs text-graphite-500">
+          <span className="text-xl" aria-hidden>▧</span>
+          <span className="mt-1 line-clamp-2">Aperçu après envoi</span>
+        </div>
+      )}
+      <button type="button" onClick={onRemove} disabled={disabled} className="absolute right-1.5 top-1.5 flex h-8 w-8 items-center justify-center rounded-full bg-white/95 text-lg text-graphite-700 shadow-card ring-1 ring-graphite-100" aria-label={`Retirer la photo ${index + 1}`}>×</button>
+    </figure>
   );
 }
 
 function CommunityPostCard({
   post,
   canPublish,
-  onReaction,
+  onPostsChange,
+  onDeleted,
 }: {
   post: CommunityFeedItem;
   canPublish: boolean;
-  onReaction: React.Dispatch<React.SetStateAction<CommunityFeedItem[]>>;
+  onPostsChange: React.Dispatch<React.SetStateAction<CommunityFeedItem[]>>;
+  onDeleted: (id: string) => void;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -207,6 +321,16 @@ function CommunityPostCard({
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [comment, setComment] = useState("");
   const [message, setMessage] = useState<string | null>(null);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
+  const lightboxPhotos: CommunityLightboxPhoto[] = post.media.flatMap((media) => media.url ? [{
+    id: media.id,
+    url: media.url,
+    content: post.content,
+    createdAt: post.createdAt,
+    author: post.author,
+    authorAvatarUrl: post.authorAvatarUrl,
+  }] : []);
 
   const loadComments = async () => {
     setCommentsLoading(true);
@@ -215,7 +339,9 @@ function CommunityPostCard({
       const response = await fetch(`/api/community/${post.id}`, { cache: "no-store" });
       const body = await response.json() as { comments?: CommunityCommentItem[]; error?: string };
       if (!response.ok) throw new Error(body.error ?? "Impossible de charger les commentaires.");
-      setComments(body.comments ?? []);
+      const nextComments = body.comments ?? [];
+      setComments(nextComments);
+      onPostsChange((current) => current.map((item) => item.id === post.id ? { ...item, commentCount: nextComments.length } : item));
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Impossible de charger les commentaires.");
     } finally {
@@ -229,40 +355,42 @@ function CommunityPostCard({
     if (nextOpen && !comments) void loadComments();
   };
 
+  const updateReaction = (reaction: CommunityReactionKind, active: boolean) => {
+    onPostsChange((current) => current.map((item) => {
+      if (item.id !== post.id) return item;
+      const wasActive = item.currentReactions.includes(reaction);
+      if (wasActive === active) return item;
+      return {
+        ...item,
+        currentReactions: active ? [...item.currentReactions, reaction] : item.currentReactions.filter((value) => value !== reaction),
+        reactionCounts: { ...item.reactionCounts, [reaction]: Math.max(0, item.reactionCounts[reaction] + (active ? 1 : -1)) },
+      };
+    }));
+  };
+
   const react = (reaction: CommunityReactionKind) => {
-    if (!canPublish) return;
+    if (!canPublish || pending) return;
+    const wasActive = post.currentReactions.includes(reaction);
     setMessage(null);
+    updateReaction(reaction, !wasActive);
     start(async () => {
       const result = await toggleCommunityReaction(post.id, reaction);
       if (!result.ok || result.active === undefined) {
+        updateReaction(reaction, wasActive);
         setMessage(result.message ?? "Réaction impossible.");
         return;
       }
-      onReaction((current) => current.map((item) => {
-        if (item.id !== post.id) return item;
-        const hasReaction = item.currentReactions.includes(reaction);
-        const currentReactions = result.active
-          ? Array.from(new Set([...item.currentReactions, reaction]))
-          : item.currentReactions.filter((value) => value !== reaction);
-        return {
-          ...item,
-          currentReactions,
-          reactionCounts: {
-            ...item.reactionCounts,
-            [reaction]: Math.max(0, item.reactionCounts[reaction] + (result.active && !hasReaction ? 1 : !result.active && hasReaction ? -1 : 0)),
-          },
-        };
-      }));
+      updateReaction(reaction, result.active);
     });
   };
 
   const submitComment = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const content = comment.trim();
-    if (!content) return;
+    const value = comment.trim();
+    if (!value) return;
     setMessage(null);
     start(async () => {
-      const result = await createCommunityComment(post.id, content);
+      const result = await createCommunityComment(post.id, value);
       if (!result.ok) {
         setMessage(result.message ?? "Commentaire impossible.");
         return;
@@ -282,6 +410,7 @@ function CommunityPostCard({
         setMessage(result.message ?? "Suppression impossible.");
         return;
       }
+      onDeleted(post.id);
       router.refresh();
     });
   };
@@ -301,42 +430,33 @@ function CommunityPostCard({
   };
 
   return (
-    <article id={`community-post-${post.id}`} className="community-post-card card scroll-mt-6 p-0">
+    <article id={`community-post-${post.id}`} className="community-post-card card scroll-mt-24 p-0">
       <div className="p-4 sm:p-5">
         <div className="flex items-start justify-between gap-3">
           <MemberIdentity
             member={post.author}
             avatarUrl={post.authorAvatarUrl}
-            avatarSize={42}
+            avatarSize={44}
             variant="feed"
             roleTone={post.author.role === "admin" ? "coral" : "aqua"}
             meta={<time title={formatDateTime(post.createdAt)}>{formatRelative(post.createdAt)}</time>}
           />
           {post.canDelete && (
-            <button type="button" disabled={pending} onClick={remove} className="btn-ghost -mr-2 -mt-1 shrink-0 p-2 text-graphite-400 hover:text-red-500" aria-label="Supprimer la publication">✕</button>
+            <details className="community-post-menu relative -mr-1">
+              <summary className="flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-full text-xl tracking-widest text-graphite-500 transition hover:bg-graphite-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-pool-400" aria-label="Actions de la publication">•••</summary>
+              <div className="absolute right-0 top-11 z-10 min-w-44 rounded-xl border border-graphite-100 bg-white p-1.5 shadow-float">
+                <button type="button" disabled={pending} onClick={remove} className="flex min-h-10 w-full items-center rounded-lg px-3 text-left text-sm font-medium text-red-700 hover:bg-red-50">Supprimer la publication</button>
+              </div>
+            </details>
           )}
         </div>
-        {post.content && <CommunityText content={post.content} className="mt-4 whitespace-pre-wrap text-sm leading-6 text-graphite-800" />}
+        {post.content && <CommunityText content={post.content} className="mt-4 whitespace-pre-wrap text-[15px] leading-7 text-graphite-800" />}
       </div>
 
-      {post.media.length > 0 && (
-        <div className={`grid gap-2 px-4 pb-4 sm:px-5 sm:pb-5 ${post.media.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
-          {post.media.map((media, index) => media.url ? (
-            <figure key={media.id} className="community-media-frame">
-              {/* La hauteur suit le ratio de la photo : aucun visage n'est recadré par défaut. */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={media.url}
-                alt={`Photo de la publication ${index + 1}`}
-                className={`h-auto w-full object-contain ${post.media.length === 1 ? "max-h-[min(38rem,68vh)]" : "max-h-80"}`}
-              />
-            </figure>
-          ) : null)}
-        </div>
-      )}
+      {lightboxPhotos.length > 0 && <PostMedia photos={lightboxPhotos} onOpen={setLightboxIndex} />}
 
       <div className="border-t border-graphite-100 px-4 py-3 sm:px-5">
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {COMMUNITY_REACTIONS.map((reaction) => {
             const active = post.currentReactions.includes(reaction);
             const meta = REACTION_LABELS[reaction];
@@ -347,50 +467,79 @@ function CommunityPostCard({
                 disabled={!canPublish || pending}
                 onClick={() => react(reaction)}
                 aria-pressed={active}
-                className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${active ? "bg-pool-50 text-pool-800 ring-1 ring-pool-200" : "bg-graphite-50 text-graphite-600 hover:bg-graphite-100"}`}
+                className={`community-reaction-chip ${active ? "community-reaction-chip--active" : ""}`}
               >
-                {meta.emoji} {meta.label}{post.reactionCounts[reaction] > 0 ? ` ${post.reactionCounts[reaction]}` : ""}
+                <span aria-hidden>{meta.emoji}</span> {meta.label}{post.reactionCounts[reaction] > 0 ? ` ${post.reactionCounts[reaction]}` : ""}
               </button>
             );
           })}
-          <button type="button" onClick={toggleComments} className="px-2 text-xs font-medium text-pool-700 hover:text-pool-800">
-            {commentsOpen ? "Masquer les commentaires" : post.commentCount > 0 ? `${post.commentCount} commentaire${post.commentCount > 1 ? "s" : ""}` : "Commenter"}
+          <button type="button" onClick={toggleComments} className="community-comment-trigger">
+            <span aria-hidden>💬</span> {commentsOpen ? "Masquer" : post.commentCount > 0 ? `${post.commentCount} commentaire${post.commentCount > 1 ? "s" : ""}` : "Commenter"}
           </button>
         </div>
         {message && <p className="mt-2 text-sm text-red-600" role="status">{message}</p>}
       </div>
 
       {commentsOpen && (
-        <div className="border-t border-graphite-100 bg-graphite-50 px-4 py-4 sm:px-5">
+        <div className="community-comments-panel border-t border-graphite-100 px-4 py-4 sm:px-5">
           {commentsLoading ? (
             <div className="space-y-2" aria-busy="true"><div className="h-12 animate-pulse rounded-xl bg-white" /><div className="h-12 animate-pulse rounded-xl bg-white" /></div>
           ) : comments?.length ? (
             <ul className="space-y-3">
               {comments.map((item) => (
-                <li key={item.id} className="rounded-xl bg-white p-3 ring-1 ring-graphite-100">
+                <li key={item.id} className="rounded-xl bg-white/90 p-3 ring-1 ring-graphite-100">
                   <div className="flex items-start justify-between gap-2">
-                    <MemberIdentity member={item.author} avatarUrl={item.authorAvatarUrl} avatarSize={30} nameClassName="text-sm" />
-                    {item.canDelete && <button type="button" disabled={pending} onClick={() => removeComment(item.id)} className="btn-ghost -mr-1 -mt-1 p-1.5 text-graphite-400 hover:text-red-500" aria-label="Supprimer le commentaire">✕</button>}
+                    <MemberIdentity member={item.author} avatarUrl={item.authorAvatarUrl} avatarSize={30} nameClassName="text-sm" meta={<time className="text-[11px] text-graphite-400" title={formatDateTime(item.createdAt)}>{formatRelative(item.createdAt)}</time>} />
+                    {item.canDelete && <button type="button" disabled={pending} onClick={() => removeComment(item.id)} className="flex h-8 w-8 items-center justify-center rounded-full text-lg text-graphite-400 hover:bg-red-50 hover:text-red-600" aria-label="Supprimer le commentaire">×</button>}
                   </div>
-                  <time className="ml-[42px] block text-[11px] text-graphite-400" title={formatDateTime(item.createdAt)}>{formatRelative(item.createdAt)}</time>
-                  <p className="mt-2 whitespace-pre-wrap text-sm text-graphite-800">{item.content}</p>
+                  <p className="ml-[42px] mt-1 whitespace-pre-wrap text-sm leading-6 text-graphite-800">{item.content}</p>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="rounded-xl bg-white px-3 py-3 text-sm text-graphite-500">Aucun commentaire pour le moment.</p>
+            <p className="rounded-xl bg-white/90 px-3 py-3 text-sm text-graphite-500">Aucun commentaire pour le moment.</p>
           )}
 
           {canPublish && (
             <form onSubmit={submitComment} className="mt-4 flex gap-2">
               <label htmlFor={`community-comment-${post.id}`} className="sr-only">Ajouter un commentaire</label>
               <input id={`community-comment-${post.id}`} value={comment} onChange={(event) => setComment(event.target.value)} maxLength={4000} disabled={pending} className="input min-w-0 flex-1 bg-white" placeholder="Écrire un commentaire…" />
-              <button type="submit" className="btn-primary shrink-0" disabled={pending || !comment.trim()}>{pending ? "…" : "Envoyer"}</button>
+              <button type="submit" className="btn-secondary shrink-0 px-3 sm:px-4" disabled={pending || !comment.trim()}>{pending ? "…" : "Envoyer"}</button>
             </form>
           )}
         </div>
       )}
+
+      {lightboxIndex !== null && (
+        <CommunityLightbox photos={lightboxPhotos} index={lightboxIndex} onIndexChange={setLightboxIndex} onClose={() => setLightboxIndex(null)} />
+      )}
     </article>
+  );
+}
+
+function PostMedia({ photos, onOpen }: { photos: CommunityLightboxPhoto[]; onOpen: (index: number) => void }) {
+  const visible = photos.slice(0, 4);
+  const count = photos.length;
+  const gridClass = count === 1 ? "grid-cols-1" : count === 3 ? "grid-cols-2 grid-rows-2" : "grid-cols-2";
+  return (
+    <div className={`grid ${gridClass} gap-1.5 px-4 pb-4 sm:gap-2 sm:px-5 sm:pb-5`}>
+      {visible.map((photo, index) => {
+        const isPrimaryThree = count === 3 && index === 0;
+        return (
+          <button
+            key={photo.id}
+            type="button"
+            onClick={() => onOpen(index)}
+            className={`community-media-frame group relative block w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-pool-500 ${count === 1 ? "max-h-[min(40rem,70vh)]" : isPrimaryThree ? "row-span-2 h-full" : "aspect-square"}`}
+            aria-label={`Agrandir la photo ${index + 1}`}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={photo.url} alt={`Photo de la publication ${index + 1}`} className={`w-full transition duration-200 group-hover:scale-[1.015] ${count === 1 ? "h-auto max-h-[min(40rem,70vh)] object-contain" : "h-full object-cover"}`} loading="lazy" />
+            {index === 3 && count > 4 && <span className="absolute inset-0 grid place-items-center bg-graphite-900/55 text-3xl font-semibold text-white">+{count - 4}</span>}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
@@ -398,100 +547,10 @@ function CommunityText({ content, className }: { content: string; className?: st
   return (
     <p className={className}>
       {communityTextParts(content).map((part, index) => part.kind === "hashtag" ? (
-        <Link
-          key={`${part.value}-${index}`}
-          href={`/app/community?q=${encodeURIComponent(part.value)}`}
-          prefetch={false}
-          className="font-semibold text-pool-700 hover:text-pool-800 hover:underline"
-        >
+        <Link key={`${part.value}-${index}`} href={`/app/community?q=${encodeURIComponent(part.value)}`} prefetch={false} className="font-semibold text-pool-700 hover:text-pool-800 hover:underline">
           {part.value}
         </Link>
       ) : <span key={`text-${index}`}>{part.value}</span>)}
     </p>
   );
-}
-
-async function optimizeImage(file: File): Promise<File> {
-  if (!isImageSource(file)) throw new Error("Sélectionnez un fichier image.");
-  const image = await decodeImage(file);
-  let optimized: Blob | null = null;
-  try {
-    const largestSide = Math.max(image.width, image.height);
-    for (const attempt of IMAGE_ATTEMPTS) {
-      const ratio = Math.min(1, attempt.longestSide / largestSide);
-      const width = Math.max(1, Math.round(image.width * ratio));
-      const height = Math.max(1, Math.round(image.height * ratio));
-      const canvas = document.createElement("canvas");
-      canvas.width = width;
-      canvas.height = height;
-      const context = canvas.getContext("2d");
-      if (!context) throw new Error("Votre navigateur ne peut pas optimiser cette photo.");
-      image.draw(context, width, height);
-      const blob = await compressedCanvasBlob(canvas, attempt.quality);
-      if (blob.size <= MAX_IMAGE_BYTES) {
-        optimized = blob;
-        break;
-      }
-    }
-  } finally {
-    image.close();
-  }
-  if (!optimized) throw new Error("Cette photo reste trop volumineuse. Essayez une photo plus légère.");
-  const name = file.name.replace(/\.[^.]+$/, "") || "photo";
-  return new File([optimized], `${name}.${imageExtension(optimized.type)}`, { type: optimized.type });
-}
-
-type DecodedImage = {
-  width: number;
-  height: number;
-  draw: (context: CanvasRenderingContext2D, width: number, height: number) => void;
-  close: () => void;
-};
-
-/** Safari ne prend pas toujours createImageBitmap en charge pour les photos HEIC. */
-async function decodeImage(file: File): Promise<DecodedImage> {
-  if (typeof createImageBitmap === "function") {
-    try {
-      const bitmap = await createImageBitmap(file);
-      return {
-        width: bitmap.width,
-        height: bitmap.height,
-        draw: (context, width, height) => context.drawImage(bitmap, 0, 0, width, height),
-        close: () => bitmap.close(),
-      };
-    } catch {
-      // Le repli Image est nécessaire pour certains appareils Apple.
-    }
-  }
-
-  const sourceUrl = URL.createObjectURL(file);
-  try {
-    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
-      const candidate = new Image();
-      candidate.onload = () => resolve(candidate);
-      candidate.onerror = () => reject(new Error("Cette photo ne peut pas être lue. Exportez-la en JPEG si le problème persiste."));
-      candidate.src = sourceUrl;
-    });
-    return {
-      width: image.naturalWidth,
-      height: image.naturalHeight,
-      draw: (context, width, height) => context.drawImage(image, 0, 0, width, height),
-      close: () => URL.revokeObjectURL(sourceUrl),
-    };
-  } catch (error) {
-    URL.revokeObjectURL(sourceUrl);
-    throw error;
-  }
-}
-
-async function compressedCanvasBlob(canvas: HTMLCanvasElement, quality: number): Promise<Blob> {
-  const toBlob = (type: string, quality: number) => new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, type, quality));
-  const webp = await toBlob("image/webp", quality);
-  if (webp?.type === "image/webp") return webp;
-  // Safari peut convertir une demande WebP en PNG. Préférer alors le JPEG,
-  // beaucoup plus léger pour les photos prises sur mobile.
-  const jpeg = await toBlob("image/jpeg", quality);
-  if (jpeg?.type === "image/jpeg") return jpeg;
-  if (webp && OUTPUT_IMAGE_TYPES.has(webp.type)) return webp;
-  throw new Error("Impossible d'optimiser cette photo.");
 }

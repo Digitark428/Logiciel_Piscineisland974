@@ -11,6 +11,7 @@ const nextConfig = {
     ],
   },
   experimental: {
+    serverComponentsExternalPackages: ["heic-decode"],
     serverActions: {
       bodySizeLimit: "10mb",
     },

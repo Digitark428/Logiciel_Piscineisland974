@@ -619,10 +619,10 @@ export function AppShell({
 
       {/* Drawer mobile */}
       {open && (
-        <div className="fixed inset-0 z-40 lg:hidden">
+        <div className="leti-mobile-drawer fixed inset-0 lg:hidden">
           <button type="button" className="absolute inset-0 cursor-default bg-graphite-950/25" onClick={closeDrawer} aria-label="Fermer le menu" />
           <aside ref={mobileDrawerRef} role="dialog" aria-modal="true" aria-label="Navigation principale" className="absolute inset-y-0 left-0 flex w-72 max-w-[85%] flex-col bg-white shadow-float">
-            <div className="flex h-[4.5rem] items-center justify-between px-5">
+            <div className="flex h-[var(--leti-header-height)] items-center justify-between px-5">
               <Logo symbolEffect="sidebar" />
               <button onClick={closeDrawer} className="btn-ghost p-2" aria-label="Fermer">✕</button>
             </div>
@@ -645,7 +645,7 @@ export function AppShell({
 
       {/* Contenu */}
       <div className="lg:pl-64">
-        <header className="sticky top-0 z-20 flex h-[4.5rem] items-center gap-3 border-b border-graphite-100 bg-white/95 px-4 backdrop-blur sm:px-6">
+        <header className="leti-app-header sticky top-0 flex items-center gap-3 border-b border-graphite-100 bg-white/95 px-4 backdrop-blur sm:px-6">
           <button ref={mobileMenuButtonRef} onClick={() => setOpen(true)} className="btn-ghost p-2 lg:hidden" aria-label="Menu">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
           </button>

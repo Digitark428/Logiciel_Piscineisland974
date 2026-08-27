@@ -1,11 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import Image from "next/image";
-import { MemberIdentity } from "@/components/members/MemberIdentity";
 import { loadMoreCommunityGallery } from "@/lib/actions/community";
 import type { CommunityCursor, CommunityGalleryItem } from "@/lib/community-types";
 import { formatDateTime } from "@/lib/utils/format";
+import { CommunityLightbox, type CommunityLightboxPhoto } from "../CommunityLightbox";
 
 export function CommunityGallery({
   initialItems,
@@ -21,59 +21,19 @@ export function CommunityGallery({
   const [items, setItems] = useState(initialItems);
   const [hasMore, setHasMore] = useState(initialHasMore);
   const [cursor, setCursor] = useState(initialCursor);
-  const [selected, setSelected] = useState<CommunityGalleryItem | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [loading, startLoading] = useTransition();
-  const closeButtonRef = useRef<HTMLButtonElement>(null);
-  const dialogRef = useRef<HTMLElement>(null);
-  const openerRef = useRef<HTMLElement | null>(null);
 
-  const closeLightbox = useCallback(() => {
-    setSelected(null);
-    requestAnimationFrame(() => openerRef.current?.focus());
-  }, []);
-
-  useEffect(() => {
-    if (!selected) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        closeLightbox();
-        return;
-      }
-      if (event.key !== "Tab" || !dialogRef.current) return;
-      const focusable = Array.from(dialogRef.current.querySelectorAll<HTMLElement>("button:not([disabled]), a[href]"));
-      if (focusable.length === 0) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-    const scrollY = window.scrollY;
-    const previousOverflow = document.body.style.overflow;
-    const previousPosition = document.body.style.position;
-    const previousTop = document.body.style.top;
-    const previousWidth = document.body.style.width;
-    document.body.style.overflow = "hidden";
-    document.body.style.position = "fixed";
-    document.body.style.top = `-${scrollY}px`;
-    document.body.style.width = "100%";
-    window.addEventListener("keydown", onKeyDown);
-    closeButtonRef.current?.focus();
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      document.body.style.position = previousPosition;
-      document.body.style.top = previousTop;
-      document.body.style.width = previousWidth;
-      window.scrollTo({ top: scrollY, behavior: "auto" });
-      window.removeEventListener("keydown", onKeyDown);
-    };
-  }, [closeLightbox, selected]);
+  const visibleItems = items.filter((item): item is CommunityGalleryItem & { url: string } => Boolean(item.url));
+  const lightboxPhotos: CommunityLightboxPhoto[] = visibleItems.map((item) => ({
+    id: item.mediaId,
+    url: item.url,
+    content: item.content,
+    createdAt: item.createdAt,
+    author: item.author,
+    authorAvatarUrl: item.authorAvatarUrl,
+  }));
 
   const loadMore = () => {
     if (!cursor) return;
@@ -84,7 +44,7 @@ export function CommunityGallery({
         setMessage(result.message);
         return;
       }
-      setItems((current) => [...current, ...result.items]);
+      setItems((current) => [...current, ...result.items.filter((item) => !current.some((existing) => existing.mediaId === item.mediaId))]);
       setHasMore(result.hasMore);
       setCursor(result.nextCursor);
     });
@@ -102,79 +62,43 @@ export function CommunityGallery({
 
   return (
     <>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-        {items.map((item) => item.url ? (
+      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 xl:grid-cols-4">
+        {visibleItems.map((item, index) => (
           <button
             key={item.mediaId}
             type="button"
-            onClick={() => {
-              openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-              setSelected(item);
-            }}
-            className="group relative aspect-square overflow-hidden rounded-xl bg-graphite-100 text-left ring-1 ring-graphite-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pool-500"
+            onClick={() => setSelectedIndex(index)}
+            className="community-gallery-tile group relative aspect-square overflow-hidden rounded-2xl bg-graphite-100 text-left ring-1 ring-graphite-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pool-500"
             aria-label={`Ouvrir la photo publiée le ${formatDateTime(item.createdAt)}`}
           >
             <Image
               src={item.url}
               alt=""
               fill
-              sizes="(max-width: 639px) 50vw, (max-width: 1023px) 33vw, 20vw"
-              className="object-cover transition duration-200 group-hover:scale-[1.03]"
+              sizes="(max-width: 639px) 50vw, (max-width: 1279px) 33vw, 25vw"
+              className="object-cover transition duration-300 group-hover:scale-[1.025]"
             />
-            <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-graphite-950/70 to-transparent px-2 pb-2 pt-8 text-xs font-medium text-white opacity-0 transition group-hover:opacity-100 group-focus-visible:opacity-100">
-              {item.author.first_name ?? item.author.email ?? "Membre"}
+            <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-graphite-950/65 to-transparent px-3 pb-3 pt-10 text-white opacity-0 transition group-hover:opacity-100 group-focus-visible:opacity-100">
+              <span className="block text-xs font-semibold">{item.author.first_name ?? item.author.email ?? "Membre"}</span>
+              <time className="mt-0.5 block text-[11px] text-white/80">{formatDateTime(item.createdAt)}</time>
             </span>
           </button>
-        ) : null)}
+        ))}
       </div>
       {message && <p className="mt-4 text-center text-sm text-red-600" role="status">{message}</p>}
       {hasMore && cursor && (
-        <div className="mt-6 flex justify-center">
-          <button type="button" className="btn-secondary" onClick={loadMore} disabled={loading}>{loading ? "Chargement…" : "Voir plus"}</button>
+        <div className="mt-7 flex justify-center">
+          <button type="button" className="btn-secondary" onClick={loadMore} disabled={loading}>{loading ? "Chargement…" : "Voir plus de photos"}</button>
         </div>
       )}
 
-      {selected?.url && (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-graphite-950/94 p-2 backdrop-blur-sm sm:p-6" onMouseDown={closeLightbox}>
-          <section
-            ref={dialogRef}
-            role="dialog"
-            aria-modal="true"
-            aria-label="Détail de la photo"
-            className="relative flex h-[calc(100dvh-1rem)] w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-graphite-950 shadow-float sm:h-[calc(100dvh-3rem)]"
-            onMouseDown={(event) => event.stopPropagation()}
-          >
-            <button
-              ref={closeButtonRef}
-              type="button"
-              className="absolute right-[max(0.75rem,env(safe-area-inset-right))] top-[max(0.75rem,env(safe-area-inset-top))] z-10 flex h-11 w-11 items-center justify-center rounded-full bg-graphite-950/75 text-xl text-white ring-1 ring-white/20 backdrop-blur transition hover:bg-graphite-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-pool-300"
-              onClick={closeLightbox}
-              aria-label="Fermer la photo"
-            >
-              ✕
-            </button>
-            <div className="relative min-h-0 flex-1 bg-black">
-              <Image
-                src={selected.url}
-                alt="Photo partagée par l'équipe"
-                fill
-                sizes="100vw"
-                className="object-contain"
-                priority
-              />
-            </div>
-            <aside className="max-h-[34dvh] shrink-0 overflow-y-auto border-t border-white/10 bg-graphite-950 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] text-white sm:px-5 sm:py-4">
-              <MemberIdentity
-                member={selected.author}
-                avatarUrl={selected.authorAvatarUrl}
-                avatarSize={36}
-                nameClassName="text-sm text-white"
-                meta={<time className="text-graphite-300">{formatDateTime(selected.createdAt)}</time>}
-              />
-              {selected.content && <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-graphite-100">{selected.content}</p>}
-            </aside>
-          </section>
-        </div>
+      {selectedIndex !== null && (
+        <CommunityLightbox
+          photos={lightboxPhotos}
+          index={selectedIndex}
+          onIndexChange={setSelectedIndex}
+          onClose={() => setSelectedIndex(null)}
+        />
       )}
     </>
   );

@@ -2,6 +2,14 @@
 
 > Ajouter une entrée courte après chaque intervention significative. Ne pas y dupliquer la documentation durable de `PROJECT_CONTEXT.md`.
 
+## 2026-08-27 — Codex — Refonte premium d’Entre nous et pipeline photo universel
+
+- **Expérience sociale :** feed recentré, composeur compact, insertion immédiate, cartes premium, mosaïques 1 à 4+, réactions légères et commentaires différés ; galerie responsive et recherche/pagination existantes conservées.
+- **Visionneuse :** lightbox partagée feed/galerie rendue par Portal au-dessus du shell, photo non recadrée, panneau d’identité clair, navigation clavier/tactile, focus piégé et scroll restauré ; hauteur du header et couches globales centralisées.
+- **Photos mobiles :** envoi direct temporaire vers le bucket privé par URL signée, validation des octets et normalisation serveur JPEG/PNG/WebP/GIF/AVIF/HEIC/HEIF avec orientation EXIF, limite 2 048 px et sortie WebP ; échec isolé par fichier et aucun conseil de conversion manuelle.
+- **Périmètre :** données, historique, bucket, tables, permissions et RLS inchangés ; aucune migration Supabase.
+- **Vérification :** lint, typecheck et build valides, 72 tests actifs réussis et 19 tests d’intégration conditionnels ignorés ; vraie image HEIC décodée/convertie, contrôles navigateur desktop/mobile sans débordement ni overlay, lightbox Portal, clavier et restauration du scroll validés.
+
 ## 2026-08-27 — Codex — Refonte premium des Notes d’équipe
 
 - **Flux :** en-tête dédié, composeur compact dépliable et fiches professionnelles donnant la priorité au message, à l’identité métier et aux compteurs discrets ; une note exécutée reste visible avec une surface menthe et le statut « Traité ».
