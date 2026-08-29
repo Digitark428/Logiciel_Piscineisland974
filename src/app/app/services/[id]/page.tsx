@@ -12,9 +12,10 @@ import type { ServiceTask } from "@/lib/db/types";
 import { serviceTypeLabel } from "@/lib/services/constants";
 import { serviceDetailEditAction } from "@/lib/services/detail";
 
-export default async function ServiceDetailPage({ params }: { params: { id: string } }) {
+export default async function ServiceDetailPage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = await paramsPromise;
   const ctx = await requirePermission("services.view");
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const [serviceRes, tasksRes, clientNotesRes] = await Promise.all([
     supabase

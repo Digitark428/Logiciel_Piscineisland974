@@ -6,7 +6,7 @@ import { UploadBox, DocRow } from "./DocumentsClient";
 
 export default async function DocumentsPage() {
   const ctx = await requirePermission("documents.view");
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data: docs } = await supabase
     .from("documents")

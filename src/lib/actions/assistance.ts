@@ -36,7 +36,7 @@ async function clientFromPortalSession(token: string): Promise<PortalClient | nu
 
   if (!client || !client.portal_enabled || client.status !== "active") return null;
 
-  const cookieValue = cookies().get(portalCookieName(token))?.value;
+  const cookieValue = (await cookies()).get(portalCookieName(token))?.value;
   if (!verifyPortalSession(token, cookieValue, client.id)) return null;
 
   return {

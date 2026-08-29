@@ -1,13 +1,13 @@
 "use client";
 
-import { useFormState } from "react-dom";
+import { useActionState } from "react";
 import { signInSuperAdmin } from "@/lib/actions/superadmin";
 import { idle } from "@/lib/actions/result";
 import { SubmitButton } from "@/components/forms/SubmitButton";
 import { SuperAdminPasswordRecoveryRequest } from "./PasswordRecoveryRequest";
 
 export function SuperAdminLoginForm() {
-  const [state, formAction] = useFormState(signInSuperAdmin, idle);
+  const [state, formAction] = useActionState(signInSuperAdmin, idle);
   return (
     <>
       <form action={formAction} className="space-y-4">

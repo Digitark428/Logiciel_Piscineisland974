@@ -8,6 +8,7 @@ import { updateWorkspace } from "@/lib/actions/workspace";
 import { signedUrl } from "@/lib/storage";
 import { workspaceLogoPath } from "@/lib/workspace-logo";
 import { WorkspaceLogoSettings } from "./WorkspaceLogoSettings";
+import { LETI_TIMEZONE_OPTIONS } from "@/lib/timezone";
 
 export const maxDuration = 30;
 
@@ -70,6 +71,24 @@ export default async function SettingsPage() {
             <div>
               <label className="label" htmlFor="legal_form">Forme juridique</label>
               <input id="legal_form" name="legal_form" className="input" defaultValue={w.legal_form ?? ""} />
+            </div>
+            <div>
+              <label className="label" htmlFor="timezone">Fuseau horaire</label>
+              <input
+                id="timezone"
+                name="timezone"
+                className="input"
+                list="leti-timezones"
+                defaultValue={w.timezone ?? "Indian/Reunion"}
+                autoComplete="off"
+                required
+              />
+              <datalist id="leti-timezones">
+                {LETI_TIMEZONE_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </datalist>
+              <span className="mt-1 block text-xs text-graphite-400">Identifiant IANA, par exemple Indian/Reunion ou Europe/Paris. Utilisé pour la sauvegarde quotidienne à 21h00.</span>
             </div>
           </div>
         </div>

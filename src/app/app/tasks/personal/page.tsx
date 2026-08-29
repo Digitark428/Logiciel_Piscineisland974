@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 export default async function PersonalTasksPage() {
   const ctx = await requirePermission("tasks.view");
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data } = await supabase
     .from("tasks")
     .select("id,title,description,category,status,priority,due_date,due_time,created_at,created_by,assigned_membership_id")

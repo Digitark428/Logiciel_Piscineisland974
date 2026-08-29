@@ -5,7 +5,7 @@ import { MarkAllButton, NotificationItem } from "./NotificationsClient";
 
 export default async function NotificationsPage() {
   const ctx = await requireContext();
-  const supabase = createClient();
+  const supabase = await createClient();
 
   let query = supabase
     .from("notifications")

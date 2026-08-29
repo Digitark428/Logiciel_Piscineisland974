@@ -11,9 +11,10 @@ import { signedUrls } from "@/lib/storage";
 
 export const dynamic = "force-dynamic";
 
-export default async function MapPage({ searchParams }: { searchParams: { date?: string } }) {
+export default async function MapPage({ searchParams: searchParamsPromise }: { searchParams: Promise<{ date?: string }> }) {
+  const searchParams = await searchParamsPromise;
   const ctx = await requirePermission("map.view");
-  const supabase = createClient();
+  const supabase = await createClient();
   const date = /^\d{4}-\d{2}-\d{2}$/.test(searchParams.date ?? "") ? searchParams.date! : todayInReunion();
   const seesAll = ctx.isAdmin || can(ctx, "services.edit");
   const occurrences = await getMaintenanceOccurrences(supabase, {

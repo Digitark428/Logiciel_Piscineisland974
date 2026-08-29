@@ -37,7 +37,7 @@ function toMember(value: any): CommunityMember {
 
 async function matchingAuthorIds(ctx: SessionContext, search: string): Promise<string[]> {
   if (!search) return [];
-  const supabase = createClient();
+  const supabase = await createClient();
   const pattern = `*${search}*`;
   const { data } = await supabase
     .from("memberships")
@@ -55,7 +55,7 @@ export async function getCommunityFeedPage(
   cursor?: CommunityCursor,
   rawSearch?: string,
 ): Promise<{ items: CommunityFeedItem[]; hasMore: boolean }> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const search = normalizeCommunitySearch(rawSearch);
   const authorIds = await matchingAuthorIds(ctx, search);
   let query = supabase
@@ -139,7 +139,7 @@ export async function getCommunityGalleryPage(
   cursor?: CommunityCursor,
   rawSearch?: string,
 ): Promise<{ items: CommunityGalleryItem[]; hasMore: boolean; nextCursor: CommunityCursor | null }> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const search = normalizeCommunitySearch(rawSearch);
   const authorIds = await matchingAuthorIds(ctx, search);
   let query = supabase

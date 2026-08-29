@@ -5,9 +5,10 @@ import { getClientOptions } from "@/lib/db/queries";
 import { PageHeader } from "@/components/ui";
 import { PoolForm } from "../PoolForm";
 
-export default async function NewPoolPage({ searchParams }: { searchParams: { client?: string } }) {
+export default async function NewPoolPage({ searchParams: searchParamsPromise }: { searchParams: Promise<{ client?: string }> }) {
+  const searchParams = await searchParamsPromise;
   const ctx = await requirePermission("pools.edit");
-  const supabase = createClient();
+  const supabase = await createClient();
   const clients = await getClientOptions(supabase, ctx.workspace.id);
   return (
     <div className="mx-auto max-w-3xl">

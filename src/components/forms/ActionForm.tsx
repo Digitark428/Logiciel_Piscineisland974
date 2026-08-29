@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { useFormState } from "react-dom";
+import { useActionState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { idle, type ActionResult } from "@/lib/actions/result";
 import { cn } from "@/lib/utils/cn";
@@ -27,7 +26,7 @@ export function ActionForm({
   refreshOnSuccess?: boolean;
   resetOnSuccess?: boolean;
 }) {
-  const [state, formAction] = useFormState(action, idle);
+  const [state, formAction] = useActionState(action, idle);
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const lastHandled = useRef(state);

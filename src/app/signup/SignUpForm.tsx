@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useFormState } from "react-dom";
+import { useActionState } from "react";
 import { signUp } from "@/lib/auth/actions";
 import { idle } from "@/lib/actions/result";
 import { SubmitButton } from "@/components/forms/SubmitButton";
 
 export function SignUpForm() {
-  const [state, formAction] = useFormState(signUp, idle);
+  const [state, formAction] = useActionState(signUp, idle);
 
   if (state.ok && state.data?.companyCode) {
     return (

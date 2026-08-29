@@ -263,30 +263,17 @@ body {
   right: calc(var(--leti-active-drawer-width, var(--leti-drawer-width)) + var(--leti-overlay-gap));
 }
 
-.leti-company-brand-slot {
-  position: absolute;
-  z-index: 1;
-  top: 50%;
-  left: 50%;
-  display: flex;
-  max-width: min(11.25rem, calc(100vw - 31rem));
-  transform: translate(-50%, -50%);
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-}
-
 .leti-company-brand {
   position: relative;
   display: flex;
-  width: 11.25rem;
-  max-width: 100%;
-  height: 2.5rem;
+  width: 6rem;
+  min-width: 0;
+  height: 2.35rem;
   align-items: center;
   justify-content: center;
   overflow: hidden;
   border-radius: 0.6rem;
-  padding: 0.15rem 0.25rem;
+  padding: 0.1rem;
   isolation: isolate;
 }
 
@@ -312,12 +299,14 @@ body {
 
 .leti-company-logo-action {
   display: inline-flex;
+  width: 2.25rem;
   min-height: 2.25rem;
   align-items: center;
+  justify-content: center;
   gap: 0.45rem;
   border: 1px solid rgba(var(--leti-aqua-rgb), 0.24);
   border-radius: 0.75rem;
-  padding: 0.35rem 0.65rem;
+  padding: 0.35rem;
   background: rgba(var(--leti-aqua-rgb), 0.065);
   color: var(--leti-navy);
   font-size: 0.75rem;
@@ -558,13 +547,9 @@ a[data-leti-navigation-pending="true"] {
 }
 
 @media (max-width: 1023px) {
-  .leti-company-brand-slot {
-    max-width: 8.25rem;
-  }
-
   .leti-company-brand {
-    width: 8.25rem;
-    height: 2.25rem;
+    width: 7.25rem;
+    height: 2.35rem;
   }
 
   .leti-support-launcher--shifted .leti-support-label {
@@ -573,20 +558,10 @@ a[data-leti-navigation-pending="true"] {
 }
 
 @media (max-width: 767px) {
-  .leti-company-brand-slot {
-    max-width: 4.5rem;
-  }
-
   .leti-company-brand {
-    width: 4.5rem;
-    height: 2rem;
+    width: 7.25rem;
+    height: 2.35rem;
     padding-inline: 0.1rem;
-  }
-}
-
-@media (max-width: 419px) {
-  .leti-company-brand-slot {
-    display: none;
   }
 }
 
@@ -661,5 +636,225 @@ a[data-leti-navigation-pending="true"] {
 
   .leti-route-view {
     animation: none !important;
+  }
+}
+
+.leti-week-print {
+  min-height: 100vh;
+  background: #e8eef2;
+  color: #183a59;
+  padding: 1.5rem;
+}
+
+.leti-week-print-controls {
+  position: sticky;
+  z-index: 10;
+  top: 1rem;
+  display: flex;
+  max-width: 297mm;
+  margin: 0 auto 1rem;
+  justify-content: flex-end;
+  gap: 0.65rem;
+}
+
+.leti-week-print-controls button {
+  min-height: 2.75rem;
+  border: 1px solid rgba(24, 58, 89, 0.15);
+  border-radius: 0.75rem;
+  padding: 0.6rem 1rem;
+  background: #fff;
+  color: #183a59;
+  font-weight: 650;
+  box-shadow: 0 4px 18px rgba(24, 58, 89, 0.08);
+}
+
+.leti-week-print-controls button:first-child {
+  border-color: #ff886a;
+  background: #ff9b82;
+}
+
+.leti-week-print-page {
+  display: flex;
+  width: 297mm;
+  min-height: 210mm;
+  margin: 0 auto 1.5rem;
+  flex-direction: column;
+  overflow: hidden;
+  background: #fff;
+  padding: 9mm 10mm 7mm;
+  box-shadow: 0 14px 42px rgba(24, 58, 89, 0.12);
+  break-after: page;
+  page-break-after: always;
+}
+
+.leti-week-print-page:last-child {
+  break-after: auto;
+  page-break-after: auto;
+}
+
+.leti-week-print-header {
+  display: flex;
+  min-height: 24mm;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8mm;
+  border-bottom: 0.45mm solid #60d1d0;
+  padding-bottom: 4mm;
+}
+
+.leti-week-print-company {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 4mm;
+}
+
+.leti-week-print-company img {
+  width: 28mm;
+  height: 12mm;
+  object-fit: contain;
+}
+
+.leti-week-print-company p,
+.leti-week-print-meta p {
+  margin: 0;
+}
+
+.leti-week-print-company-name {
+  font-size: 15pt;
+  font-weight: 750;
+  letter-spacing: -0.025em;
+}
+
+.leti-week-print-company-name + p {
+  margin-top: 1mm;
+  color: #6a7e8e;
+  font-size: 8.5pt;
+}
+
+.leti-week-print-meta {
+  flex: none;
+  color: #607585;
+  font-size: 7.5pt;
+  line-height: 1.45;
+  text-align: right;
+}
+
+.leti-week-print-wordmark {
+  color: #183a59;
+  font-size: 12pt;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.leti-week-print-grid {
+  display: grid;
+  flex: 1;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 1.7mm;
+  padding: 4mm 0 3mm;
+}
+
+.leti-week-print-day {
+  min-width: 0;
+  overflow: hidden;
+  border: 0.25mm solid #dbe5eb;
+  border-radius: 2.3mm;
+  background: #fbfdfe;
+}
+
+.leti-week-print-day > header {
+  display: flex;
+  min-height: 14mm;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 0.25mm solid #dbe5eb;
+  background: #effbfb;
+  padding: 2.2mm 2.4mm;
+}
+
+.leti-week-print-day > header span {
+  font-size: 7.5pt;
+  font-weight: 720;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.leti-week-print-day > header strong {
+  color: #238f96;
+  font-size: 15pt;
+}
+
+.leti-week-print-day-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5mm;
+  padding: 1.7mm;
+}
+
+.leti-week-print-day-content article {
+  min-height: 17mm;
+  overflow: hidden;
+  border-left: 0.7mm solid #ff9b82;
+  border-radius: 1.3mm;
+  background: #fff;
+  padding: 2.2mm 2mm;
+  break-inside: avoid;
+}
+
+.leti-week-print-day-content article strong,
+.leti-week-print-day-content article span {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.leti-week-print-day-content article strong {
+  color: #183a59;
+  font-size: 8.3pt;
+  line-height: 1.15;
+}
+
+.leti-week-print-day-content article span {
+  margin-top: 1.2mm;
+  color: #5f7484;
+  font-size: 6.8pt;
+  line-height: 1.28;
+}
+
+.leti-week-print-day-content > p {
+  margin: 8mm 0 0;
+  color: #a0adb6;
+  font-size: 7pt;
+  text-align: center;
+}
+
+.leti-week-print-page > footer {
+  display: flex;
+  justify-content: space-between;
+  border-top: 0.25mm solid #e4ebef;
+  padding-top: 2.3mm;
+  color: #82939f;
+  font-size: 6.5pt;
+}
+
+@media print {
+  .leti-week-print {
+    min-height: 0;
+    background: #fff !important;
+    padding: 0;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .leti-week-print-page {
+    width: 297mm;
+    height: 210mm;
+    min-height: 210mm;
+    margin: 0;
+    box-shadow: none;
+  }
+
+  .leti-week-print header {
+    display: flex !important;
   }
 }

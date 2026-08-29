@@ -1,11 +1,12 @@
 import "server-only";
 
-import sharp from "sharp";
+import sharp, { type Metadata } from "sharp";
 
 export const WORKSPACE_LOGO_MAX_SOURCE_BYTES = 4 * 1024 * 1024;
 export const WORKSPACE_LOGO_MAX_PIXELS = 40_000_000;
 export const WORKSPACE_LOGO_OUTPUT_WIDTH = 1440;
 export const WORKSPACE_LOGO_OUTPUT_HEIGHT = 480;
+const WORKSPACE_LOGO_TRIM_THRESHOLD = 14;
 
 const ACCEPTED_FORMATS = new Set(["jpeg", "png", "svg"]);
 
@@ -25,7 +26,7 @@ export async function normalizeWorkspaceLogo(source: Buffer): Promise<Normalized
   if (source.length === 0) throw new Error("Le fichier est vide.");
   if (source.length > WORKSPACE_LOGO_MAX_SOURCE_BYTES) throw new Error("Le logo dépasse la limite de 4 Mo.");
 
-  let metadata: sharp.Metadata;
+  let metadata: Metadata;
   try {
     metadata = await sharp(source, {
       density: 240,
@@ -41,17 +42,34 @@ export async function normalizeWorkspaceLogo(source: Buffer): Promise<Normalized
   }
 
   try {
-    const { data, info } = await sharp(source, {
+    const oriented = sharp(source, {
       density: 240,
       limitInputPixels: WORKSPACE_LOGO_MAX_PIXELS,
       failOn: "error",
-    })
-      .autoOrient()
+    }).autoOrient();
+    const trimmed = await oriented.clone()
+      // Supprime les grands aplats transparents ou unis autour du visuel. Le
+      // canevas 3:1 recréé ensuite garantit un rendu constant pour les logos
+      // carrés, verticaux ou horizontaux sans jamais les déformer.
+      .trim({ threshold: WORKSPACE_LOGO_TRIM_THRESHOLD })
+      .toBuffer({ resolveWithObject: true });
+    // Une image parfaitement uniforme est réduite à un pixel par trim(). Dans
+    // ce cas, conserver la source évite de transformer un logo-aplat valide en
+    // carré ; les véritables marges restent bien supprimées dans tous les autres cas.
+    const sourceRatio = (metadata.width ?? 1) / (metadata.height ?? 1);
+    const trimmedRatio = trimmed.info.width / trimmed.info.height;
+    const ratioDivergence = Math.max(sourceRatio / trimmedRatio, trimmedRatio / sourceRatio);
+    const trimKeepsSvgComposition = metadata.format !== "svg" || ratioDivergence < 2.5;
+    const visual = trimmed.info.width > 1 && trimmed.info.height > 1 && trimKeepsSvgComposition
+      ? sharp(trimmed.data)
+      : oriented;
+    const { data, info } = await visual
       .resize({
         width: WORKSPACE_LOGO_OUTPUT_WIDTH,
         height: WORKSPACE_LOGO_OUTPUT_HEIGHT,
-        fit: "inside",
-        withoutEnlargement: metadata.format !== "svg",
+        fit: "contain",
+        background: { r: 255, g: 255, b: 255, alpha: 0 },
+        withoutEnlargement: false,
       })
       .webp({ quality: 90, alphaQuality: 100, smartSubsample: true })
       .toBuffer({ resolveWithObject: true });

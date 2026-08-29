@@ -41,7 +41,7 @@ function readFinancialAmount(formData: FormData): { cents: number | null; messag
 }
 
 async function saveFinancialAmount(
-  supabase: ReturnType<typeof createClient>,
+  supabase: Awaited<ReturnType<typeof createClient>>,
   input: {
     workspaceId: string;
     clientId: string;
@@ -85,7 +85,7 @@ interface ServiceReferences {
 }
 
 async function validateServiceReferences(
-  supabase: ReturnType<typeof createClient>,
+  supabase: Awaited<ReturnType<typeof createClient>>,
   workspaceId: string,
   refs: ServiceReferences,
 ): Promise<boolean> {
@@ -143,7 +143,7 @@ export async function createMaintenanceContract(_previous: ActionResult, formDat
   if (amount.message) return fail(amount.message);
   if (ctx.isAdmin && amount.cents === null) return fail("Le montant mensuel est requis pour le gérant.");
 
-  const supabase = createClient();
+  const supabase = await createClient();
   if (!(await validateServiceReferences(supabase, ctx.workspace.id, {
     clientId,
     assignedId,
@@ -245,7 +245,7 @@ export async function createOneOffService(_previous: ActionResult, formData: For
   if (amount.message) return fail(amount.message);
   if (ctx.isAdmin && amount.cents === null) return fail("Le montant facturé est requis pour le gérant.");
 
-  const supabase = createClient();
+  const supabase = await createClient();
   if (!(await validateServiceReferences(supabase, ctx.workspace.id, {
     clientId,
     poolId,
@@ -333,7 +333,7 @@ async function ensureOccurrence(
   occurrenceDate: string,
 ): Promise<{ occurrence?: MaterializedOccurrence; message?: string }> {
   if (!uuidSchema.safeParse(seriesId).success || !validDate(occurrenceDate)) return { message: "Occurrence introuvable." };
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: existing } = await supabase
     .from("services")
     .select("id,client_id,assigned_membership_id,series_id,occurrence_date,status")
@@ -405,7 +405,7 @@ async function resolveEditableOccurrence(
 ): Promise<{ occurrence?: MaterializedOccurrence; message?: string }> {
   if (input.serviceId) {
     if (!uuidSchema.safeParse(input.serviceId).success) return { message: "Entretien introuvable." };
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: service } = await supabase
       .from("services")
       .select("id,client_id,assigned_membership_id,series_id,occurrence_date,status")
@@ -438,7 +438,7 @@ async function updateOccurrenceStatus(
   if (status === "planned") Object.assign(patch, { started_at: null, completed_at: null, completed_by: null });
   if (status === "in_progress") Object.assign(patch, { started_at: new Date().toISOString(), completed_at: null, completed_by: null });
   if (status === "completed") Object.assign(patch, { completed_at: new Date().toISOString(), completed_by: ctx.membership.id });
-  const supabase = createClient();
+  const supabase = await createClient();
   const { error } = await supabase.from("services").update(patch).eq("id", occurrence.id).eq("workspace_id", ctx.workspace.id);
   if (error) return fail("Mise à jour impossible.");
 
@@ -483,7 +483,7 @@ export async function saveServiceReport(_previous: ActionResult, formData: FormD
   const notes = formData.has("notes") ? str(formData.get("notes")) : undefined;
   const patch: { report: string | null; notes?: string | null } = { report };
   if (notes !== undefined) patch.notes = notes;
-  const supabase = createClient();
+  const supabase = await createClient();
   const { error } = await supabase.from("services").update(patch).eq("id", resolved.occurrence.id).eq("workspace_id", ctx.workspace.id);
   if (error) return fail("Enregistrement impossible.");
   revalidateMaintenance(resolved.occurrence.client_id, resolved.occurrence.id, resolved.occurrence.series_id);
@@ -507,7 +507,7 @@ export async function updateOccurrenceException(_previous: ActionResult, formDat
   });
   if (!resolved.occurrence) return fail(resolved.message ?? "Occurrence introuvable.");
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: current } = await supabase.from("services").select("status").eq("id", resolved.occurrence.id).single();
   if (current?.status === "completed" || current?.status === "in_progress") return fail("Un passage en cours ou terminé ne peut pas être déplacé.");
   const nominalDate = resolved.occurrence.occurrence_date;
@@ -549,7 +549,7 @@ export async function updateMaintenanceContract(_previous: ActionResult, formDat
   if (status === "ended" && !endsOn) endsOn = todayInReunion();
   if (endsOn && (!validDate(endsOn) || endsOn < startsOn)) return fail("La date de fin doit suivre la date de début.");
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: existing } = await supabase
     .from("service_series")
     .select("client_id,recurrence_kind")
@@ -616,7 +616,7 @@ export async function updateService(_previous: ActionResult, formData: FormData)
   if (!validDate(scheduledDate) || !submittedType) return fail("La date et le type sont requis.");
   if (durationMin !== null && (!Number.isInteger(durationMin) || durationMin <= 0 || durationMin > 1440)) return fail("Durée invalide.");
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: existing } = await supabase
     .from("services")
     .select("client_id,kind,series_id,service_type")
@@ -674,7 +674,7 @@ export async function toggleServiceTask(taskId: string, serviceId: string, done:
   const result = await actionContext();
   if ("error" in result) return result.error;
   const { ctx } = result;
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: service } = await supabase
     .from("services")
     .select("assigned_membership_id")
@@ -698,7 +698,7 @@ export async function deleteService(id: string): Promise<ActionResult> {
   if ("error" in result) return result.error;
   const { ctx } = result;
   if (!can(ctx, "services.edit")) return fail("Vous n'avez pas le droit de supprimer cet entretien.");
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: service } = await supabase
     .from("services")
     .select("client_id,kind,series_id")

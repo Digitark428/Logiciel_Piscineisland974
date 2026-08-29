@@ -10,12 +10,13 @@ function firstRelation<T>(value: T | T[] | null | undefined): T | null {
 }
 
 /** Commentaires chargés à la demande : le feed initial reste léger. */
-export async function GET(_request: Request, { params }: { params: { id: string } }) {
+export async function GET(_request: Request, { params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = await paramsPromise;
   const ctx = await getSessionContext();
   if (!ctx) return NextResponse.json({ error: "Session expirée." }, { status: 401 });
   if (!can(ctx, "community.view")) return NextResponse.json({ error: "Accès refusé." }, { status: 403 });
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: post, error: postError } = await supabase
     .from("community_posts")
     .select("id")

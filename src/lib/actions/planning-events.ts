@@ -63,7 +63,7 @@ async function planningAssignee(
   if (!UUID.test(membershipId)) return { ok: false, result: fail("La personne concernée est invalide.") };
   if (!ctx.isAdmin) return { ok: false, result: fail("Seul le gérant peut affecter un événement à un membre.") };
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data } = await supabase
     .from("memberships")
     .select("id")
@@ -84,7 +84,7 @@ export async function createPlanningEvent(_previous: ActionResult, formData: For
   const { ctx } = result;
   const assignee = await planningAssignee(ctx, formData);
   if (!assignee.ok) return assignee.result;
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("planning_events")
     .insert({
@@ -112,7 +112,7 @@ export async function updatePlanningEvent(_previous: ActionResult, formData: For
   const { ctx } = result;
   const assignee = await planningAssignee(ctx, formData);
   if (!assignee.ok) return assignee.result;
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("planning_events")
     .update({ ...parsed.value, assigned_membership_id: assignee.membershipId })
@@ -133,7 +133,7 @@ export async function deletePlanningEvent(id: string): Promise<ActionResult> {
   if (!UUID.test(id)) return fail("Événement invalide.");
 
   const { ctx } = result;
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("planning_events")
     .delete()

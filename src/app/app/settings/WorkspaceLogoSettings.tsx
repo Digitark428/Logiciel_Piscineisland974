@@ -11,10 +11,11 @@ export function WorkspaceLogoSettings({ logoUrl }: { logoUrl: string | null }) {
       <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
         <div className="max-w-xl">
           <p className="leti-eyebrow">Identité de l’entreprise</p>
-          <h2 className="mt-1 text-lg font-semibold text-graphite-900">Logo dans le header</h2>
+          <h2 className="mt-1 text-lg font-semibold text-graphite-900">Logo dans la barre latérale</h2>
           <p className="mt-2 text-sm leading-6 text-graphite-500">
             SVG recommandé pour une qualité optimale. PNG haute résolution ou JPG/JPEG accepté.
-            Utilisez de préférence un logo avec fond transparent et de bonne qualité.
+            Les marges inutiles seront supprimées et le format sera ajusté automatiquement,
+            sans déformation, quelle que soit l’orientation du logo.
           </p>
         </div>
         <div className="flex h-20 w-full shrink-0 items-center justify-center overflow-hidden rounded-xl border border-graphite-100 bg-graphite-50 p-3 sm:w-52">

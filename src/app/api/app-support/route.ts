@@ -11,7 +11,7 @@ export async function GET() {
   const ctx = await getSessionContext();
   if (!ctx) return Response.json({ error: "Session expirée." }, { status: 401 });
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: conversationRows, error: conversationError } = await supabase
     .from("support_conversations")
     .select("id, category, status, context, created_at, last_message_at, client_last_seen_at")

@@ -6,7 +6,7 @@ import { clientName } from "@/lib/utils/format";
 
 export default async function PoolsPage() {
   const ctx = await requirePermission("pools.view");
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: pools } = await supabase
     .from("pools")
     .select("id, name, pool_type, water_treatment, city, client:clients(first_name,last_name,company_name)")

@@ -2,6 +2,15 @@
 
 > Ajouter une entrée courte après chaque intervention significative. Ne pas y dupliquer la documentation durable de `PROJECT_CONTEXT.md`.
 
+## 2026-08-29 — Codex — Sauvegardes professionnelles, impression hebdomadaire et logo latéral
+
+- **Sauvegardes :** export admin-only en ZIP privé comprenant un dossier PDF paginé avec sommaire réel, un XLSX exhaustif de 24 feuilles métier et les documents/photos originaux disponibles ; collecte paginée, assemblage en flux, historique sans rétention, téléchargement signé, suppression contrôlée et erreurs/progression explicites.
+- **Planification durable :** sauvegarde manuelle ou quotidienne après 21 h dans le fuseau IANA de chaque entreprise, cron Vercel horaire idempotent et Workflow DevKit en 9 étapes relançables ; les données personnelles du planning/to-do, secrets portail et identifiants Auth sont explicitement exclus.
+- **Interface :** logo entreprise normalisé pour tout ratio puis placé dans la barre latérale à côté de LETI ; « Mes entretiens » imprime la semaine filtrée lundi-dimanche en A4 paysage, avec uniquement date, client et adresse.
+- **Base et galerie :** migrations `20260829080314_professional_backups` et `20260829080405_professional_backups_indexes` appliquées en production ; `workspaces.timezone`, états/métadonnées de sauvegarde, garde tenant et métadonnées d’originaux galerie ajoutés sans supprimer l’historique JSON existant.
+- **Socle et sécurité :** Next.js 15.5.24, React 19.2.8 et Sharp 0.35.4 ; audit npm de production à 0 vulnérabilité connue. Advisors Supabase sans nouvelle alerte sécurité et index de clé étrangère corrigé.
+- **Vérification :** lint, typecheck, build de production et 84 tests actifs validés ; PDF 5 pages et XLSX 24 feuilles inspectés visuellement, scan de formules sans erreur. Les 20 tests d’intégration conditionnels restent ignorés faute de secrets de test dédiés.
+
 ## 2026-08-27 — Codex — Cohérence globale LETI, marque entreprise et Planning assignable
 
 - **Navigation et header :** ordre principal stabilisé de « Tableau de bord » à « LETI IA », « Mes clients » généralisé et comptabilité retirée de l’interface ; le header accueille désormais le logo privé de l’entreprise, réellement centré, normalisé en WebP sans déformation, administrable par un gérant et animé par un flare CSS discret respectant `prefers-reduced-motion`.

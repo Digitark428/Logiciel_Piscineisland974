@@ -8,7 +8,8 @@ import { normalizeCommunitySearch } from "@/lib/community-search";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-export default async function CommunityPage({ searchParams }: { searchParams: { q?: string } }) {
+export default async function CommunityPage({ searchParams: searchParamsPromise }: { searchParams: Promise<{ q?: string }> }) {
+  const searchParams = await searchParamsPromise;
   const ctx = await requirePermission("community.view");
   const searchQuery = normalizeCommunitySearch(searchParams.q);
   const { items, hasMore } = await getCommunityFeedPage(ctx, COMMUNITY_INITIAL_POSTS, undefined, searchQuery);

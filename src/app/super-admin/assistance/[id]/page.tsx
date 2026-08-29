@@ -9,7 +9,8 @@ import { ConversationActions } from "./ConversationActions";
 
 export const dynamic = "force-dynamic";
 
-export default async function SuperAdminConversationPage({ params }: { params: { id: string } }) {
+export default async function SuperAdminConversationPage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = await paramsPromise;
   await requireSuperAdmin();
   const admin = createAdminClient();
 

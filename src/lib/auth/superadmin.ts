@@ -11,7 +11,7 @@ export interface SuperAdminContext {
 }
 
 export const getSuperAdmin = cache(async (): Promise<SuperAdminContext | null> => {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
 

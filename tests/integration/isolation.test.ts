@@ -17,8 +17,8 @@ const READY = Boolean(URL && ANON && SERVICE);
 const admin = READY ? createClient(URL!, SERVICE!, { auth: { persistSession: false } }) : null;
 
 const rnd = Math.random().toString(36).slice(2, 8);
-const A = { email: `iso-a-${rnd}@example.test`, password: "Password123!", userId: "", workspaceId: "", clientId: "", membershipId: "", poolId: "", serviceId: "", cancelledServiceId: "", seriesId: "", weeklySeriesId: "", recurringServiceId: "", financialId: "", documentId: "", employeeEmail: `iso-member-${rnd}@example.test`, employeeUserId: "", employeeMembershipId: "", noteId: "", communityPostId: "" };
-const B = { email: `iso-b-${rnd}@example.test`, password: "Password123!", userId: "", workspaceId: "", clientId: "", membershipId: "", poolId: "", serviceId: "", cancelledServiceId: "", seriesId: "", weeklySeriesId: "", recurringServiceId: "", financialId: "", documentId: "", employeeEmail: "", employeeUserId: "", employeeMembershipId: "", noteId: "", communityPostId: "" };
+const A = { email: `iso-a-${rnd}@example.test`, password: "Password123!", userId: "", workspaceId: "", clientId: "", membershipId: "", poolId: "", serviceId: "", cancelledServiceId: "", seriesId: "", weeklySeriesId: "", recurringServiceId: "", financialId: "", documentId: "", employeeEmail: `iso-member-${rnd}@example.test`, employeeUserId: "", employeeMembershipId: "", noteId: "", communityPostId: "", backupId: "" };
+const B = { email: `iso-b-${rnd}@example.test`, password: "Password123!", userId: "", workspaceId: "", clientId: "", membershipId: "", poolId: "", serviceId: "", cancelledServiceId: "", seriesId: "", weeklySeriesId: "", recurringServiceId: "", financialId: "", documentId: "", employeeEmail: "", employeeUserId: "", employeeMembershipId: "", noteId: "", communityPostId: "", backupId: "" };
 
 async function setupTenant(t: typeof A, name: string) {
   const { data: created } = await admin!.auth.admin.createUser({ email: t.email, password: t.password, email_confirm: true });
@@ -107,6 +107,19 @@ async function setupTenant(t: typeof A, name: string) {
     storage_path: `${t.workspaceId}/posts/${t.communityPostId}/0.webp`,
     position: 0,
   });
+  const { data: backup } = await admin!.from("backups").insert({
+    workspace_id: t.workspaceId,
+    storage_path: `${t.workspaceId}/tests/archive.zip`,
+    file_name: "archive.zip",
+    mime_type: "application/zip",
+    kind: "manual",
+    status: "completed",
+    progress_stage: "completed",
+    size_bytes: 1024,
+    completed_at: new Date().toISOString(),
+    requested_by: t.membershipId,
+  }).select("id").single();
+  t.backupId = backup!.id;
 }
 
 describe.skipIf(!READY)("Isolation multi-tenant (RLS)", () => {
@@ -153,6 +166,31 @@ describe.skipIf(!READY)("Isolation multi-tenant (RLS)", () => {
     await asA.auth.signInWithPassword({ email: A.email, password: A.password });
     const { data } = await asA.from("clients").select("*").eq("id", B.clientId).maybeSingle();
     expect(data).toBeNull();
+  });
+
+  it("réserve les sauvegardes complètes aux administrateurs et isole leur historique", async () => {
+    const asA = createClient(URL!, ANON!, { auth: { persistSession: false } });
+    const asEmployee = createClient(URL!, ANON!, { auth: { persistSession: false } });
+    await Promise.all([
+      asA.auth.signInWithPassword({ email: A.email, password: A.password }),
+      asEmployee.auth.signInWithPassword({ email: A.employeeEmail, password: A.password }),
+    ]);
+
+    const [own, foreign, employee] = await Promise.all([
+      asA.from("backups").select("id").eq("id", A.backupId),
+      asA.from("backups").select("id").eq("id", B.backupId),
+      asEmployee.from("backups").select("id").eq("workspace_id", A.workspaceId),
+    ]);
+    expect(own.data).toHaveLength(1);
+    expect(foreign.data ?? []).toHaveLength(0);
+    expect(employee.data ?? []).toHaveLength(0);
+
+    const badRequester = await admin!.from("backups").insert({
+      workspace_id: A.workspaceId,
+      kind: "manual",
+      requested_by: B.membershipId,
+    });
+    expect(badRequester.error).toBeTruthy();
   });
 
   it("l'écriture dans un autre workspace est refusée", async () => {

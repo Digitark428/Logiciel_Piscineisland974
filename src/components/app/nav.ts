@@ -41,7 +41,7 @@ export function filterNavEntries(entries: NavEntry[], canShow: (item: NavItem) =
 export const MANAGEMENT_ITEMS: NavItem[] = [
   { href: "/app/documents", label: "Documents", icon: "file", perm: "documents.view" },
   { href: "/app/team", label: "Équipe", icon: "team", perm: "team.manage" },
-  { href: "/app/backups", label: "Sauvegardes", icon: "backup", perm: "backups.manage" },
+  { href: "/app/backups", label: "Sauvegardes", icon: "backup", adminOnly: true },
   { href: "/app/activity", label: "Journal", icon: "activity", adminOnly: true },
 ];
 

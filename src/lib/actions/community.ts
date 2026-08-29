@@ -26,7 +26,9 @@ import {
 import {
   COMMUNITY_MAX_IMAGES,
   COMMUNITY_MAX_SOURCE_BYTES,
+  detectCommunityImageFormat,
   normalizeCommunityImage,
+  type CommunityImageFormat,
 } from "@/lib/community-media";
 
 const postIdSchema = z.string().uuid();
@@ -54,6 +56,18 @@ function isScopedTemporaryPath(path: string, workspaceId: string, membershipId: 
   if (!path.startsWith(prefix)) return false;
   const suffix = path.slice(prefix.length);
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\/[0-3]-[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(suffix);
+}
+
+function originalImageContentType(format: CommunityImageFormat): string {
+  const types: Record<CommunityImageFormat, string> = {
+    avif: "image/avif",
+    gif: "image/gif",
+    heic: "image/heic",
+    jpeg: "image/jpeg",
+    png: "image/png",
+    webp: "image/webp",
+  };
+  return types[format];
 }
 
 /** Prépare des URLs à usage court : les fichiers lourds vont directement vers Storage. */
@@ -112,7 +126,13 @@ async function createCommunityPostImpl(input: { content: string; uploads: Commun
 
   const admin = createAdminClient();
   const temporaryPaths = uploads.data.map((item) => item.path);
-  const prepared: Array<{ buffer: Buffer; contentType: "image/webp" }> = [];
+  const prepared: Array<{
+    buffer: Buffer;
+    contentType: "image/webp";
+    originalBuffer: Buffer;
+    originalFormat: CommunityImageFormat;
+    originalName: string;
+  }> = [];
   let skippedCount = 0;
   try {
     for (const [index, item] of uploads.data.entries()) {
@@ -120,8 +140,16 @@ async function createCommunityPostImpl(input: { content: string; uploads: Commun
         const { data, error } = await admin.storage.from("community-media").download(item.path);
         if (error || !data) throw new Error("download-failed");
         const source = Buffer.from(await data.arrayBuffer());
+        const originalFormat = detectCommunityImageFormat(source);
+        if (!originalFormat) throw new Error("unsupported-image-format");
         const normalized = await normalizeCommunityImage(source);
-        prepared.push({ buffer: normalized.buffer, contentType: normalized.contentType });
+        prepared.push({
+          buffer: normalized.buffer,
+          contentType: normalized.contentType,
+          originalBuffer: source,
+          originalFormat,
+          originalName: item.originalName,
+        });
       } catch (error) {
         console.warn("[community.media] skipped", index, error instanceof Error ? error.message : String(error));
         skippedCount += 1;
@@ -145,6 +173,17 @@ async function createCommunityPostImpl(input: { content: string; uploads: Commun
   try {
     for (const [position, item] of prepared.entries()) {
       const path = `${ctx.workspace.id}/posts/${postId}/${position}-${crypto.randomUUID()}.webp`;
+      const originalPath = `${ctx.workspace.id}/posts/${postId}/original-${position}-${crypto.randomUUID()}.${item.originalFormat}`;
+      const { error: originalUploadError } = await admin.storage
+        .from("community-media")
+        .upload(originalPath, item.originalBuffer, {
+          contentType: originalImageContentType(item.originalFormat),
+          cacheControl: "31536000",
+          upsert: false,
+        });
+      if (originalUploadError) throw new Error("original-upload");
+      uploadedPaths.push(originalPath);
+
       const { error: uploadError } = await admin.storage
         .from("community-media")
         .upload(path, item.buffer, { contentType: item.contentType, cacheControl: "31536000", upsert: false });
@@ -155,6 +194,10 @@ async function createCommunityPostImpl(input: { content: string; uploads: Commun
         workspace_id: ctx.workspace.id,
         post_id: postId,
         storage_path: path,
+        original_storage_path: originalPath,
+        original_name: item.originalName,
+        original_mime_type: originalImageContentType(item.originalFormat),
+        original_size_bytes: item.originalBuffer.byteLength,
         position,
       });
       if (mediaError) throw new Error("media");
@@ -204,7 +247,7 @@ export async function deleteCommunityPost(id: string): Promise<ActionResult> {
 
   const { data: media } = await admin
     .from("community_post_media")
-    .select("storage_path")
+    .select("storage_path, original_storage_path")
     .eq("post_id", id)
     .eq("workspace_id", ctx.workspace.id);
   const { error } = await admin
@@ -214,7 +257,9 @@ export async function deleteCommunityPost(id: string): Promise<ActionResult> {
     .eq("workspace_id", ctx.workspace.id);
   if (error) return fail("Suppression impossible.");
 
-  const paths = (media ?? []).map((item) => item.storage_path).filter(Boolean);
+  const paths = (media ?? [])
+    .flatMap((item) => [item.storage_path, item.original_storage_path])
+    .filter((path): path is string => Boolean(path));
   if (paths.length > 0) await admin.storage.from("community-media").remove(paths);
   await logActivity(ctx, { action: "delete", entity_type: "community_post", entity_id: id, summary: "Publication supprimée dans Entre nous" });
   revalidatePath("/app/community");
@@ -232,7 +277,7 @@ export async function toggleCommunityReaction(id: string, reaction: CommunityRea
   if (!can(ctx, "community.publish")) return fail("Vous n'êtes pas autorisé à interagir.");
   if (!postIdSchema.safeParse(id).success || !COMMUNITY_REACTIONS.includes(reaction)) return fail("Réaction invalide.");
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: existing } = await supabase
     .from("community_post_reactions")
     .select("id")
@@ -267,7 +312,7 @@ export async function createCommunityComment(id: string, rawContent: string): Pr
   const parsed = commentSchema.safeParse(rawContent);
   if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? "Commentaire invalide.");
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { error } = await supabase.from("community_post_comments").insert({
     workspace_id: ctx.workspace.id,
     post_id: id,

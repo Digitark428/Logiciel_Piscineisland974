@@ -4,6 +4,7 @@ import {
   type DragEvent,
   type KeyboardEvent,
   type PointerEvent,
+  useActionState,
   useCallback,
   useEffect,
   useRef,
@@ -11,7 +12,6 @@ import {
   useTransition,
 } from "react";
 import { useRouter } from "next/navigation";
-import { useFormState } from "react-dom";
 import { SubmitButton } from "@/components/forms/SubmitButton";
 import { Checkbox } from "@/components/ui/Checkbox";
 import { OverlayPortal } from "@/components/ui/OverlayPortal";
@@ -189,7 +189,7 @@ function PersonalTaskRow({
 }
 
 function PersonalTaskDrawer({ onClosed }: { onClosed: () => void }) {
-  const [state, formAction] = useFormState(createTask, idle);
+  const [state, formAction] = useActionState(createTask, idle);
   const [entered, setEntered] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);

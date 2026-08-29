@@ -50,7 +50,7 @@ export async function signIn(_prev: ActionResult, formData: FormData): Promise<A
   }
   const { workspaceId, expectedRole, email, password } = parsed.data;
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: auth, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error || !auth.user) {
     return fail("Identifiants incorrects.");
@@ -168,7 +168,7 @@ export async function signUp(_prev: ActionResult, formData: FormData): Promise<A
   const row = Array.isArray(prov) ? prov[0] : prov;
 
   // 3. Établit la session (connexion automatique).
-  const supabase = createClient();
+  const supabase = await createClient();
   const { error: signInErr } = await supabase.auth.signInWithPassword({
     email: v.email,
     password: v.password,
@@ -182,7 +182,7 @@ export async function signUp(_prev: ActionResult, formData: FormData): Promise<A
 }
 
 export async function signOut(): Promise<void> {
-  const supabase = createClient();
+  const supabase = await createClient();
   await supabase.auth.signOut();
   redirect("/login");
 }

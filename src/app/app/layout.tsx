@@ -9,7 +9,7 @@ import { workspaceLogoPath } from "@/lib/workspace-logo";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const ctx = await requireContext();
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Compteur de notifications non lues visibles par l'utilisateur.
   let notifQuery = supabase

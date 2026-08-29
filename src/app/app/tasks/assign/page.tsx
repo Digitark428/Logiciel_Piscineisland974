@@ -14,7 +14,7 @@ function relationOne<T>(value: T | T[] | null | undefined): T | null {
 
 export default async function AssignedTasksPage() {
   const ctx = await requirePermission("tasks.view");
-  const supabase = createClient();
+  const supabase = await createClient();
   const canManage = can(ctx, "tasks.manage");
   const myId = ctx.membership.id;
   const [tasksRes, members] = await Promise.all([

@@ -7,9 +7,10 @@ import { PageHeader } from "@/components/ui";
 import { PoolForm } from "../../PoolForm";
 import type { Pool } from "@/lib/db/types";
 
-export default async function EditPoolPage({ params }: { params: { id: string } }) {
+export default async function EditPoolPage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = await paramsPromise;
   const ctx = await requirePermission("pools.edit");
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: pool } = await supabase.from("pools").select("*").eq("id", params.id).eq("workspace_id", ctx.workspace.id).maybeSingle();
   if (!pool) notFound();
   const clients = await getClientOptions(supabase, ctx.workspace.id);

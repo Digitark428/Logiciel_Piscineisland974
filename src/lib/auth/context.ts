@@ -22,7 +22,7 @@ export interface SessionContext {
  */
 export const getSessionContext = cache(
   async (): Promise<SessionContext | null> => {
-    const supabase = createClient();
+    const supabase = await createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();

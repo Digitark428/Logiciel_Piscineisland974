@@ -14,7 +14,7 @@ export async function signInSuperAdmin(_prev: ActionResult, formData: FormData):
   const parsed = loginSchema.safeParse({ email: formData.get("email"), password: formData.get("password") });
   if (!parsed.success) return fail("Identifiants invalides.");
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: auth, error } = await supabase.auth.signInWithPassword(parsed.data);
   if (error || !auth.user) return fail("Identifiants incorrects.");
 
@@ -33,7 +33,7 @@ export async function signInSuperAdmin(_prev: ActionResult, formData: FormData):
 }
 
 export async function signOutSuperAdmin(): Promise<void> {
-  const supabase = createClient();
+  const supabase = await createClient();
   await supabase.auth.signOut();
   redirect("/super-admin/login");
 }

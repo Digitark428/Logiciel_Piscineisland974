@@ -9,7 +9,7 @@ export async function signedUrl(
   expiresIn = 3600,
 ): Promise<string | null> {
   if (!path) return null;
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data } = await supabase.storage.from(bucket).createSignedUrl(path, expiresIn);
   return data?.signedUrl ?? null;
 }
@@ -23,7 +23,7 @@ export async function signedUrls(
   const uniquePaths = Array.from(new Set(paths.filter((path): path is string => Boolean(path))));
   if (uniquePaths.length === 0) return new Map();
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data } = await supabase.storage.from(bucket).createSignedUrls(uniquePaths, expiresIn);
   const urls = new Map<string, string>();
   for (const item of data ?? []) {
@@ -40,7 +40,7 @@ export async function signedDownloadUrl(
   expiresIn = 3600,
 ): Promise<string | null> {
   if (!path) return null;
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data } = await supabase.storage
     .from(bucket)
     .createSignedUrl(path, expiresIn, { download: downloadName ?? true });

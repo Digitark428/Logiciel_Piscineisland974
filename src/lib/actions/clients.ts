@@ -74,7 +74,7 @@ export async function upsertClient(_prev: ActionResult, formData: FormData): Pro
     return fail("Renseignez au moins un nom (personne ou entreprise).");
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const payload = {
     first_name: v.first_name ?? null,
     last_name: v.last_name ?? null,
@@ -118,7 +118,7 @@ export async function archiveClient(id: string, archived: boolean): Promise<Acti
   const res = await actionContext();
   if ("error" in res) return res.error;
   const { ctx } = res;
-  const supabase = createClient();
+  const supabase = await createClient();
   const { error } = await supabase
     .from("clients")
     .update({ status: archived ? "archived" : "active" })
@@ -209,7 +209,7 @@ export async function setClientPortal(_prev: ActionResult, formData: FormData): 
   const code = String(formData.get("private_code") ?? "").trim();
   if (!clientId) return fail("Client introuvable.");
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const update: Record<string, unknown> = { portal_enabled: enabled };
 
   if (enabled) {
@@ -240,7 +240,7 @@ export async function regeneratePortalToken(clientId: string): Promise<ActionRes
   const res = await actionContext();
   if ("error" in res) return res.error;
   const { ctx } = res;
-  const supabase = createClient();
+  const supabase = await createClient();
   const { error } = await supabase
     .from("clients")
     .update({ portal_token: generatePortalToken() })

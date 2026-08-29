@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { useFormState } from "react-dom";
+import { useActionState, useState } from "react";
 import { createMember } from "@/lib/actions/team";
 import { idle } from "@/lib/actions/result";
 import { SubmitButton } from "@/components/forms/SubmitButton";
@@ -9,7 +8,7 @@ import { PermissionsFields } from "@/components/forms/PermissionsFields";
 import { DEFAULT_MEMBER_PERMISSIONS } from "@/lib/permissions";
 
 export function NewMemberForm() {
-  const [state, formAction] = useFormState(createMember, idle);
+  const [state, formAction] = useActionState(createMember, idle);
   const [role, setRole] = useState<"admin" | "member">("member");
 
   return (

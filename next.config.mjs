@@ -1,6 +1,14 @@
+import { withWorkflow } from "workflow/next";
+import { dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const projectRoot = dirname(fileURLToPath(import.meta.url));
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  outputFileTracingRoot: projectRoot,
+  serverExternalPackages: ["heic-decode"],
   images: {
     remotePatterns: [
       {
@@ -11,11 +19,10 @@ const nextConfig = {
     ],
   },
   experimental: {
-    serverComponentsExternalPackages: ["heic-decode"],
     serverActions: {
       bodySizeLimit: "10mb",
     },
   },
 };
 
-export default nextConfig;
+export default withWorkflow(nextConfig);

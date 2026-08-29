@@ -39,7 +39,7 @@ export async function uploadDocument(formData: FormData): Promise<ActionResult> 
   const customName = String(formData.get("doc_name") ?? "").trim();
   const displayName = (customName || file.name).slice(0, 200);
 
-  const supabase = createClient();
+  const supabase = await createClient();
   if (!entity_id) return fail("Rattachement requis.");
   const { data: entity } = entity_type === "client"
     ? await supabase.from("clients").select("id").eq("id", entity_id).eq("workspace_id", ctx.workspace.id).maybeSingle()
@@ -93,7 +93,7 @@ export async function deleteDocument(id: string): Promise<ActionResult> {
   const res = await actionContext();
   if ("error" in res) return res.error;
   const { ctx } = res;
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: doc } = await supabase.from("documents").select("storage_path").eq("id", id).eq("workspace_id", ctx.workspace.id).maybeSingle();
   if (doc?.storage_path) await supabase.storage.from("documents").remove([doc.storage_path]);
   const { error } = await supabase.from("documents").delete().eq("id", id).eq("workspace_id", ctx.workspace.id);

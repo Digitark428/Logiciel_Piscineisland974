@@ -2,6 +2,7 @@
 
 import {
   createContext,
+  useActionState,
   useCallback,
   useContext,
   useEffect,
@@ -11,7 +12,6 @@ import {
   type ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
-import { useFormState } from "react-dom";
 import {
   createPlanningEvent,
   deletePlanningEvent,
@@ -205,7 +205,7 @@ function EventForm({ event, date, onClose }: { event: PlanningEvent | null; date
   const { members, canAssign, currentMembershipId } = usePlanningEventDialog();
   const router = useRouter();
   const action = event ? updatePlanningEvent : createPlanningEvent;
-  const [state, formAction] = useFormState(action, idle);
+  const [state, formAction] = useActionState(action, idle);
   const [allDay, setAllDay] = useState(event?.all_day ?? false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);

@@ -63,7 +63,7 @@ function DashboardKpi({
 
 export default async function DashboardPage() {
   const ctx = await requireContext();
-  const supabase = createClient();
+  const supabase = await createClient();
   const today = todayInReunion();
 
   const baseSel =

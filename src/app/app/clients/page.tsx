@@ -5,12 +5,13 @@ import { PageHeader, Card, EmptyState, Badge, Avatar } from "@/components/ui";
 import { clientName } from "@/lib/utils/format";
 
 export default async function ClientsPage({
-  searchParams,
+  searchParams: searchParamsPromise,
 }: {
-  searchParams: { q?: string; archived?: string };
+  searchParams: Promise<{ q?: string; archived?: string }>;
 }) {
+  const searchParams = await searchParamsPromise;
   const ctx = await requirePermission("clients.view");
-  const supabase = createClient();
+  const supabase = await createClient();
   const q = (searchParams.q ?? "").trim();
   const showArchived = searchParams.archived === "1";
 

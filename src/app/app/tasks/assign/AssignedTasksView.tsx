@@ -1,13 +1,13 @@
 "use client";
 
 import {
+  useActionState,
   useCallback,
   useEffect,
   useRef,
   useState,
 } from "react";
 import { useRouter } from "next/navigation";
-import { useFormState } from "react-dom";
 import { SubmitButton } from "@/components/forms/SubmitButton";
 import { MemberIdentity, type MemberIdentityData } from "@/components/members/MemberIdentity";
 import { Checkbox } from "@/components/ui/Checkbox";
@@ -160,7 +160,7 @@ function AssignedTaskDrawer({
   members: MemberOption[];
   onClosed: () => void;
 }) {
-  const [state, formAction] = useFormState(createTask, idle);
+  const [state, formAction] = useActionState(createTask, idle);
   const [entered, setEntered] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLFormElement>(null);

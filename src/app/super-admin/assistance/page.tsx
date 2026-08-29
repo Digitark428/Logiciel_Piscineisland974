@@ -16,7 +16,8 @@ interface SearchParams {
   q?: string;
 }
 
-export default async function SuperAdminAssistancePage({ searchParams }: { searchParams: SearchParams }) {
+export default async function SuperAdminAssistancePage({ searchParams: searchParamsPromise }: { searchParams: Promise<SearchParams> }) {
+  const searchParams = await searchParamsPromise;
   await requireSuperAdmin();
   const { conversations, stats } = await getSupportOverview();
 

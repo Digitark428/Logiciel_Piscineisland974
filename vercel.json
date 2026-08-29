@@ -4,6 +4,6 @@
   "buildCommand": "next build",
   "outputDirectory": ".next",
   "crons": [
-    { "path": "/api/cron/backups", "schedule": "0 23 * * *" }
+    { "path": "/api/cron/backups", "schedule": "0 * * * *" }
   ]
 }

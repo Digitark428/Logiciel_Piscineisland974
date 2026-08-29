@@ -1,16 +1,19 @@
 import { NextResponse, type NextRequest } from "next/server";
 import crypto from "node:crypto";
+import { start } from "workflow/api";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { runWorkspaceBackup } from "@/lib/backup";
+import { attachWorkflowRun, createBackupJob } from "@/lib/backups/queue";
+import { isDailyBackupDue, isValidIanaTimezone } from "@/lib/timezone";
+import { professionalBackupWorkflow } from "@/workflows/professional-backup";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
+export const maxDuration = 30;
 
 /**
- * Sauvegarde automatique quotidienne (déclenchée à 23h00 par un planificateur externe,
- * ex. Vercel Cron ou pg_cron appelant cette route). Protégée par CRON_SECRET.
+ * Contrôle horaire : chaque entreprise est mise en file une seule fois, dès
+ * 21h00 dans son propre fuseau IANA. Le travail lourd est confié au workflow.
  */
-export async function POST(request: NextRequest) {
+async function handleCron(request: NextRequest) {
   const secret = process.env.CRON_SECRET;
   const provided = request.headers.get("authorization")?.match(/^Bearer\s+(.+)$/i)?.[1];
   const valid = Boolean(secret && provided && Buffer.byteLength(secret) === Buffer.byteLength(provided)
@@ -20,15 +23,55 @@ export async function POST(request: NextRequest) {
   }
 
   const admin = createAdminClient();
-  const { data: workspaces } = await admin.from("workspaces").select("id").eq("status", "active");
+  const { data: workspaces, error } = await admin.from("workspaces").select("id, name, timezone").eq("status", "active");
+  if (error) return NextResponse.json({ error: "Lecture des entreprises impossible" }, { status: 500 });
 
-  let ok = 0;
+  const now = new Date();
+  let queued = 0;
+  let skipped = 0;
   let failed = 0;
   for (const w of workspaces ?? []) {
-    const result = await runWorkspaceBackup(admin, w.id, "auto");
-    if (result) ok++;
-    else failed++;
+    const timeZone = isValidIanaTimezone(w.timezone) ? w.timezone : "Indian/Reunion";
+    const schedule = isDailyBackupDue(now, timeZone, 21);
+    if (!schedule.due) {
+      skipped += 1;
+      continue;
+    }
+    let jobId: string | null = null;
+    try {
+      const job = await createBackupJob(admin, {
+        workspaceId: w.id,
+        workspaceName: w.name,
+        timeZone,
+        kind: "auto",
+        scheduledLocalDate: schedule.localDate,
+        now,
+      });
+      if (job.alreadyExists) {
+        skipped += 1;
+        continue;
+      }
+      jobId = job.id;
+      const run = await start(professionalBackupWorkflow, [{ backupId: job.id, workspaceId: w.id }]);
+      await attachWorkflowRun(admin, job.id, w.id, run.runId);
+      queued += 1;
+    } catch (cause) {
+      const message = cause instanceof Error ? cause.message : String(cause);
+      console.error("[backup.cron]", w.id, message);
+      if (jobId) {
+        await admin.from("backups").update({
+          status: "failed",
+          progress_stage: "failed",
+          failure_message: message.replace(/\s+/g, " ").slice(0, 500),
+          completed_at: new Date().toISOString(),
+        }).eq("id", jobId).eq("workspace_id", w.id);
+      }
+      failed += 1;
+    }
   }
 
-  return NextResponse.json({ ok, failed, total: (workspaces ?? []).length });
+  return NextResponse.json({ queued, skipped, failed, total: (workspaces ?? []).length, checkedAt: now.toISOString() });
 }
+
+export const GET = handleCron;
+export const POST = handleCron;

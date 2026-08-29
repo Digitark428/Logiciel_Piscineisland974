@@ -13,9 +13,10 @@ import { signedUrls } from "@/lib/storage";
 
 const CONTRACT_STATUS_LABELS: Record<string, string> = { active: "Actif", paused: "Suspendu", ended: "Terminé" };
 
-export default async function MaintenanceContractPage({ params }: { params: { id: string } }) {
+export default async function MaintenanceContractPage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = await paramsPromise;
   const ctx = await requirePermission("services.view");
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: contract } = await supabase
     .from("service_series")
     .select("id,client_id,service_type,assigned_membership_id,contract_document_id,invoice_document_id,recurrence_kind,recurrence_weekday,starts_on,ends_on,status,notes,client:clients(id,first_name,last_name,company_name,phone,address_line1,postal_code,city),assignee:memberships!service_series_assigned_membership_id_fkey(first_name,last_name,email,role,job_title,photo_path)")

@@ -12,7 +12,8 @@ import { addCalendarDays } from "@/lib/services/recurrence";
 import { getMaintenanceOccurrences } from "@/lib/services/queries";
 import { serviceTypeLabel } from "@/lib/services/constants";
 
-export default async function PortalPage({ params }: { params: { token: string } }) {
+export default async function PortalPage({ params: paramsPromise }: { params: Promise<{ token: string }> }) {
+  const params = await paramsPromise;
   const token = params.token;
   const admin = createAdminClient();
 
@@ -23,7 +24,7 @@ export default async function PortalPage({ params }: { params: { token: string }
     .maybeSingle();
 
   const invalid = !client || !client.portal_enabled || client.status !== "active";
-  const cookieValue = cookies().get(portalCookieName(token))?.value;
+  const cookieValue = (await cookies()).get(portalCookieName(token))?.value;
   const authed = !invalid && verifyPortalSession(token, cookieValue, client!.id);
 
   // ---- Écran de saisie du code ----

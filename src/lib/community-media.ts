@@ -1,6 +1,6 @@
 import "server-only";
 
-import sharp from "sharp";
+import sharp, { type Sharp } from "sharp";
 
 export const COMMUNITY_MAX_IMAGES = 4;
 export const COMMUNITY_MAX_SOURCE_BYTES = 35 * 1024 * 1024;
@@ -40,7 +40,7 @@ type NormalizedCommunityImage = {
   height: number;
 };
 
-async function encodeForCommunity(input: sharp.Sharp): Promise<NormalizedCommunityImage> {
+async function encodeForCommunity(input: Sharp): Promise<NormalizedCommunityImage> {
   const base = input
     .resize({
       width: COMMUNITY_IMAGE_LONGEST_SIDE,

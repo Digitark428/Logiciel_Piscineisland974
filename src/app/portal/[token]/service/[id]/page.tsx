@@ -10,7 +10,8 @@ import { Logo } from "@/components/Logo";
 
 export const dynamic = "force-dynamic";
 
-export default async function PortalServicePage({ params }: { params: { token: string; id: string } }) {
+export default async function PortalServicePage({ params: paramsPromise }: { params: Promise<{ token: string; id: string }> }) {
+  const params = await paramsPromise;
   const { token, id } = params;
   const admin = createAdminClient();
 
@@ -21,7 +22,7 @@ export default async function PortalServicePage({ params }: { params: { token: s
     .maybeSingle();
 
   const invalid = !client || !client.portal_enabled || client.status !== "active";
-  const cookieValue = cookies().get(portalCookieName(token))?.value;
+  const cookieValue = (await cookies()).get(portalCookieName(token))?.value;
   const authed = !invalid && verifyPortalSession(token, cookieValue, client!.id);
   if (!authed) redirect(`/portal/${token}`);
 

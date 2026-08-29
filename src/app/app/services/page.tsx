@@ -24,6 +24,12 @@ function queryHref(values: SearchParams): string {
   return `/app/services?${params.toString()}`;
 }
 
+function printHref(values: SearchParams): string {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(values)) if (value) params.set(key, value);
+  return `/print/services/week?${params.toString()}`;
+}
+
 const OCCURRENCE_TONES: Record<string, { card: string; accent: string }> = {
   planned: {
     card: "border-pool-100/90 bg-gradient-to-br from-white to-pool-50/70 hover:border-pool-200",
@@ -69,9 +75,10 @@ function OccurrenceCard({ occurrence }: { occurrence: MaintenanceOccurrence }) {
   );
 }
 
-export default async function ServicesPage({ searchParams }: { searchParams: SearchParams }) {
+export default async function ServicesPage({ searchParams: searchParamsPromise }: { searchParams: Promise<SearchParams> }) {
+  const searchParams = await searchParamsPromise;
   const ctx = await requirePermission("services.view");
-  const supabase = createClient();
+  const supabase = await createClient();
   const anchor = parseAnchor(searchParams.date);
   const weekStart = startOfWeek(anchor);
   const weekEnd = addDays(weekStart, 6);
@@ -114,12 +121,23 @@ export default async function ServicesPage({ searchParams }: { searchParams: Sea
     <div>
       <div className="mb-6 flex items-center justify-between gap-4 sm:mb-7">
         <h1 className="text-2xl font-semibold tracking-[-0.035em] text-graphite-900 sm:text-[1.85rem]">Mes entretiens</h1>
-        {canCreate && (
-          <div className="flex shrink-0 gap-2">
+        <div className="flex shrink-0 flex-wrap justify-end gap-2">
+          <Link
+            prefetch={false}
+            href={printHref({ date: start, ...preserved })}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-secondary rounded-xl px-3 text-[13px] shadow-none sm:px-4"
+          >
+            Imprimer la semaine
+          </Link>
+          {canCreate && (
+            <>
             <Link prefetch={false} href="/app/services/new?kind=contract" className="btn-coral-soft rounded-xl px-3 text-[13px] sm:px-4" title="Nouveau contrat">+ Contrat</Link>
             <Link prefetch={false} href="/app/services/new?kind=one_off" className="btn-secondary rounded-xl px-3 text-[13px] shadow-none sm:px-4" title="Nouvel entretien ponctuel">+ Ponctuel</Link>
-          </div>
-        )}
+            </>
+          )}
+        </div>
       </div>
 
       <div className="mb-5 flex flex-wrap items-center gap-2 rounded-[1.35rem] border border-graphite-100/80 bg-white/90 p-2.5 shadow-[0_1px_2px_rgba(24,58,89,0.02),0_8px_24px_rgba(24,58,89,0.025)] sm:mb-6 sm:p-3">

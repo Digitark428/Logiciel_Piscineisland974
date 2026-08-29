@@ -28,7 +28,7 @@ export async function createTeamNote(_prev: ActionResult, formData: FormData): P
   if (!content) return fail("La note est vide.");
   if (content.length > 4000) return fail("Note trop longue.");
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { error } = await supabase.from("team_notes").insert({
     workspace_id: ctx.workspace.id,
     author_membership_id: ctx.membership.id,
@@ -44,7 +44,7 @@ export async function deleteTeamNote(id: string): Promise<ActionResult> {
   const res = await actionContext();
   if ("error" in res) return res.error;
   const { ctx } = res;
-  const supabase = createClient();
+  const supabase = await createClient();
   // La RLS autorise la suppression uniquement à l'auteur ou au gérant.
   const { error } = await supabase.from("team_notes").delete().eq("id", id).eq("workspace_id", ctx.workspace.id);
   if (error) return fail("Suppression impossible.");
@@ -59,7 +59,7 @@ export async function markTeamNoteRead(id: string): Promise<ActionResult> {
   const { ctx } = res;
   if (!canUseTeamNotes(ctx)) return fail("Accès aux notes d'équipe refusé.");
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { error } = await supabase.from("team_note_reads").upsert(
     {
       workspace_id: ctx.workspace.id,
@@ -80,7 +80,7 @@ export async function markTeamNoteExecuted(id: string): Promise<ActionResult> {
   const { ctx } = res;
   if (!canUseTeamNotes(ctx)) return fail("Accès aux notes d'équipe refusé.");
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { error } = await supabase.from("team_note_executions").upsert(
     {
       workspace_id: ctx.workspace.id,
@@ -104,7 +104,7 @@ export async function createTeamNoteComment(id: string, rawContent: string): Pro
   if (!content) return fail("Le commentaire est vide.");
   if (content.length > 4000) return fail("Commentaire trop long.");
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { error } = await supabase.from("team_note_comments").insert({
     workspace_id: ctx.workspace.id,
     team_note_id: id,

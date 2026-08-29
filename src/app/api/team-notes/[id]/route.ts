@@ -13,12 +13,13 @@ function firstRelation<T>(value: T | T[] | null | undefined): T | null {
  * Détails d'une note, demandés uniquement à l'ouverture de sa fiche.
  * Les listes ne transportent donc pas tous les commentaires à chaque navigation.
  */
-export async function GET(_request: Request, { params }: { params: { id: string } }) {
+export async function GET(_request: Request, { params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = await paramsPromise;
   const ctx = await getSessionContext();
   if (!ctx) return NextResponse.json({ error: "Session expirée." }, { status: 401 });
   if (!can(ctx, "tasks.view")) return NextResponse.json({ error: "Accès refusé." }, { status: 403 });
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: note, error: noteError } = await supabase
     .from("team_notes")
     .select("id")

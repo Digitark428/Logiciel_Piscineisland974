@@ -5,10 +5,11 @@ import { getClientOptions, getPoolOptions, getMemberOptions, getClientDocumentOp
 import { PageHeader } from "@/components/ui";
 import { ServiceForm } from "../ServiceForm";
 
-export default async function NewServicePage({ searchParams }: { searchParams: { client?: string; pool?: string; kind?: string } }) {
+export default async function NewServicePage({ searchParams: searchParamsPromise }: { searchParams: Promise<{ client?: string; pool?: string; kind?: string }> }) {
+  const searchParams = await searchParamsPromise;
   const ctx = await requirePermission("services.create");
   const kind = searchParams.kind === "one_off" ? "one_off" : "contract";
-  const supabase = createClient();
+  const supabase = await createClient();
   const [clients, pools, members, documents] = await Promise.all([
     getClientOptions(supabase, ctx.workspace.id),
     getPoolOptions(supabase, ctx.workspace.id),

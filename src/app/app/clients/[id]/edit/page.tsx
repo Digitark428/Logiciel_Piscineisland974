@@ -7,9 +7,10 @@ import { ClientForm } from "../../ClientForm";
 import { clientName } from "@/lib/utils/format";
 import type { Client } from "@/lib/db/types";
 
-export default async function EditClientPage({ params }: { params: { id: string } }) {
+export default async function EditClientPage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = await paramsPromise;
   const ctx = await requirePermission("clients.edit");
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: client } = await supabase
     .from("clients")
     .select("*")

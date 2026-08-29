@@ -7,9 +7,10 @@ import { PageHeader } from "@/components/ui";
 import { ServiceEditForm } from "./ServiceEditForm";
 import type { Service } from "@/lib/db/types";
 
-export default async function EditServicePage({ params }: { params: { id: string } }) {
+export default async function EditServicePage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = await paramsPromise;
   const ctx = await requirePermission("services.edit");
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: service } = await supabase
     .from("services")
     .select("*")

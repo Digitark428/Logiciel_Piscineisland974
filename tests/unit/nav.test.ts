@@ -5,7 +5,7 @@ describe("Navigation applicative", () => {
   it("conserve Gestion dans le menu du compte et masque ses enfants non autorisés", () => {
     const entries = filterNavEntries(ACCOUNT_NAV_ITEMS, (item) => item.perm !== "team.manage" && !item.adminOnly);
     const management = entries.find((entry) => isNavGroup(entry) && entry.key === "management");
-    expect(management && isNavGroup(management) ? management.children.map((item) => item.label) : []).toEqual(["Documents", "Sauvegardes"]);
+    expect(management && isNavGroup(management) ? management.children.map((item) => item.label) : []).toEqual(["Documents"]);
   });
 
   it("respecte l’ordre produit et masque les entrées retirées", () => {

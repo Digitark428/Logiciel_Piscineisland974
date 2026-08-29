@@ -34,7 +34,7 @@ export async function addPortalServiceNote(
     .maybeSingle();
   if (!client || !client.portal_enabled || client.status !== "active") return fail("Session expirée. Rechargez la page.");
 
-  const cookieValue = cookies().get(portalCookieName(token))?.value;
+  const cookieValue = (await cookies()).get(portalCookieName(token))?.value;
   if (!verifyPortalSession(token, cookieValue, client.id)) return fail("Session expirée. Rechargez la page.");
 
   // 2) La prestation doit appartenir à CE client (portée stricte).

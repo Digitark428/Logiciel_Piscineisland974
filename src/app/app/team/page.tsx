@@ -10,7 +10,7 @@ import type { Membership } from "@/lib/db/types";
 export default async function TeamPage() {
   const ctx = await requireContext();
   if (!ctx.isAdmin) redirect("/app");
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data: members } = await supabase
     .from("memberships")

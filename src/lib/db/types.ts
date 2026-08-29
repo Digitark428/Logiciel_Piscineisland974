@@ -37,6 +37,7 @@ export interface Workspace {
   legal_form: string | null;
   legal_info: Record<string, unknown>;
   settings: Record<string, unknown>;
+  timezone: string;
   status: WorkspaceStatus;
   plan: string;
   trial_ends_at: string | null;
@@ -339,6 +340,10 @@ export interface CommunityPostMedia {
   workspace_id: string;
   post_id: string;
   storage_path: string;
+  original_storage_path: string | null;
+  original_name: string | null;
+  original_mime_type: string | null;
+  original_size_bytes: number | null;
   position: number;
   created_at: string;
 }
@@ -404,7 +409,17 @@ export interface Backup {
   storage_path: string | null;
   kind: "auto" | "manual";
   size_bytes: number | null;
-  status: "running" | "completed" | "failed";
+  status: "queued" | "running" | "completed" | "failed";
+  file_name: string | null;
+  mime_type: string;
+  progress_stage: string;
+  started_at: string | null;
+  completed_at: string | null;
+  scheduled_local_date: string | null;
+  attempt_count: number;
+  failure_message: string | null;
+  workflow_run_id: string | null;
+  requested_by: string | null;
   created_at: string;
 }
 

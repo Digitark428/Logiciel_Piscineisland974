@@ -1,7 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useFormState } from "react-dom";
+import { useActionState, useMemo, useState } from "react";
 import { SubmitButton } from "@/components/forms/SubmitButton";
 import { createMaintenanceContract, createOneOffService } from "@/lib/actions/services";
 import { idle } from "@/lib/actions/result";
@@ -32,7 +31,7 @@ export function ServiceForm({
   isAdmin: boolean;
 }) {
   const action = kind === "contract" ? createMaintenanceContract : createOneOffService;
-  const [state, formAction] = useFormState(action, idle);
+  const [state, formAction] = useActionState(action, idle);
   const [clientId, setClientId] = useState(defaultClientId ?? "");
   const clientPools = useMemo(() => pools.filter((pool) => pool.client_id === clientId), [pools, clientId]);
   const clientContracts = useMemo(() => documents.filter((document) => document.client_id === clientId && document.category === "contract"), [documents, clientId]);

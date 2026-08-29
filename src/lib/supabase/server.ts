@@ -5,8 +5,8 @@ import { cookies } from "next/headers";
  * Client Supabase côté serveur (RSC, Server Actions, Route Handlers).
  * Utilise la clé anon + la session de l'utilisateur (cookies) → soumis à la RLS.
  */
-export function createClient() {
-  const cookieStore = cookies();
+export async function createClient() {
+  const cookieStore = await cookies();
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

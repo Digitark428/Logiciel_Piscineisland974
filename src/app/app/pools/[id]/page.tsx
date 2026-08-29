@@ -5,9 +5,10 @@ import { createClient } from "@/lib/supabase/server";
 import { Card, Badge } from "@/components/ui";
 import { clientName, formatDate, SERVICE_STATUS_LABELS } from "@/lib/utils/format";
 
-export default async function PoolDetailPage({ params }: { params: { id: string } }) {
+export default async function PoolDetailPage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = await paramsPromise;
   const ctx = await requirePermission("pools.view");
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: pool } = await supabase
     .from("pools")
     .select("*, client:clients(id,first_name,last_name,company_name)")

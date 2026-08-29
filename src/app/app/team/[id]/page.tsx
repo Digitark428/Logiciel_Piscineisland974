@@ -8,7 +8,8 @@ import { MemberManagement } from "./MemberManagement";
 import { memberName } from "@/lib/utils/format";
 import type { Membership } from "@/lib/db/types";
 
-export default async function MemberProfilePage({ params }: { params: { id: string } }) {
+export default async function MemberProfilePage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = await paramsPromise;
   const ctx = await requireContext();
   if (!ctx.isAdmin) redirect("/app");
 

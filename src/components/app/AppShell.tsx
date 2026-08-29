@@ -354,13 +354,13 @@ function ProfileMenu({
 function CompanyBrand({ logoUrl, canManage }: { logoUrl: string | null; canManage: boolean }) {
   if (logoUrl) {
     return (
-      <div className="leti-company-brand" aria-label="Logo de l’entreprise">
+      <div className="leti-company-brand" aria-label="Logo de l’entreprise" title="Logo de l’entreprise">
         <Image
           src={logoUrl}
           alt="Logo de l’entreprise"
-          width={360}
-          height={96}
-          sizes="(max-width: 767px) 72px, (max-width: 1023px) 132px, 180px"
+          width={240}
+          height={80}
+          sizes="96px"
           className="h-full w-full object-contain"
         />
       </div>
@@ -371,7 +371,7 @@ function CompanyBrand({ logoUrl, canManage }: { logoUrl: string | null; canManag
   return (
     <Link href="/app/settings#company-logo" prefetch={false} className="leti-company-logo-action" aria-label="Ajouter le logo de mon entreprise">
       <Icon name="upload" size={16} />
-      <span className="hidden md:inline">Ajouter le logo de mon entreprise</span>
+      <span className="sr-only">Ajouter le logo de mon entreprise</span>
     </Link>
   );
 }
@@ -619,7 +619,7 @@ export function AppShell({
     <div className="min-h-screen bg-graphite-50" onClickCapture={handleInternalNavigation}>
       {/* Sidebar desktop */}
       <aside className="fixed inset-y-0 left-0 z-[var(--leti-layer-sidebar)] hidden w-64 flex-col border-r border-graphite-100 bg-white lg:flex">
-        <div className="flex h-[var(--leti-header-height)] items-center px-5">
+        <div className="flex h-[var(--leti-header-height)] items-center gap-3 px-5">
           <Link
             href="/app"
             prefetch={false}
@@ -632,6 +632,8 @@ export function AppShell({
           >
             <Logo symbolEffect="sidebar" />
           </Link>
+          <span className="h-7 w-px shrink-0 bg-graphite-100" aria-hidden />
+          <CompanyBrand logoUrl={workspaceLogoUrl} canManage={canManageBranding} />
         </div>
         <div className="px-5 pb-3">
           <WorkspaceIdentity name={workspaceName} companyCode={companyCode} />
@@ -653,9 +655,11 @@ export function AppShell({
         <div className="leti-mobile-drawer fixed inset-0 lg:hidden" data-leti-overlay="drawer" data-leti-overlay-side="left">
           <button type="button" className="absolute inset-0 cursor-default bg-graphite-950/25" onClick={closeDrawer} aria-label="Fermer le menu" />
           <aside ref={mobileDrawerRef} role="dialog" aria-modal="true" aria-label="Navigation principale" className="absolute inset-y-0 left-0 flex w-72 max-w-[85%] flex-col bg-white shadow-float">
-            <div className="flex h-[var(--leti-header-height)] items-center justify-between px-5">
+            <div className="flex h-[var(--leti-header-height)] items-center gap-3 px-5">
               <Logo symbolEffect="sidebar" />
-              <button onClick={closeDrawer} className="btn-ghost p-2" aria-label="Fermer">✕</button>
+              <span className="h-7 w-px shrink-0 bg-graphite-100" aria-hidden />
+              <CompanyBrand logoUrl={workspaceLogoUrl} canManage={canManageBranding} />
+              <button onClick={closeDrawer} className="btn-ghost ml-auto p-2" aria-label="Fermer">✕</button>
             </div>
             <div className="px-5 pb-3">
               <WorkspaceIdentity name={workspaceName} companyCode={companyCode} />
@@ -680,9 +684,6 @@ export function AppShell({
           <button ref={mobileMenuButtonRef} onClick={() => setOpen(true)} className="btn-ghost p-2 lg:hidden" aria-label="Menu">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
           </button>
-          <div className="leti-company-brand-slot">
-            <CompanyBrand logoUrl={workspaceLogoUrl} canManage={canManageBranding} />
-          </div>
           <div className="ml-auto flex items-center gap-2">
             <Link
               href="/app/notifications"

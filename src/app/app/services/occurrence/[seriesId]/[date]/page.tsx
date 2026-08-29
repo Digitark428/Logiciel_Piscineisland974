@@ -11,9 +11,10 @@ import { clientName, formatDate, SERVICE_STATUS_LABELS } from "@/lib/utils/forma
 import { formatMoneyCents } from "@/lib/utils/money";
 import { ExceptionForm, GoThereButton, ReportForm, StatusActions } from "../../../[id]/ServiceControls";
 
-export default async function WeeklyOccurrencePage({ params }: { params: { seriesId: string; date: string } }) {
+export default async function WeeklyOccurrencePage({ params: paramsPromise }: { params: Promise<{ seriesId: string; date: string }> }) {
+  const params = await paramsPromise;
   const ctx = await requirePermission("services.view");
-  const supabase = createClient();
+  const supabase = await createClient();
   const occurrence = await getWeeklyOccurrenceDetail(supabase, {
     workspaceId: ctx.workspace.id,
     seriesId: params.seriesId,

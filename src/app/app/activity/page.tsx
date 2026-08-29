@@ -19,7 +19,7 @@ const ACTION_LABELS: Record<string, string> = {
 export default async function ActivityPage() {
   const ctx = await requireContext();
   if (!ctx.isAdmin) redirect("/app");
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data: logs } = await supabase
     .from("activity_logs")

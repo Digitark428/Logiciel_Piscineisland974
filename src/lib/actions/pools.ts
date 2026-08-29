@@ -56,7 +56,7 @@ export async function upsertPool(_prev: ActionResult, formData: FormData): Promi
     geo_precision: str(formData.get("geo_precision")),
   };
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: client } = await supabase.from("clients").select("id").eq("id", client_id).eq("workspace_id", ctx.workspace.id).maybeSingle();
   if (!client) return fail("Client introuvable dans cet espace.");
   if (id) {
@@ -81,7 +81,7 @@ export async function deletePool(id: string): Promise<ActionResult> {
   const res = await actionContext();
   if ("error" in res) return res.error;
   const { ctx } = res;
-  const supabase = createClient();
+  const supabase = await createClient();
   const { error } = await supabase.from("pools").delete().eq("id", id).eq("workspace_id", ctx.workspace.id);
   if (error) return fail("Suppression impossible.");
   await logActivity(ctx, { action: "delete", entity_type: "pool", entity_id: id, summary: "Piscine supprimée" });

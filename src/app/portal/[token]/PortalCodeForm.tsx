@@ -1,12 +1,12 @@
 "use client";
 
-import { useFormState } from "react-dom";
+import { useActionState } from "react";
 import { openPortal } from "@/lib/actions/portal";
 import { idle } from "@/lib/actions/result";
 import { SubmitButton } from "@/components/forms/SubmitButton";
 
 export function PortalCodeForm({ token }: { token: string }) {
-  const [state, formAction] = useFormState(openPortal, idle);
+  const [state, formAction] = useActionState(openPortal, idle);
   return (
     <form action={formAction} className="space-y-4">
       {state.message && !state.ok && (

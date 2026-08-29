@@ -40,3 +40,4 @@ supabase/.branches
 
 # testing
 /coverage
+/.swc

@@ -11,7 +11,7 @@ function relationOne<T>(value: T | T[] | null | undefined): T | null {
 
 export default async function TeamNotesPage() {
   const ctx = await requirePermission("tasks.view");
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: notes } = await supabase
     .from("team_notes")
     .select(

@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { useFormState } from "react-dom";
+import { useActionState, useState, useTransition } from "react";
 import { resolveCompanyCode, signIn } from "@/lib/auth/actions";
 import { idle } from "@/lib/actions/result";
 import { SubmitButton } from "@/components/forms/SubmitButton";
@@ -15,7 +14,7 @@ export function LoginFlow() {
   const [role, setRole] = useState<Role>("admin");
   const [codeError, setCodeError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-  const [signInState, signInAction] = useFormState(signIn, idle);
+  const [signInState, signInAction] = useActionState(signIn, idle);
 
   function submitCode(e: React.FormEvent) {
     e.preventDefault();

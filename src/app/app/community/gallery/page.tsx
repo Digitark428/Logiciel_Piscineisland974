@@ -7,7 +7,8 @@ import { CommunityGallery } from "./CommunityGallery";
 
 export const dynamic = "force-dynamic";
 
-export default async function CommunityGalleryPage({ searchParams }: { searchParams: { q?: string } }) {
+export default async function CommunityGalleryPage({ searchParams: searchParamsPromise }: { searchParams: Promise<{ q?: string }> }) {
+  const searchParams = await searchParamsPromise;
   const ctx = await requirePermission("community.view");
   const searchQuery = normalizeCommunitySearch(searchParams.q);
   const page = await getCommunityGalleryPage(ctx, COMMUNITY_GALLERY_INITIAL_POSTS, undefined, searchQuery);

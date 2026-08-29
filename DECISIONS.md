@@ -56,6 +56,24 @@
 
 **Raison :** conserver une source unique par photo, éviter les incohérences de suppression et maintenir l'isolation du bucket privé par entreprise.
 
+## Sauvegardes professionnelles
+
+**Décision :** une sauvegarde LETI est une archive ZIP privée admin-only, générée par un workflow durable à partir d’un instantané paginé. Elle contient un PDF de lecture, un XLSX exhaustif et les fichiers métier disponibles. Le cron s’exécute chaque heure mais ne crée qu’une sauvegarde par date locale, après 21 h dans `workspaces.timezone`. Il n’existe aucune suppression ou rétention automatique.
+
+**Raison :** dissocier l’ordonnancement des traitements lourds, rendre les reprises idempotentes, éviter les limites d’une requête HTTP synchrone et respecter le fuseau de chaque entreprise sans multiplier les crons. L’absence de rétention automatique préserve l’historique demandé ; la suppression reste une action explicite du gérant.
+
+## Périmètre des données de sauvegarde
+
+**Décision :** le catalogue d’export est explicite et orienté métier. Il exclut les secrets portail, identifiants Auth, journaux techniques, notifications, to-do et événements personnels ; les nouvelles photos « Entre nous » conservent leur original en plus du WebP d’affichage, tandis que l’historique exporte le meilleur fichier déjà disponible.
+
+**Raison :** une sauvegarde administrative ne doit pas devenir une copie de secrets ou contourner la confidentialité personnelle, et un catalogue positif est plus sûr qu’un export implicite de toutes les tables.
+
+## Impression hebdomadaire des entretiens
+
+**Décision :** l’impression semaine reprend exactement la période et les filtres visibles, couvre toujours lundi à dimanche et reste volontairement limitée au jour/date, client et adresse, en A4 paysage.
+
+**Raison :** fournir une feuille terrain lisible sans exposer les notes, montants, accès, statuts internes ou autres informations non demandées.
+
 ## Événements personnels du planning
 
 **Décision :** les événements du planning vivent dans `planning_events`, séparés des entretiens et des tâches. Ils sont rattachés au `workspace_id` et à leur `owner_membership_id`; seul cet auteur authentifié peut les modifier ou les supprimer. Un administrateur auteur peut sélectionner un `assigned_membership_id` actif de son propre workspace : cette personne peut alors consulter l’événement, sans pouvoir l’éditer. L’assignation reste nullable pour préserver tous les événements historiques. Les tâches datées restent seulement consultables depuis le planning et continuent d'être modifiées depuis leur écran dédié.

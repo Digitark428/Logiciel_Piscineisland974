@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { actionContext, logActivity } from "@/lib/actions/helpers";
 import { fail, ok, type ActionResult } from "@/lib/actions/result";
 import { normalizeWorkspaceLogo, workspaceLogoPath } from "@/lib/workspace-logo";
+import { isValidIanaTimezone } from "@/lib/timezone";
 
 const str = (v: FormDataEntryValue | null) => {
   const t = (v as string | null)?.trim();
@@ -20,8 +21,10 @@ export async function updateWorkspace(_prev: ActionResult, formData: FormData): 
 
   const name = z.string().min(2, "Nom requis.").safeParse(formData.get("name"));
   if (!name.success) return fail(name.error.issues[0].message);
+  const timezone = String(formData.get("timezone") ?? "").trim();
+  if (!isValidIanaTimezone(timezone)) return fail("Fuseau horaire invalide.");
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const settings = {
     ...(ctx.workspace.settings ?? {}),
     portal_share_assignee_phone: formData.get("portal_share_assignee_phone") === "on",
@@ -38,6 +41,7 @@ export async function updateWorkspace(_prev: ActionResult, formData: FormData): 
       siret: str(formData.get("siret")),
       vat_number: str(formData.get("vat_number")),
       legal_form: str(formData.get("legal_form")),
+      timezone,
       settings,
     })
     .eq("id", ctx.workspace.id);
@@ -63,7 +67,7 @@ export async function updateWorkspaceLogo(_prev: ActionResult, formData: FormDat
     return fail(cause instanceof Error ? cause.message : "Logo incorrect.");
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const previousPath = workspaceLogoPath(ctx.workspace.settings);
   const nextPath = `${ctx.workspace.id}/branding/company-logo-${Date.now()}.webp`;
   const { error: uploadError } = await supabase.storage
@@ -111,7 +115,7 @@ export async function deleteWorkspaceLogo(_prev: ActionResult, _formData: FormDa
   const currentPath = workspaceLogoPath(ctx.workspace.settings);
   if (!currentPath) return ok("Aucun logo n’était enregistré.");
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const nextSettings = { ...(ctx.workspace.settings ?? {}) };
   delete nextSettings.company_logo_path;
   const { error } = await supabase

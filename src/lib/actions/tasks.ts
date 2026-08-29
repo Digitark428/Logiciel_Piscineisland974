@@ -45,7 +45,7 @@ export async function createTask(_prev: ActionResult, formData: FormData): Promi
   const assignedMembershipId = category === "professional" ? str(formData.get("assigned_membership_id")) : null;
   if (category === "professional" && !assignedMembershipId) return fail("Choisissez une personne.");
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { error } = await supabase.from("tasks").insert({
     workspace_id: ctx.workspace.id,
     title,
@@ -68,7 +68,7 @@ export async function setTaskStatus(id: string, status: "todo" | "in_progress" |
   const res = await actionContext();
   if ("error" in res) return res.error;
   const { ctx } = res;
-  const supabase = createClient();
+  const supabase = await createClient();
   const { error } = await supabase.from("tasks").update({ status }).eq("id", id).eq("workspace_id", ctx.workspace.id);
   if (error) return fail("Action impossible.");
   revalidateTaskViews();
@@ -82,7 +82,7 @@ export async function updatePersonalTaskPriority(id: string, priority: unknown):
   if (!isTaskPriority(priority)) return fail("Le niveau d'importance est invalide.");
 
   const { ctx } = res;
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("tasks")
     .update({ priority })
@@ -103,7 +103,7 @@ export async function deleteTask(id: string): Promise<ActionResult> {
   const res = await actionContext();
   if ("error" in res) return res.error;
   const { ctx } = res;
-  const supabase = createClient();
+  const supabase = await createClient();
   const { error } = await supabase.from("tasks").delete().eq("id", id).eq("workspace_id", ctx.workspace.id);
   if (error) return fail("Suppression impossible.");
   revalidateTaskViews();

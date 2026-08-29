@@ -20,20 +20,23 @@ describe("Logo d’entreprise", () => {
     const metadata = await sharp(logo.buffer).metadata();
     expect(logo.sourceFormat).toBe("svg");
     expect(metadata.format).toBe("webp");
-    expect(metadata.width).toBeLessThanOrEqual(WORKSPACE_LOGO_OUTPUT_WIDTH);
-    expect(metadata.height).toBeLessThanOrEqual(WORKSPACE_LOGO_OUTPUT_HEIGHT);
-    expect((metadata.width ?? 1) / (metadata.height ?? 1)).toBeCloseTo((width as number) / (height as number), 1);
+    expect(metadata.width).toBe(WORKSPACE_LOGO_OUTPUT_WIDTH);
+    expect(metadata.height).toBe(WORKSPACE_LOGO_OUTPUT_HEIGHT);
+    const visible = await sharp(await sharp(logo.buffer).trim({ threshold: 10 }).toBuffer()).metadata();
+    expect((visible.width ?? 1) / (visible.height ?? 1)).toBeCloseTo((width as number) / (height as number), 1);
   });
 
   it("conserve la transparence d’un PNG et accepte une image basse résolution", async () => {
-    const source = await sharp({
-      create: { width: 48, height: 32, channels: 4, background: { r: 24, g: 58, b: 89, alpha: 0.35 } },
-    }).png().toBuffer();
+    const source = await sharp({ create: { width: 48, height: 32, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } })
+      .composite([{ input: Buffer.from('<svg width="30" height="20"><rect width="30" height="20" rx="3" fill="#183A59"/></svg>'), left: 9, top: 6 }])
+      .png()
+      .toBuffer();
     const logo = await normalizeWorkspaceLogo(source);
     const metadata = await sharp(logo.buffer).metadata();
     expect(logo.sourceFormat).toBe("png");
     expect(metadata.hasAlpha).toBe(true);
-    expect(metadata.width).toBe(48);
+    expect(metadata.width).toBe(WORKSPACE_LOGO_OUTPUT_WIDTH);
+    expect(metadata.height).toBe(WORKSPACE_LOGO_OUTPUT_HEIGHT);
   });
 
   it("accepte JPG/JPEG et limite les images très larges", async () => {
@@ -42,8 +45,19 @@ describe("Logo d’entreprise", () => {
     }).jpeg({ quality: 90 }).toBuffer();
     const logo = await normalizeWorkspaceLogo(source);
     expect(logo.sourceFormat).toBe("jpeg");
-    expect(logo.width).toBeLessThanOrEqual(WORKSPACE_LOGO_OUTPUT_WIDTH);
-    expect(logo.height).toBeLessThanOrEqual(WORKSPACE_LOGO_OUTPUT_HEIGHT);
+    expect(logo.width).toBe(WORKSPACE_LOGO_OUTPUT_WIDTH);
+    expect(logo.height).toBe(WORKSPACE_LOGO_OUTPUT_HEIGHT);
+  });
+
+  it("supprime de très grandes marges internes avant la mise au format", async () => {
+    const source = await sharp({ create: { width: 2000, height: 1000, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } })
+      .composite([{ input: Buffer.from('<svg width="400" height="200"><rect width="400" height="200" fill="#183A59"/></svg>'), left: 800, top: 400 }])
+      .png()
+      .toBuffer();
+    const logo = await normalizeWorkspaceLogo(source);
+    const visible = await sharp(await sharp(logo.buffer).trim({ threshold: 10 }).toBuffer()).metadata();
+    expect((visible.width ?? 1) / (visible.height ?? 1)).toBeCloseTo(2, 1);
+    expect(visible.width).toBeGreaterThan(900);
   });
 
   it("rejette un fichier incorrect", async () => {

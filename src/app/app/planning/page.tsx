@@ -76,9 +76,10 @@ function itemSortValue(item: CalendarItem): string {
   return item.event.all_day ? "00:00" : item.event.start_time ?? "00:00";
 }
 
-export default async function PlanningPage({ searchParams }: { searchParams: SearchParams }) {
+export default async function PlanningPage({ searchParams: searchParamsPromise }: { searchParams: Promise<SearchParams> }) {
+  const searchParams = await searchParamsPromise;
   const ctx = await requirePermission("planning.view");
-  const supabase = createClient();
+  const supabase = await createClient();
   const view = (["day", "week", "month", "year"].includes(searchParams.view ?? "") ? searchParams.view : "week") as PlanningView;
   const anchor = parseAnchor(searchParams.date);
   const { start, end } = rangeFor(view, anchor);

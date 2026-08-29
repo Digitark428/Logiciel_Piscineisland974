@@ -15,9 +15,10 @@ import {
 import { formatMoneyCents } from "@/lib/utils/money";
 import { serviceTypeLabel, weekdayLabel } from "@/lib/services/constants";
 
-export default async function ClientDetailPage({ params }: { params: { id: string } }) {
+export default async function ClientDetailPage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = await paramsPromise;
   const ctx = await requirePermission("clients.view");
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const canViewDocs = can(ctx, "documents.view");
   const [clientRes, poolsRes, contractsRes, servicesRes, docsRes, financialsRes] = await Promise.all([
