@@ -2,6 +2,12 @@
 
 > Ajouter une entrée courte après chaque intervention significative. Ne pas y dupliquer la documentation durable de `PROJECT_CONTEXT.md`.
 
+## 2026-08-30 — Codex — Sauvegardes complètes : polices PDFKit empaquetées
+
+- **Cause :** PDFKit charge les métriques Helvetica à la demande, mais le traçage de la route Workflow n'incluait pas `pdfkit/js/standard-fonts`, ce qui faisait échouer `generatePdfStep` après trois tentatives en production.
+- **Correctif :** inclusion ciblée des polices PDFKit dans le paquet de la route `/.well-known/workflow/v1/step`, sans changement de données, schéma, permissions ou contenu des sauvegardes.
+- **Vérification :** build de production valide et manifeste de fonction contenant les 30 fichiers de polices requis ; typecheck et 86 tests actifs réussis, 20 tests d'intégration conditionnels ignorés.
+
 ## 2026-08-29 — Codex — Dossiers clients premium et retrait global de la gestion piscine
 
 - **Clients :** création et modification réunies dans un dossier continu et responsive ; fiche partagée recomposée en quatre surfaces principales pour les coordonnées/synthèse/espace client, contrats compacts, historique paginé et documents regroupés, sans retirer les actions métier existantes.

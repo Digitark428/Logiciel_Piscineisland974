@@ -8,6 +8,11 @@ const projectRoot = dirname(fileURLToPath(import.meta.url));
 const nextConfig = {
   reactStrictMode: true,
   outputFileTracingRoot: projectRoot,
+  outputFileTracingIncludes: {
+    "/.well-known/workflow/v1/step": [
+      "node_modules/pdfkit/js/standard-fonts/**/*",
+    ],
+  },
   serverExternalPackages: ["heic-decode"],
   images: {
     remotePatterns: [
