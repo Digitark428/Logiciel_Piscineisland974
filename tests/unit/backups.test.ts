@@ -7,7 +7,7 @@ import { backupFileName, safeFileSegment } from "@/lib/backups/format";
 import type { BackupSnapshot } from "@/lib/backups/types";
 import { generateProfessionalPdf } from "@/lib/backups/pdf";
 import { generateProfessionalXlsx } from "@/lib/backups/xlsx";
-import { isDailyBackupDue, isValidIanaTimezone, zonedClock } from "@/lib/timezone";
+import { isDailyBackupDue, isValidIanaTimezone, nextDailyRun, zonedClock } from "@/lib/timezone";
 
 function snapshotFixture(): BackupSnapshot {
   return {
@@ -44,6 +44,15 @@ describe("Sauvegardes professionnelles", () => {
     expect(zonedClock(new Date("2026-08-29T17:00:00Z"), "Indian/Reunion")).toEqual({ date: "2026-08-29", hour: 21, minute: 0 });
     expect(isDailyBackupDue(new Date("2026-08-29T16:59:00Z"), "Indian/Reunion").due).toBe(false);
     expect(isDailyBackupDue(new Date("2026-08-29T17:00:00Z"), "Indian/Reunion")).toEqual({ due: true, localDate: "2026-08-29" });
+    expect(nextDailyRun(new Date("2026-08-29T00:05:00Z"), "Indian/Reunion")).toEqual({
+      at: new Date("2026-08-29T17:00:00.000Z"),
+      localDate: "2026-08-29",
+    });
+    expect(nextDailyRun(new Date("2026-08-29T00:05:00Z"), "Europe/Paris")).toEqual({
+      at: new Date("2026-08-29T19:00:00.000Z"),
+      localDate: "2026-08-29",
+    });
+    expect(nextDailyRun(new Date("2026-12-15T00:05:00Z"), "Europe/Paris").at).toEqual(new Date("2026-12-15T20:00:00.000Z"));
     expect(isValidIanaTimezone("Indian/Reunion")).toBe(true);
     expect(isValidIanaTimezone("Fuseau/Inconnu")).toBe(false);
   });

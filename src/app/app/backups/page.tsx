@@ -57,7 +57,13 @@ export default async function BackupsPage({ searchParams: searchParamsPromise }:
 
   const list = (data ?? []) as BackupListItem[];
   const latest = latestData as BackupListItem | null;
-  const active = list.some((backup) => backup.status === "queued" || backup.status === "running");
+  const now = Date.now();
+  const active = list.some((backup) => backup.status === "running"
+    || (backup.status === "queued" && new Date(backup.created_at).getTime() <= now + 60_000));
+  const wakeAt = list
+    .filter((backup) => backup.status === "queued" && new Date(backup.created_at).getTime() > now + 60_000)
+    .map((backup) => backup.created_at)
+    .sort()[0] ?? null;
   const groups = new Map<string, Map<string, BackupListItem[]>>();
   for (const backup of list) {
     const local = localYearMonth(backup.created_at, timeZone);
@@ -70,7 +76,7 @@ export default async function BackupsPage({ searchParams: searchParamsPromise }:
 
   return (
     <div>
-      <BackupAutoRefresh active={active} />
+      <BackupAutoRefresh active={active} wakeAt={wakeAt} />
       <PageHeader
         title="Sauvegardes"
         description="Créez et téléchargez un dossier complet contenant un PDF professionnel, un classeur XLSX, la galerie et les documents associés."

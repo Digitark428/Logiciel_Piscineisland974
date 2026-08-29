@@ -31,4 +31,5 @@ export interface BackupTableDefinition {
 export interface BackupWorkflowInput {
   backupId: string;
   workspaceId: string;
+  scheduledAt?: string;
 }

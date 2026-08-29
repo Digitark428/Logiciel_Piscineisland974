@@ -3,15 +3,16 @@ import crypto from "node:crypto";
 import { start } from "workflow/api";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { attachWorkflowRun, createBackupJob } from "@/lib/backups/queue";
-import { isDailyBackupDue, isValidIanaTimezone } from "@/lib/timezone";
+import { isValidIanaTimezone, nextDailyRun } from "@/lib/timezone";
 import { professionalBackupWorkflow } from "@/workflows/professional-backup";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 /**
- * Contrôle horaire : chaque entreprise est mise en file une seule fois, dès
- * 21h00 dans son propre fuseau IANA. Le travail lourd est confié au workflow.
+ * Répartiteur quotidien compatible avec le plan Hobby : chaque entreprise est
+ * mise en file une fois, puis son workflow dort sans consommer de ressources
+ * jusqu'au prochain 21h00 dans son propre fuseau IANA.
  */
 async function handleCron(request: NextRequest) {
   const secret = process.env.CRON_SECRET;
@@ -32,11 +33,7 @@ async function handleCron(request: NextRequest) {
   let failed = 0;
   for (const w of workspaces ?? []) {
     const timeZone = isValidIanaTimezone(w.timezone) ? w.timezone : "Indian/Reunion";
-    const schedule = isDailyBackupDue(now, timeZone, 21);
-    if (!schedule.due) {
-      skipped += 1;
-      continue;
-    }
+    const schedule = nextDailyRun(now, timeZone, 21);
     let jobId: string | null = null;
     try {
       const job = await createBackupJob(admin, {
@@ -45,14 +42,18 @@ async function handleCron(request: NextRequest) {
         timeZone,
         kind: "auto",
         scheduledLocalDate: schedule.localDate,
-        now,
+        now: schedule.at,
       });
       if (job.alreadyExists) {
         skipped += 1;
         continue;
       }
       jobId = job.id;
-      const run = await start(professionalBackupWorkflow, [{ backupId: job.id, workspaceId: w.id }]);
+      const run = await start(professionalBackupWorkflow, [{
+        backupId: job.id,
+        workspaceId: w.id,
+        scheduledAt: schedule.at.toISOString(),
+      }]);
       await attachWorkflowRun(admin, job.id, w.id, run.runId);
       queued += 1;
     } catch (cause) {
@@ -70,7 +71,7 @@ async function handleCron(request: NextRequest) {
     }
   }
 
-  return NextResponse.json({ queued, skipped, failed, total: (workspaces ?? []).length, checkedAt: now.toISOString() });
+  return NextResponse.json({ queued, skipped, failed, total: (workspaces ?? []).length, dispatchedAt: now.toISOString() });
 }
 
 export const GET = handleCron;

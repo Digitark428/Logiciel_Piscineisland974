@@ -58,7 +58,7 @@
 
 ## Sauvegardes professionnelles
 
-**Décision :** une sauvegarde LETI est une archive ZIP privée admin-only, générée par un workflow durable à partir d’un instantané paginé. Elle contient un PDF de lecture, un XLSX exhaustif et les fichiers métier disponibles. Le cron s’exécute chaque heure mais ne crée qu’une sauvegarde par date locale, après 21 h dans `workspaces.timezone`. Il n’existe aucune suppression ou rétention automatique.
+**Décision :** une sauvegarde LETI est une archive ZIP privée admin-only, générée par un workflow durable à partir d’un instantané paginé. Elle contient un PDF de lecture, un XLSX exhaustif et les fichiers métier disponibles. Le cron Vercel s’exécute une fois par jour à 00:05 UTC ; il crée une exécution idempotente par date locale, puis chaque workflow attend sans consommation active le prochain 21 h dans `workspaces.timezone`. Il n’existe aucune suppression ou rétention automatique.
 
 **Raison :** dissocier l’ordonnancement des traitements lourds, rendre les reprises idempotentes, éviter les limites d’une requête HTTP synchrone et respecter le fuseau de chaque entreprise sans multiplier les crons. L’absence de rétention automatique préserve l’historique demandé ; la suppression reste une action explicite du gérant.
 

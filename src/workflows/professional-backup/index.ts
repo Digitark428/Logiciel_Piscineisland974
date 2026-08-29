@@ -1,3 +1,4 @@
+import { sleep } from "workflow";
 import type { BackupWorkflowInput } from "@/lib/backups/types";
 import {
   assembleArchiveStep,
@@ -13,6 +14,7 @@ export async function professionalBackupWorkflow(input: BackupWorkflowInput) {
 
   const temporaryPaths: string[] = [];
   try {
+    if (input.scheduledAt) await sleep(new Date(input.scheduledAt));
     const snapshotPath = await collectSnapshotStep(input.backupId, input.workspaceId);
     temporaryPaths.push(snapshotPath);
     const pdfPath = await generatePdfStep(input.backupId, input.workspaceId, snapshotPath);

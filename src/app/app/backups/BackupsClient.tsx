@@ -35,13 +35,19 @@ export function backupDateTime(value: string, timeZone: string): string {
   return new Intl.DateTimeFormat("fr-FR", { dateStyle: "long", timeStyle: "short", timeZone }).format(date);
 }
 
-export function BackupAutoRefresh({ active }: { active: boolean }) {
+export function BackupAutoRefresh({ active, wakeAt }: { active: boolean; wakeAt: string | null }) {
   const router = useRouter();
   useEffect(() => {
-    if (!active) return;
-    const timer = window.setInterval(() => router.refresh(), 5000);
-    return () => window.clearInterval(timer);
-  }, [active, router]);
+    if (active) {
+      const timer = window.setInterval(() => router.refresh(), 5000);
+      return () => window.clearInterval(timer);
+    }
+    if (wakeAt) {
+      const delay = Math.max(0, Math.min(new Date(wakeAt).getTime() - Date.now() + 1000, 2_147_000_000));
+      const timer = window.setTimeout(() => router.refresh(), delay);
+      return () => window.clearTimeout(timer);
+    }
+  }, [active, router, wakeAt]);
   return null;
 }
 
