@@ -8,32 +8,26 @@ import { MAINTENANCE_TYPES, WEEKDAYS } from "@/lib/services/constants";
 import { todayInReunion } from "@/lib/utils/date";
 
 interface Option { id: string; label: string }
-interface PoolOption { id: string; label: string; client_id: string }
 interface DocumentOption { id: string; label: string; client_id: string; category: "contract" | "invoice" }
 
 export function ServiceForm({
   kind,
   clients,
-  pools,
   members,
   documents = [],
   defaultClientId,
-  defaultPoolId,
   isAdmin,
 }: {
   kind: "contract" | "one_off";
   clients: Option[];
-  pools: PoolOption[];
   members: Option[];
   documents?: DocumentOption[];
   defaultClientId?: string;
-  defaultPoolId?: string;
   isAdmin: boolean;
 }) {
   const action = kind === "contract" ? createMaintenanceContract : createOneOffService;
   const [state, formAction] = useActionState(action, idle);
   const [clientId, setClientId] = useState(defaultClientId ?? "");
-  const clientPools = useMemo(() => pools.filter((pool) => pool.client_id === clientId), [pools, clientId]);
   const clientContracts = useMemo(() => documents.filter((document) => document.client_id === clientId && document.category === "contract"), [documents, clientId]);
   const clientInvoices = useMemo(() => documents.filter((document) => document.client_id === clientId && document.category === "invoice"), [documents, clientId]);
   const today = todayInReunion();
@@ -53,15 +47,6 @@ export function ServiceForm({
               {clients.map((client) => <option key={client.id} value={client.id}>{client.label}</option>)}
             </select>
           </div>
-          {kind === "one_off" && (
-            <div>
-              <label className="label" htmlFor="pool_id">Piscine</label>
-              <select id="pool_id" name="pool_id" className="input" defaultValue={defaultPoolId ?? ""}>
-                <option value="">—</option>
-                {clientPools.map((pool) => <option key={pool.id} value={pool.id}>{pool.label}</option>)}
-              </select>
-            </div>
-          )}
           <div>
             <label className="label" htmlFor="service_type">Type d'entretien *</label>
             <select id="service_type" name="service_type" required className="input" defaultValue={MAINTENANCE_TYPES[0].key}>

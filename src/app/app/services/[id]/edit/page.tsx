@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { requirePermission } from "@/lib/auth/context";
 import { createClient } from "@/lib/supabase/server";
-import { getPoolOptions, getMemberOptions, getClientDocumentOptions } from "@/lib/db/queries";
+import { getMemberOptions, getClientDocumentOptions } from "@/lib/db/queries";
 import { PageHeader } from "@/components/ui";
 import { ServiceEditForm } from "./ServiceEditForm";
 import type { Service } from "@/lib/db/types";
@@ -28,8 +28,7 @@ export default async function EditServicePage({ params: paramsPromise }: { param
     if (series?.recurrence_kind === "weekly_contract") redirect(`/app/services/contracts/${service.series_id}`);
   }
 
-  const [pools, members, documents] = await Promise.all([
-    getPoolOptions(supabase, ctx.workspace.id),
+  const [members, documents] = await Promise.all([
     getMemberOptions(supabase, ctx.workspace.id),
     getClientDocumentOptions(supabase, ctx.workspace.id),
   ]);
@@ -47,7 +46,7 @@ export default async function EditServicePage({ params: paramsPromise }: { param
     <div className="mx-auto max-w-3xl">
       <Link href={`/app/services/${params.id}`} className="mb-4 inline-block text-sm text-graphite-500 hover:text-graphite-700">← Entretien</Link>
       <PageHeader title="Modifier l'entretien" />
-      <ServiceEditForm service={service as Service} members={members} pools={pools} documents={clientDocuments} isAdmin={ctx.isAdmin} financialAmountCents={financialResult.data?.amount_cents ?? null} />
+      <ServiceEditForm service={service as Service} members={members} documents={clientDocuments} isAdmin={ctx.isAdmin} financialAmountCents={financialResult.data?.amount_cents ?? null} />
     </div>
   );
 }

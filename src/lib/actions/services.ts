@@ -78,7 +78,6 @@ async function saveFinancialAmount(
 
 interface ServiceReferences {
   clientId: string;
-  poolId?: string | null;
   assignedId?: string | null;
   contractDocumentId?: string | null;
   invoiceDocumentId?: string | null;
@@ -90,11 +89,8 @@ async function validateServiceReferences(
   refs: ServiceReferences,
 ): Promise<boolean> {
   if (!uuidSchema.safeParse(refs.clientId).success) return false;
-  const [client, pool, assignee, contractDocument, invoiceDocument] = await Promise.all([
+  const [client, assignee, contractDocument, invoiceDocument] = await Promise.all([
     supabase.from("clients").select("id").eq("id", refs.clientId).eq("workspace_id", workspaceId).maybeSingle(),
-    refs.poolId
-      ? supabase.from("pools").select("id,client_id").eq("id", refs.poolId).eq("client_id", refs.clientId).eq("workspace_id", workspaceId).maybeSingle()
-      : Promise.resolve({ data: { id: "not-required" } }),
     refs.assignedId
       ? supabase.from("memberships").select("id").eq("id", refs.assignedId).eq("workspace_id", workspaceId).eq("status", "active").maybeSingle()
       : Promise.resolve({ data: { id: "not-required" } }),
@@ -105,7 +101,7 @@ async function validateServiceReferences(
       ? supabase.from("documents").select("id").eq("id", refs.invoiceDocumentId).eq("workspace_id", workspaceId).eq("entity_type", "client").eq("entity_id", refs.clientId).eq("category", "invoice").maybeSingle()
       : Promise.resolve({ data: { id: "not-required" } }),
   ]);
-  return [client, pool, assignee, contractDocument, invoiceDocument].every((result) => Boolean(result.data));
+  return [client, assignee, contractDocument, invoiceDocument].every((result) => Boolean(result.data));
 }
 
 function revalidateMaintenance(clientId?: string | null, serviceId?: string | null, seriesId?: string | null): void {
@@ -227,7 +223,6 @@ export async function createOneOffService(_previous: ActionResult, formData: For
   if (!can(ctx, "services.create")) return fail("Vous n'avez pas le droit de créer un entretien.");
 
   const clientId = str(formData.get("client_id"));
-  const poolId = str(formData.get("pool_id"));
   const type = serviceType(formData.get("service_type"));
   const scheduledDate = str(formData.get("scheduled_date"));
   const scheduledTime = str(formData.get("scheduled_time"));
@@ -248,7 +243,6 @@ export async function createOneOffService(_previous: ActionResult, formData: For
   const supabase = await createClient();
   if (!(await validateServiceReferences(supabase, ctx.workspace.id, {
     clientId,
-    poolId,
     assignedId,
     contractDocumentId,
     invoiceDocumentId,
@@ -259,7 +253,7 @@ export async function createOneOffService(_previous: ActionResult, formData: For
     .insert({
       workspace_id: ctx.workspace.id,
       client_id: clientId,
-      pool_id: poolId,
+      pool_id: null,
       series_id: null,
       service_type: type,
       kind: "unique",
@@ -607,7 +601,6 @@ export async function updateService(_previous: ActionResult, formData: FormData)
   if (!id) return fail("Entretien introuvable.");
   const scheduledDate = str(formData.get("scheduled_date"));
   const submittedType = str(formData.get("service_type"));
-  const poolId = str(formData.get("pool_id"));
   const assignedId = str(formData.get("assigned_membership_id"));
   const contractDocumentId = str(formData.get("contract_document_id"));
   const invoiceDocumentId = str(formData.get("invoice_document_id"));
@@ -628,7 +621,6 @@ export async function updateService(_previous: ActionResult, formData: FormData)
   if (!type) return fail("Le type d'entretien est invalide.");
   if (!(await validateServiceReferences(supabase, ctx.workspace.id, {
     clientId: existing.client_id,
-    poolId,
     assignedId,
     contractDocumentId,
     invoiceDocumentId,
@@ -642,7 +634,6 @@ export async function updateService(_previous: ActionResult, formData: FormData)
       scheduled_time: str(formData.get("scheduled_time")),
       duration_min: durationMin,
       assigned_membership_id: assignedId,
-      pool_id: poolId,
       contract_document_id: contractDocumentId,
       invoice_document_id: invoiceDocumentId,
       notes: str(formData.get("notes")),

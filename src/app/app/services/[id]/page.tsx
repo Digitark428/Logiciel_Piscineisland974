@@ -20,7 +20,7 @@ export default async function ServiceDetailPage({ params: paramsPromise }: { par
   const [serviceRes, tasksRes, clientNotesRes] = await Promise.all([
     supabase
       .from("services")
-      .select("id, code, service_type, occurrence_date, scheduled_date, scheduled_time, status, assigned_membership_id, kind, series_id, contract_document_id, invoice_document_id, report, completed_at, duration_min, notes, series:service_series(recurrence_kind,notes), client:clients(id,first_name,last_name,company_name,phone,address_line1,postal_code,city,latitude,longitude,access_info), pool:pools(name,address_line1,postal_code,city,latitude,longitude), assignee:memberships!services_assigned_membership_id_fkey(first_name,last_name,email,role,job_title,photo_path)")
+      .select("id, code, service_type, occurrence_date, scheduled_date, scheduled_time, status, assigned_membership_id, kind, series_id, contract_document_id, invoice_document_id, report, completed_at, duration_min, notes, series:service_series(recurrence_kind,notes), client:clients(id,first_name,last_name,company_name,phone,address_line1,postal_code,city,latitude,longitude,access_info), pool:pools(address_line1,postal_code,city,latitude,longitude), assignee:memberships!services_assigned_membership_id_fkey(first_name,last_name,email,role,job_title,photo_path)")
       .eq("id", params.id)
       .eq("workspace_id", ctx.workspace.id)
       .maybeSingle(),
@@ -112,7 +112,7 @@ export default async function ServiceDetailPage({ params: paramsPromise }: { par
         seriesId: service.series_id,
         weeklyContract: series?.recurrence_kind === "weekly_contract",
       })}
-      client={{ id: client?.id, name: clientName(client ?? {}), phone: client?.phone, context: pool?.name }}
+      client={{ id: client?.id, name: clientName(client ?? {}), phone: client?.phone }}
       navigation={<GoThereButton address={address} lat={geoLat} lng={geoLng} />}
       statusActions={<StatusActions occurrence={occurrence} status={service.status} canComplete={canComplete} canEdit={canEdit} />}
       accessInfo={canSensitive ? client?.access_info : null}

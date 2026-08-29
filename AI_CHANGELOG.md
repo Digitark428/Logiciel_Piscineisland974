@@ -2,6 +2,12 @@
 
 > Ajouter une entrée courte après chaque intervention significative. Ne pas y dupliquer la documentation durable de `PROJECT_CONTEXT.md`.
 
+## 2026-08-29 — Codex — Dossiers clients premium et retrait global de la gestion piscine
+
+- **Clients :** création et modification réunies dans un dossier continu et responsive ; fiche partagée recomposée en quatre surfaces principales pour les coordonnées/synthèse/espace client, contrats compacts, historique paginé et documents regroupés, sans retirer les actions métier existantes.
+- **Piscines :** routes, fiches, formulaires, sélecteurs d’entretien, portail, permissions visibles et contenus d’export liés à l’entité piscine retirés. Les tables, relations, cascades et replis internes d’adresse/GPS historiques restent intacts pour préserver les données et les anciens entretiens ; les types métier comme « Entretien piscine » sont conservés.
+- **Qualité :** pagination de l’historique client à 30 lignes, requêtes indépendantes parallélisées, tests de non-régression sur permissions et sauvegardes, aucune migration Supabase.
+
 ## 2026-08-29 — Codex — Correctif d’affichage des sauvegardes
 
 - **Cause :** la page serveur `/app/backups` appelait directement un utilitaire exporté par un composant client, provoquant le digest Vercel `2798169997` après ouverture de la rubrique.

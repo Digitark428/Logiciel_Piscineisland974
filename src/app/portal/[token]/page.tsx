@@ -48,8 +48,7 @@ export default async function PortalPage({ params: paramsPromise }: { params: Pr
 
   // ---- Données du client (portée stricte à ce client) ----
   const today = todayInReunion();
-  const [{ data: pools }, { data: services }, upcomingOccurrences, { data: invoices }, { data: workspace }] = await Promise.all([
-    admin.from("pools").select("id, name, pool_type, water_treatment").eq("client_id", client!.id).eq("workspace_id", client!.workspace_id),
+  const [{ data: services }, upcomingOccurrences, { data: invoices }, { data: workspace }] = await Promise.all([
     admin.from("services").select("id, code, scheduled_date, status, service_type").eq("client_id", client!.id).eq("workspace_id", client!.workspace_id).order("scheduled_date", { ascending: false }).limit(20),
     getMaintenanceOccurrences(admin, { workspaceId: client!.workspace_id, clientId: client!.id, start: today, end: addCalendarDays(today, 56) ?? today }),
     admin.from("invoices").select("id, number, status, total, issue_date").eq("client_id", client!.id).eq("workspace_id", client!.workspace_id).order("issue_date", { ascending: false }),
@@ -157,20 +156,6 @@ export default async function PortalPage({ params: paramsPromise }: { params: Pr
             </ul>
           )}
         </section>
-
-        {(pools ?? []).length > 0 && (
-          <section className="card p-6">
-            <h2 className="mb-4 text-lg font-semibold text-graphite-900">Mes piscines</h2>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {(pools ?? []).map((p) => (
-                <div key={p.id} className="rounded-xl bg-graphite-50 p-4">
-                  <div className="font-medium text-graphite-900">{p.name}</div>
-                  <div className="text-sm text-graphite-500">{[p.pool_type, p.water_treatment].filter(Boolean).join(" · ") || "—"}</div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
 
         {past.length > 0 && (
           <section className="card p-6">

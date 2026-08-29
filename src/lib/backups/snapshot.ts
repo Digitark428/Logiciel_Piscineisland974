@@ -25,6 +25,7 @@ async function readTable(
       .eq(definition.table === "workspaces" ? "id" : "workspace_id", workspaceId)
       .range(from, from + PAGE_SIZE - 1);
     if (definition.filter === "professional_tasks") query = query.eq("category", "professional");
+    if (definition.filter === "exclude_pool_documents") query = query.neq("entity_type", "pool");
     const { data, error } = await query;
     if (error) throw new Error(`Lecture de ${definition.table} impossible: ${error.message}`);
     const page = (data ?? []) as JsonRecord[];

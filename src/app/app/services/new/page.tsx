@@ -1,18 +1,17 @@
 import Link from "next/link";
 import { requirePermission } from "@/lib/auth/context";
 import { createClient } from "@/lib/supabase/server";
-import { getClientOptions, getPoolOptions, getMemberOptions, getClientDocumentOptions } from "@/lib/db/queries";
+import { getClientOptions, getMemberOptions, getClientDocumentOptions } from "@/lib/db/queries";
 import { PageHeader } from "@/components/ui";
 import { ServiceForm } from "../ServiceForm";
 
-export default async function NewServicePage({ searchParams: searchParamsPromise }: { searchParams: Promise<{ client?: string; pool?: string; kind?: string }> }) {
+export default async function NewServicePage({ searchParams: searchParamsPromise }: { searchParams: Promise<{ client?: string; kind?: string }> }) {
   const searchParams = await searchParamsPromise;
   const ctx = await requirePermission("services.create");
   const kind = searchParams.kind === "one_off" ? "one_off" : "contract";
   const supabase = await createClient();
-  const [clients, pools, members, documents] = await Promise.all([
+  const [clients, members, documents] = await Promise.all([
     getClientOptions(supabase, ctx.workspace.id),
-    getPoolOptions(supabase, ctx.workspace.id),
     getMemberOptions(supabase, ctx.workspace.id),
     getClientDocumentOptions(supabase, ctx.workspace.id),
   ]);
@@ -23,7 +22,7 @@ export default async function NewServicePage({ searchParams: searchParamsPromise
         title={kind === "contract" ? "Nouveau contrat" : "Entretien ponctuel"}
         subtitle={kind === "contract" ? "Planifiez un passage récurrent chaque semaine." : "Planifiez une intervention à une date précise."}
       />
-      <ServiceForm kind={kind} clients={clients} pools={pools} members={members} documents={documents} defaultClientId={searchParams.client} defaultPoolId={searchParams.pool} isAdmin={ctx.isAdmin} />
+      <ServiceForm kind={kind} clients={clients} members={members} documents={documents} defaultClientId={searchParams.client} isAdmin={ctx.isAdmin} />
     </div>
   );
 }

@@ -28,7 +28,7 @@ export default function HomePage() {
             </h1>
           </div>
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-graphite-500">
-            Clients, piscines, interventions, planning et équipe : tout ce dont vous avez besoin pour
+            Clients, interventions, planning et équipe : tout ce dont vous avez besoin pour
             travailler plus efficacement, depuis un seul outil.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">

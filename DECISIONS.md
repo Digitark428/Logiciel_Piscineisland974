@@ -44,6 +44,12 @@
 
 **Raison :** éviter la création arbitraire de 52 occurrences, permettre une navigation sans limite de semaine, conserver les exceptions et l'historique sans modifier rétroactivement le contrat ni les anciennes séries `legacy`.
 
+## Périmètre de gestion des piscines
+
+**Décision :** LETI ne propose actuellement aucune gestion d’une piscine comme entité rattachée à un client. Les routes, formulaires, fiches, sélecteurs, permissions visibles et exports correspondants restent absents. Le schéma et le code serveur historiques ne sont pas supprimés afin de préserver les données existantes ; ils restent dormants, à l’exception des replis internes d’adresse/GPS nécessaires aux anciens entretiens. Les termes décrivant le métier ou un type d’intervention, comme « Entretien piscine », restent valides.
+
+**Raison :** ne pas annoncer une fonctionnalité qui n’appartient pas encore au produit, tout en évitant une suppression destructive des données et toute régression sur l’historique des entretiens.
+
 ## Mode démo
 
 **Décision :** le mode démo reste retiré et ne doit pas être réintroduit.

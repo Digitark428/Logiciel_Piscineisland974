@@ -204,7 +204,6 @@ export async function generateProfessionalPdf(admin: SupabaseClient, snapshot: B
   const series = table(snapshot, "service_series");
   const clientById = byId(clients);
   const membershipById = byId(memberships);
-  const poolById = byId(table(snapshot, "pools"));
   const serviceTasksByService = groupBy(table(snapshot, "service_tasks"), "service_id");
   const clientNotesByService = groupBy(table(snapshot, "service_client_notes"), "service_id");
   const generatedLocalDate = localDate(snapshot.generatedAt, snapshot.timeZone);
@@ -265,22 +264,13 @@ export async function generateProfessionalPdf(admin: SupabaseClient, snapshot: B
     ["Statut", statusLabel(recordText(member, "status"))], ["E-mail", member.email], ["Téléphone", member.phone],
   ]));
 
-  sections.push({ title: "Clients et piscines", page: sectionTitle(doc, companyName, "Clients et piscines", "Fichier clients et bassins rattachés.") });
-  const pools = table(snapshot, "pools");
+  sections.push({ title: "Clients", page: sectionTitle(doc, companyName, "Clients", "Fichier clients et coordonnées associées.") });
   if (clients.length === 0) emptyState(doc, companyName);
   clients.forEach((client) => {
-    const clientPools = pools.filter((pool) => recordText(pool, "client_id") === recordText(client, "id"));
     entry(doc, companyName, personLabel(client), [
       ["Société", client.company_name], ["Adresse", addressLabel(client)], ["E-mail", client.email], ["Téléphone", client.phone],
       ["Informations d’accès", client.access_info], ["Détails d’accès", client.access_details], ["Notes", client.notes],
-      ["Piscines", clientPools.map((pool) => recordText(pool, "name") || "Piscine").join(", ") || "Aucune"],
     ]);
-    clientPools.forEach((pool) => entry(doc, companyName, `Piscine — ${recordText(pool, "name") || "Sans nom"}`, [
-      ["Adresse", addressLabel(pool)], ["Type", pool.pool_type], ["Volume (m³)", pool.volume_m3],
-      ["Dimensions", [pool.length_m, pool.width_m, pool.depth_m].filter((value) => value !== null && value !== undefined && value !== "").join(" × ")],
-      ["Traitement de l’eau", pool.water_treatment], ["Équipements", pool.equipment], ["Notes techniques", pool.technical_notes],
-      ["Statut", statusLabel(recordText(pool, "status"))],
-    ]));
   });
 
   sections.push({ title: "Contrats d’entretien", page: sectionTitle(doc, companyName, "Contrats d’entretien", "Contrats hebdomadaires et règles de récurrence. Les séries sans date de fin ne sont pas développées artificiellement à l’infini.") });
@@ -296,9 +286,8 @@ export async function generateProfessionalPdf(admin: SupabaseClient, snapshot: B
   if (futureServices.length === 0) emptyState(doc, companyName);
   futureServices.forEach((service) => {
     const client = clientById.get(recordText(service, "client_id"));
-    const pool = poolById.get(recordText(service, "pool_id"));
     entry(doc, companyName, `${humanValue(service.scheduled_date)} — ${personLabel(client)}`, [
-      ["Heure", service.scheduled_time], ["Adresse", addressLabel(pool ?? client)], ["Piscine", pool ? recordText(pool, "name") : null],
+      ["Heure", service.scheduled_time], ["Adresse", addressLabel(client)],
       ["Type", service.service_type], ["Statut", statusLabel(recordText(service, "status"))],
       ["Technicien", memberLabel(membershipById, service.assigned_membership_id)], ["Notes", service.notes],
     ]);
@@ -308,12 +297,11 @@ export async function generateProfessionalPdf(admin: SupabaseClient, snapshot: B
   if (historicalServices.length === 0) emptyState(doc, companyName);
   historicalServices.forEach((service) => {
     const serviceId = recordText(service, "id");
-    const pool = poolById.get(recordText(service, "pool_id"));
     const tasks = serviceTasksByService.get(serviceId) ?? [];
     const clientNotes = clientNotesByService.get(serviceId) ?? [];
     entry(doc, companyName, `${humanValue(service.scheduled_date)} — ${personLabel(clientById.get(recordText(service, "client_id")))}`, [
       ["Code", service.code], ["Statut", statusLabel(recordText(service, "status"))], ["Heure", service.scheduled_time],
-      ["Type", service.service_type], ["Piscine", pool ? recordText(pool, "name") : null],
+      ["Type", service.service_type],
       ["Technicien planifié", memberLabel(membershipById, service.assigned_membership_id)],
       ["Réalisé par", memberLabel(membershipById, service.completed_by)],
       ["Notes", service.notes], ["Compte rendu", service.report],

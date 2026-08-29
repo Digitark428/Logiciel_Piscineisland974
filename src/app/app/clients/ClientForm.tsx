@@ -8,78 +8,104 @@ import type { Client } from "@/lib/db/types";
 
 export function ClientForm({ client }: { client?: Client }) {
   return (
-    <ActionForm action={upsertClient} className="space-y-6">
+    <ActionForm action={upsertClient} className="space-y-5">
       {client && <input type="hidden" name="id" value={client.id} />}
 
-      <div className="card p-6">
-        <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-graphite-400">Identité</h3>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label className="label" htmlFor="first_name">Prénom</label>
-            <input id="first_name" name="first_name" className="input" defaultValue={client?.first_name ?? ""} />
+      <div className="card overflow-hidden">
+        <FormSection title="Identité" description="Les informations principales pour reconnaître et contacter ce client.">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Prénom" id="first_name">
+              <input id="first_name" name="first_name" className="input bg-graphite-50/45" autoComplete="given-name" defaultValue={client?.first_name ?? ""} />
+            </Field>
+            <Field label="Nom" id="last_name">
+              <input id="last_name" name="last_name" className="input bg-graphite-50/45" autoComplete="family-name" defaultValue={client?.last_name ?? ""} />
+            </Field>
+            <Field label="Entreprise (optionnel)" id="company_name" full>
+              <input id="company_name" name="company_name" className="input bg-graphite-50/45" autoComplete="organization" defaultValue={client?.company_name ?? ""} />
+            </Field>
+            <Field label="Téléphone" id="phone">
+              <input id="phone" name="phone" type="tel" className="input bg-graphite-50/45" autoComplete="tel" defaultValue={client?.phone ?? ""} />
+            </Field>
+            <Field label="E-mail" id="email">
+              <input id="email" name="email" type="email" className="input bg-graphite-50/45" autoComplete="email" defaultValue={client?.email ?? ""} />
+            </Field>
           </div>
-          <div>
-            <label className="label" htmlFor="last_name">Nom</label>
-            <input id="last_name" name="last_name" className="input" defaultValue={client?.last_name ?? ""} />
+        </FormSection>
+
+        <FormSection title="Adresse" description="L’adresse sera également utilisée pour les déplacements et la carte.">
+          <AddressAutocomplete
+            defaults={{
+              address_line1: client?.address_line1,
+              address_line2: client?.address_line2,
+              postal_code: client?.postal_code,
+              city: client?.city,
+              latitude: client?.latitude,
+              longitude: client?.longitude,
+              geo_label: client?.geo_label,
+              geo_precision: client?.geo_precision,
+            }}
+          />
+        </FormSection>
+
+        <FormSection
+          title="Informations d’accès"
+          description="Informations sensibles, visibles uniquement selon les permissions de l’équipe."
+          tone="glacier"
+        >
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Code portail" id="access_portal_code">
+              <input id="access_portal_code" name="access_portal_code" className="input bg-white/85" defaultValue={client?.access_portal_code ?? ""} placeholder="Ex : 1234A" />
+            </Field>
+            <Field label="Code d’accès" id="access_code">
+              <input id="access_code" name="access_code" className="input bg-white/85" defaultValue={client?.access_code ?? ""} placeholder="Ex : B27" />
+            </Field>
+            <Field label="Autres informations" id="access_details" full>
+              <textarea id="access_details" name="access_details" rows={3} className="input bg-white/85" defaultValue={client?.access_details ?? ""} placeholder="Chien, emplacement du local technique, particularités d’accès…" />
+            </Field>
           </div>
-          <div className="sm:col-span-2">
-            <label className="label" htmlFor="company_name">Entreprise (optionnel)</label>
-            <input id="company_name" name="company_name" className="input" defaultValue={client?.company_name ?? ""} />
-          </div>
-          <div>
-            <label className="label" htmlFor="phone">Téléphone</label>
-            <input id="phone" name="phone" className="input" defaultValue={client?.phone ?? ""} />
-          </div>
-          <div>
-            <label className="label" htmlFor="email">E-mail</label>
-            <input id="email" name="email" type="email" className="input" defaultValue={client?.email ?? ""} />
-          </div>
-        </div>
+        </FormSection>
+
+        <FormSection title="Note importante" description="Une information à garder immédiatement visible dans le dossier client." tone="coral">
+          <label className="sr-only" htmlFor="notes">Note importante</label>
+          <textarea id="notes" name="notes" rows={3} className="input border-coral-100 bg-white/85 focus:border-coral-200 focus:ring-coral-100" defaultValue={client?.notes ?? ""} placeholder="Information importante à retenir sur ce client…" />
+        </FormSection>
       </div>
 
-      <div className="card p-6">
-        <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-graphite-400">Adresse</h3>
-        <AddressAutocomplete
-          defaults={{
-            address_line1: client?.address_line1,
-            address_line2: client?.address_line2,
-            postal_code: client?.postal_code,
-            city: client?.city,
-            latitude: client?.latitude,
-            longitude: client?.longitude,
-            geo_label: client?.geo_label,
-            geo_precision: client?.geo_precision,
-          }}
-        />
-      </div>
-
-      <div className="card p-6">
-        <h3 className="mb-1 text-sm font-semibold uppercase tracking-wide text-graphite-400">Informations d'accès</h3>
-        <p className="mb-4 text-xs text-graphite-400">Informations sensibles — visibles selon les permissions de l'équipe.</p>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label className="label" htmlFor="access_portal_code">Code portail</label>
-            <input id="access_portal_code" name="access_portal_code" className="input" defaultValue={client?.access_portal_code ?? ""} placeholder="Ex : 1234A" />
-          </div>
-          <div>
-            <label className="label" htmlFor="access_code">Code d'accès</label>
-            <input id="access_code" name="access_code" className="input" defaultValue={client?.access_code ?? ""} placeholder="Ex : B27" />
-          </div>
-          <div className="sm:col-span-2">
-            <label className="label" htmlFor="access_details">Autres informations</label>
-            <textarea id="access_details" name="access_details" rows={3} className="input" defaultValue={client?.access_details ?? ""} placeholder="Chien, emplacement du local technique, particularités d'accès…" />
-          </div>
-        </div>
-      </div>
-
-      <div className="card p-6">
-        <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-graphite-400">Note importante</h3>
-        <textarea id="notes" name="notes" rows={3} className="input" defaultValue={client?.notes ?? ""} placeholder="Information importante à retenir sur ce client…" />
-      </div>
-
-      <div className="flex justify-end">
+      <div className="flex justify-end pt-1">
         <SubmitButton>{client ? "Enregistrer" : "Créer le client"}</SubmitButton>
       </div>
     </ActionForm>
+  );
+}
+
+function FormSection({
+  title,
+  description,
+  tone = "plain",
+  children,
+}: {
+  title: string;
+  description: string;
+  tone?: "plain" | "glacier" | "coral";
+  children: React.ReactNode;
+}) {
+  const surface = tone === "glacier" ? "bg-pool-50/30" : tone === "coral" ? "bg-coral-50/25" : "bg-white";
+  return (
+    <section className={`border-b border-graphite-100 px-5 py-6 last:border-b-0 sm:px-7 sm:py-7 ${surface}`}>
+      <div className="mb-5 max-w-2xl">
+        <h2 className="text-sm font-semibold tracking-[0.04em] text-graphite-800">{title}</h2>
+        <p className="mt-1 text-xs leading-5 text-graphite-400">{description}</p>
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function Field({ label, id, full, children }: { label: string; id: string; full?: boolean; children: React.ReactNode }) {
+  return (
+    <div className={full ? "sm:col-span-2" : ""}>
+      <label className="label" htmlFor={id}>{label}</label>
+      {children}
+    </div>
   );
 }

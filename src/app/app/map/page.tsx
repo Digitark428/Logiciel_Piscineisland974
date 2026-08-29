@@ -97,7 +97,7 @@ export default async function MapPage({ searchParams: searchParamsPromise }: { s
       {geocodedCount === 0 ? (
         <div className="card p-8 text-center">
           <p className="text-graphite-700">Aucun entretien localisé ce jour.</p>
-          <p className="mt-2 text-sm text-graphite-500">Les entretiens apparaissent dès que l'adresse du client ou de la piscine possède des coordonnées GPS.</p>
+          <p className="mt-2 text-sm text-graphite-500">Les entretiens apparaissent dès que l’adresse enregistrée possède des coordonnées GPS.</p>
         </div>
       ) : (
         <>

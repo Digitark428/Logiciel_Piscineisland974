@@ -12,7 +12,7 @@ export function ArchiveButton({ clientId, archived }: { clientId: string; archiv
     <button
       type="button"
       disabled={pending}
-      className="btn-secondary"
+      className="btn-secondary shadow-none"
       onClick={() =>
         start(async () => {
           const ok = archived
@@ -74,7 +74,7 @@ export function DeleteClientButton({ clientId }: { clientId: string }) {
 
   return (
     <>
-      <button ref={triggerRef} type="button" className="btn-ghost text-red-600 hover:bg-red-50" onClick={() => setOpen(true)}>
+      <button ref={triggerRef} type="button" className="btn min-h-11 border-red-100 bg-red-50/35 text-red-700 shadow-none hover:border-red-200 hover:bg-red-50" onClick={() => setOpen(true)}>
         Supprimer totalement
       </button>
 

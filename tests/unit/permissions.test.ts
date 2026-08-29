@@ -24,6 +24,14 @@ describe("Permissions", () => {
     expect(DEFAULT_MEMBER_PERMISSIONS).toContain("community.view");
     expect(DEFAULT_MEMBER_PERMISSIONS).toContain("community.publish");
   });
+
+  it("ne propose plus la gestion des piscines dans l’interface des permissions", () => {
+    const visibleKeys = PERMISSION_GROUPS.flatMap((group) => group.items.map((item) => item.key));
+    expect(visibleKeys).not.toContain("pools.view");
+    expect(visibleKeys).not.toContain("pools.edit");
+    expect(DEFAULT_MEMBER_PERMISSIONS).not.toContain("pools.view");
+    expect(DEFAULT_MEMBER_PERMISSIONS).not.toContain("pools.edit");
+  });
 });
 
 // Réplique de la logique de `can()` (l'admin possède toutes les permissions).

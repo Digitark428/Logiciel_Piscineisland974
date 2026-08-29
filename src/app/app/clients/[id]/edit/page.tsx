@@ -21,9 +21,9 @@ export default async function EditClientPage({ params: paramsPromise }: { params
   if (!client) notFound();
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-4xl">
       <Link href={`/app/clients/${params.id}`} className="mb-4 inline-block text-sm text-graphite-500 hover:text-graphite-700">← {clientName(client)}</Link>
-      <PageHeader title="Modifier le client" />
+      <PageHeader title="Modifier le client" description="Mettez à jour les informations utiles de ce dossier client." />
       <ClientForm client={client as Client} />
     </div>
   );

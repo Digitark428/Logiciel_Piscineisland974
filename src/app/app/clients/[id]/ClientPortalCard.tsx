@@ -4,7 +4,6 @@ import { useState } from "react";
 import { ActionForm } from "@/components/forms/ActionForm";
 import { SubmitButton } from "@/components/forms/SubmitButton";
 import { setClientPortal, regeneratePortalToken } from "@/lib/actions/clients";
-import { Card } from "@/components/ui";
 import { Checkbox } from "@/components/ui/Checkbox";
 
 export function ClientPortalCard({
@@ -21,8 +20,8 @@ export function ClientPortalCard({
   const [copied, setCopied] = useState(false);
 
   return (
-    <Card>
-      <h2 className="text-lg font-semibold text-graphite-900">Espace client (lien privé)</h2>
+    <section className="rounded-2xl border border-pool-100/80 bg-pool-50/30 p-5 sm:p-6">
+      <h2 className="text-base font-semibold text-graphite-900">Espace client</h2>
       <p className="mt-1 text-sm text-graphite-500">
         Le client accède uniquement à ses informations via un lien privé et un code personnel.
       </p>
@@ -38,13 +37,13 @@ export function ClientPortalCard({
             Code privé du client {hasCode && <span className="text-graphite-400">(défini — laisser vide pour conserver)</span>}
           </label>
           <input id="private_code" name="private_code" className="input" placeholder={hasCode ? "••••••" : "Ex. 4826"} autoComplete="off" />
-          <p className="mt-1 text-xs text-graphite-400">Au moins 4 caractères. Stocké de façon sécurisée (haché).</p>
+          <p className="mt-1 text-xs text-graphite-400">Au moins 8 caractères. Stocké de façon sécurisée (haché).</p>
         </div>
         <SubmitButton>Enregistrer l'accès</SubmitButton>
       </ActionForm>
 
       {enabled && portalUrl && (
-        <div className="mt-5 rounded-xl bg-graphite-50 p-4">
+        <div className="mt-5 rounded-xl border border-white/80 bg-white/70 p-4">
           <div className="text-xs font-medium uppercase tracking-wide text-graphite-400">Lien privé</div>
           <div className="mt-1 break-all font-mono text-sm text-graphite-700">{portalUrl}</div>
           <div className="mt-3 flex flex-wrap gap-2">
@@ -73,6 +72,6 @@ export function ClientPortalCard({
           </div>
         </div>
       )}
-    </Card>
+    </section>
   );
 }

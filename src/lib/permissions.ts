@@ -45,13 +45,6 @@ export const PERMISSION_GROUPS: {
     ],
   },
   {
-    label: "Piscines",
-    items: [
-      { key: "pools.view", label: "Consulter les piscines" },
-      { key: "pools.edit", label: "Créer / modifier les piscines" },
-    ],
-  },
-  {
     label: "Entretiens",
     items: [
       { key: "services.view", label: "Consulter les entretiens" },
@@ -98,7 +91,6 @@ export const PERMISSION_GROUPS: {
 /** Permissions par défaut proposées pour un nouveau membre "employé". */
 export const DEFAULT_MEMBER_PERMISSIONS: PermissionKey[] = [
   "clients.view",
-  "pools.view",
   "services.view",
   "services.complete",
   "planning.view",

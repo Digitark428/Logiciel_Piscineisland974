@@ -25,7 +25,7 @@ export interface BackupTableDefinition {
   title: string;
   description: string;
   excludedColumns?: readonly string[];
-  filter?: "professional_tasks";
+  filter?: "professional_tasks" | "exclude_pool_documents";
 }
 
 export interface BackupWorkflowInput {

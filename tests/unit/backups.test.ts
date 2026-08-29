@@ -72,6 +72,9 @@ describe("Sauvegardes professionnelles", () => {
     const clients = BACKUP_TABLES.find((entry) => entry.table === "clients");
     expect(clients?.excludedColumns).toEqual(expect.arrayContaining(["private_code_hash", "portal_token", "access_code"]));
     expect(BACKUP_TABLES.find((entry) => entry.table === "tasks")?.filter).toBe("professional_tasks");
+    expect(BACKUP_TABLES.find((entry) => entry.table === "documents")?.filter).toBe("exclude_pool_documents");
+    expect(BACKUP_TABLES.find((entry) => entry.table === "services")?.excludedColumns).toContain("pool_id");
+    expect(BACKUP_TABLES.some((entry) => entry.table === "pools")).toBe(false);
     expect(BACKUP_TABLES.some((entry) => entry.table === "planning_events")).toBe(false);
   });
 
@@ -90,6 +93,7 @@ describe("Sauvegardes professionnelles", () => {
     expect(workbook.worksheets[0].name).toBe("Sommaire");
     expect(workbook.getWorksheet("Clients")?.getCell("A5").value).toBe("Identifiant");
     expect(workbook.getWorksheet("Entretiens")?.autoFilter).toBeTruthy();
+    expect(workbook.getWorksheet("Piscines")).toBeUndefined();
     expect(workbook.worksheets.some((sheet) => sheet.name === "Planning personnel")).toBe(false);
 
     const fixtureDirectory = process.env.LETI_WRITE_BACKUP_FIXTURES_DIR;

@@ -20,7 +20,7 @@ export default function ConfidentialitePage() {
             cliente (le « responsable de traitement »), dans son espace isolé.
           </Section>
           <Section title="2. Données collectées">
-            Selon l'usage : identité et coordonnées des clients, informations sur les piscines et prestations,
+            Selon l'usage : identité et coordonnées des clients, informations techniques liées aux prestations,
             documents, factures, et données des membres de l'équipe. Les données sont minimisées à ce qui est
             nécessaire à la gestion de l'activité.
           </Section>

@@ -71,6 +71,7 @@ Un push sur la branche de production déclenche le déploiement Vercel. Vérifie
 
 ## Repères fonctionnels importants
 - Le mode démo a été entièrement supprimé : ne pas réintroduire `/demo`, `seed_demo_data` ni `is_demo`.
+- La gestion d’une piscine comme entité client n’est pas exposée : ne pas réintroduire routes, fiches, formulaires, sélecteurs, permissions visibles ou exports piscine. Préserver le schéma historique et les replis internes d’adresse/GPS tant qu’une migration destructive distincte n’est pas explicitement validée. Les libellés métier tels que « Entretien piscine » restent légitimes.
 - Factures et contrats sont des fichiers stockés dans `documents`, importés depuis la fiche client, pas des documents générés par l’application.
 - Le portail client utilise `/portal/[token]` ; l’assistance intégrée passe par `support_conversations` et `support_messages`.
 - Les fonctions d’autorisation SQL (`auth_is_member`, `auth_is_admin`, `auth_has_permission`, `auth_workspace_ids`, `auth_is_platform_admin`) sont essentielles aux policies RLS : ne pas modifier leurs permissions sans analyse complète.

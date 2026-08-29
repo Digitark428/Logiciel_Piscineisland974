@@ -9,27 +9,23 @@ import type { Service } from "@/lib/db/types";
 import { moneyCentsInputValue } from "@/lib/utils/money";
 
 interface Opt { id: string; label: string }
-interface PoolOpt { id: string; label: string; client_id: string }
 interface DocOpt { id: string; label: string; client_id: string; category: "contract" | "invoice" }
 
 export function ServiceEditForm({
   service,
   members,
-  pools,
   documents = [],
   isAdmin,
   financialAmountCents,
 }: {
   service: Service;
   members: Opt[];
-  pools: PoolOpt[];
   documents?: DocOpt[];
   isAdmin: boolean;
   financialAmountCents?: number | null;
 }) {
   const [pending, start] = useTransition();
   const router = useRouter();
-  const clientPools = pools.filter((p) => p.client_id === service.client_id);
   const clientContracts = documents.filter((d) => d.category === "contract");
   const clientInvoices = documents.filter((d) => d.category === "invoice");
 
@@ -42,13 +38,6 @@ export function ServiceEditForm({
             <div>
               <label className="label" htmlFor="service_type">Type</label>
               <input id="service_type" name="service_type" className="input" defaultValue={service.service_type ?? ""} />
-            </div>
-            <div>
-              <label className="label" htmlFor="pool_id">Piscine</label>
-              <select id="pool_id" name="pool_id" className="input" defaultValue={service.pool_id ?? ""}>
-                <option value="">—</option>
-                {clientPools.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
-              </select>
             </div>
             <div>
               <label className="label" htmlFor="scheduled_date">Date *</label>

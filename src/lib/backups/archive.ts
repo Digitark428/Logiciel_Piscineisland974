@@ -51,7 +51,6 @@ function documentFolder(entityType: string): string {
     contract: "Contrats",
     invoice: "Factures",
     client: "Clients",
-    pool: "Piscines",
     service: "Entretiens",
     member: "Equipe",
     workspace: "Entreprise",
@@ -72,6 +71,7 @@ function archiveFiles(
   ];
 
   for (const document of snapshot.tables.documents ?? []) {
+    if (recordText(document, "entity_type") === "pool") continue;
     const path = recordText(document, "storage_path");
     if (!path.startsWith(`${snapshot.workspaceId}/`)) continue;
     const name = withExtension(recordText(document, "name") || `document-${recordText(document, "id")}`, recordText(document, "mime_type"));
