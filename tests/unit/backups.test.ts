@@ -3,7 +3,7 @@ import ExcelJS from "exceljs";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { BACKUP_TABLES } from "@/lib/backups/catalog";
-import { backupFileName, safeFileSegment } from "@/lib/backups/format";
+import { backupDateTime, backupFileName, safeFileSegment } from "@/lib/backups/format";
 import type { BackupSnapshot } from "@/lib/backups/types";
 import { generateProfessionalPdf } from "@/lib/backups/pdf";
 import { generateProfessionalXlsx } from "@/lib/backups/xlsx";
@@ -61,6 +61,11 @@ describe("Sauvegardes professionnelles", () => {
     expect(backupFileName("Piscine Île & Océan", new Date("2026-08-29T17:05:00Z"), "Indian/Reunion"))
       .toBe("LETI_Sauvegarde_Piscine-Ile-Ocean_2026-08-29_21h05.zip");
     expect(safeFileSegment("../../contrat client?.pdf")).toBe("..-..-contrat-client-.pdf");
+  });
+
+  it("formate la date d’une sauvegarde sans dépendre d’un composant client", () => {
+    expect(backupDateTime("2026-08-29T17:05:00.000Z", "Indian/Reunion")).toBe("29 août 2026 à 21:05");
+    expect(backupDateTime("date-invalide", "Indian/Reunion")).toBe("—");
   });
 
   it("exclut explicitement les secrets et les données personnelles du catalogue", () => {

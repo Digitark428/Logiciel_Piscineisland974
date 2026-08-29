@@ -46,6 +46,12 @@ export function backupFileName(workspaceName: string, generatedAt: Date, timeZon
   return `LETI_Sauvegarde_${safeFileSegment(workspaceName, "Entreprise")}_${get("year")}-${get("month")}-${get("day")}_${get("hour")}h${get("minute")}.zip`;
 }
 
+export function backupDateTime(value: string, timeZone: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return new Intl.DateTimeFormat("fr-FR", { dateStyle: "long", timeStyle: "short", timeZone }).format(date);
+}
+
 function readableObject(value: object): string {
   const render = (item: unknown): string => {
     if (item === null || item === undefined || item === "") return "—";

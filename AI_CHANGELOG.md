@@ -2,6 +2,12 @@
 
 > Ajouter une entrée courte après chaque intervention significative. Ne pas y dupliquer la documentation durable de `PROJECT_CONTEXT.md`.
 
+## 2026-08-29 — Codex — Correctif d’affichage des sauvegardes
+
+- **Cause :** la page serveur `/app/backups` appelait directement un utilitaire exporté par un composant client, provoquant le digest Vercel `2798169997` après ouverture de la rubrique.
+- **Correctif :** formatage de date déplacé dans le module partagé des sauvegardes et test de non-régression ajouté ; aucune donnée, sauvegarde, permission ou migration modifiée.
+- **Vérification :** typecheck, build de production et 85 tests actifs validés ; les 20 tests d’intégration conditionnels restent ignorés sans secrets de test dédiés.
+
 ## 2026-08-29 — Codex — Sauvegardes professionnelles, impression hebdomadaire et logo latéral
 
 - **Sauvegardes :** export admin-only en ZIP privé comprenant un dossier PDF paginé avec sommaire réel, un XLSX exhaustif de 24 feuilles métier et les documents/photos originaux disponibles ; collecte paginée, assemblage en flux, historique sans rétention, téléchargement signé, suppression contrôlée et erreurs/progression explicites.

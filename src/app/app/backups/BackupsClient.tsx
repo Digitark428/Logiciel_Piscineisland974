@@ -3,6 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createManualBackup, deleteBackup, getBackupDownloadUrl } from "@/lib/actions/backups";
+import { backupDateTime } from "@/lib/backups/format";
 import { formatBytes } from "@/lib/utils/format";
 
 export interface BackupListItem {
@@ -28,12 +29,6 @@ const STAGE_LABELS: Record<string, string> = {
   completed: "Disponible",
   failed: "Échec",
 };
-
-export function backupDateTime(value: string, timeZone: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "—";
-  return new Intl.DateTimeFormat("fr-FR", { dateStyle: "long", timeStyle: "short", timeZone }).format(date);
-}
 
 export function BackupAutoRefresh({ active, wakeAt }: { active: boolean; wakeAt: string | null }) {
   const router = useRouter();

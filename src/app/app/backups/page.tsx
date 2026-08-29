@@ -3,13 +3,13 @@ import { redirect } from "next/navigation";
 import { requireContext } from "@/lib/auth/context";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader, Card } from "@/components/ui";
+import { backupDateTime } from "@/lib/backups/format";
 import { formatBytes } from "@/lib/utils/format";
 import {
   BackupAutoRefresh,
   BackupRow,
   DownloadButton,
   ManualBackupButton,
-  backupDateTime,
   type BackupListItem,
 } from "./BackupsClient";
 
