@@ -13,7 +13,7 @@ const nextConfig = {
       "node_modules/pdfkit/js/standard-fonts/**/*",
     ],
   },
-  serverExternalPackages: ["heic-decode"],
+  serverExternalPackages: ["heic-decode", "pdfkit"],
   images: {
     remotePatterns: [
       {

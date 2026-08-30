@@ -4,9 +4,9 @@
 
 ## 2026-08-30 — Codex — Sauvegardes complètes : polices PDFKit empaquetées
 
-- **Cause :** PDFKit charge les métriques Helvetica à la demande, mais le traçage de la route Workflow n'incluait pas `pdfkit/js/standard-fonts`, ce qui faisait échouer `generatePdfStep` après trois tentatives en production.
-- **Correctif :** inclusion ciblée des polices PDFKit dans le paquet de la route `/.well-known/workflow/v1/step`, sans changement de données, schéma, permissions ou contenu des sauvegardes.
-- **Vérification :** build de production valide et manifeste de fonction contenant les 30 fichiers de polices requis ; typecheck et 86 tests actifs réussis, 20 tests d'intégration conditionnels ignorés.
+- **Cause :** PDFKit charge les métriques Helvetica à la demande ; une fois bundlé, son `createRequire(import.meta.url)` conservait le chemin de compilation Vercel `/vercel/path0`, alors que la fonction s'exécute sous `/var/task`. La première inclusion des polices les copiait donc sans corriger leur base de résolution.
+- **Correctif :** PDFKit reste externe au bundle de la route Workflow et ses polices restent explicitement tracées, afin que son module, son `package.json` et ses imports internes soient résolus depuis le véritable répertoire d'exécution ; aucune donnée, migration ou permission modifiée.
+- **Vérification :** paquet Vercel de production construit sans chemin PDFKit figé et avec 33 fichiers PDFKit requis ; typecheck et 86 tests actifs réussis, 20 tests d'intégration conditionnels ignorés.
 
 ## 2026-08-29 — Codex — Dossiers clients premium et retrait global de la gestion piscine
 
