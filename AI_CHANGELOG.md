@@ -2,6 +2,13 @@
 
 > Ajouter une entrée courte après chaque intervention significative. Ne pas y dupliquer la documentation durable de `PROJECT_CONTEXT.md`.
 
+## 2026-09-09 — Codex — Nouvelle vitrine publique LETI
+
+- **Accueil :** transformation de la page publique en présentation complète du logiciel avec header responsive, hero, aperçu fictif fidèle au dashboard, fonctions disponibles, usage terrain, feuille de route, CTA final et footer ; le logo officiel, les tokens, les cartes, les badges et les pictogrammes existants restent les seules fondations visuelles.
+- **Vérité produit :** la gestion des piscines n’est pas annoncée comme active ; Chantiers, Dépannages, Comptabilité et LETI IA sont tous explicitement marqués « En développement ». Les destinations `/login`, `/signup` et `/portal` restent inchangées, sans mode démo ni parcours de paiement ajouté.
+- **Responsive et accessibilité :** contrôles navigateur à 375, 430, 768, 1 024 et 1 440 px sans débordement, avec menu mobile natif, zones tactiles d’au moins 44 px, hiérarchie sémantique et focus visible. Aucun contenu privé ni donnée réelle n’est affiché.
+- **Vérification :** lint et typecheck valides, build de production réussi, 86 tests actifs validés et 20 tests d’intégration conditionnels ignorés. La prévisualisation locale des routes Auth requiert toujours les variables publiques Supabase, absentes de l’environnement de travail ; leur code et leurs routes n’ont pas été modifiés.
+
 ## 2026-08-30 — Codex — Sauvegardes complètes : polices PDFKit empaquetées
 
 - **Cause :** PDFKit charge les métriques Helvetica à la demande ; une fois bundlé, son `createRequire(import.meta.url)` conservait le chemin de compilation Vercel `/vercel/path0`, alors que la fonction s'exécute sous `/var/task`. La première inclusion des polices les copiait donc sans corriger leur base de résolution.
