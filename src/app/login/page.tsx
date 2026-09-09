@@ -12,7 +12,7 @@ export default async function LoginPage() {
     <div className="flex min-h-screen flex-col bg-graphite-50">
       <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-5 py-5">
         <Link href="/"><Logo /></Link>
-        <Link href="/signup" className="btn-ghost">Créer un espace</Link>
+        <Link href="/signup" className="btn-ghost">Créer un compte</Link>
       </header>
       <main className="flex flex-1 items-center justify-center px-5 pb-16">
         <div className="w-full max-w-md">

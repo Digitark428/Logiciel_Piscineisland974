@@ -47,6 +47,7 @@ LETI est le nom du SaaS de gestion destiné aux piscinistes, principalement aux 
 - Super Admin séparé sous `/super-admin`.
 - Contrats et factures sont gérés comme fichiers dans `documents`, et non comme documents générés par l'application.
 - L’application expose un manifeste PWA et des icônes LETI dédiées pour une installation propre sur l’écran d’accueil mobile ; l’ouverture en mode installé démarre sur `/app`.
+- La vitrine publique est organisée en plusieurs routes : l’accueil `/` reste volontairement minimal avec le logo, la promesse, la connexion et un emplacement vidéo ; `/fonctionnalites`, `/tarifs`, `/qui-sommes-nous` et `/nos-clients` portent les contenus de découverte. Le header public partagé conserve `/login` et `/signup` comme seuls accès à l’authentification existante. Les captures produit, la vidéo, la photo du fondateur, les logos et les témoignages restent des emplacements explicites tant que leurs contenus réels ne sont pas fournis.
 - Le mode démo a été retiré par la migration `0019` : ne pas réintroduire `/demo`, `seed_demo_data` ou `is_demo`.
 
 ## Intégrations et cibles autorisées

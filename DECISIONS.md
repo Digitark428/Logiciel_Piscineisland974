@@ -2,6 +2,12 @@
 
 > Conserver ici les décisions qui ne doivent pas être rediscutées implicitement par un autre agent. Chaque entrée doit indiquer la décision et sa raison.
 
+## Vitrine publique multi-page
+
+**Décision :** la partie publique de LETI utilise un layout partagé et des routes dédiées pour l’accueil, les fonctionnalités, les tarifs, la présentation de l’entreprise et les clients. L’accueil ne porte plus les contenus commerciaux détaillés : il se limite à la marque, la promesse, la connexion et la présentation vidéo. Les contenus non fournis restent des placeholders explicites et aucun écran produit fictif n’est inventé.
+
+**Raison :** préserver une page d’entrée très simple tout en permettant une découverte claire et progressive du produit, sans mélanger le parcours des utilisateurs existants avec celui des prospects.
+
 ## Mémoire commune Codex ↔ Claude Code
 
 **Décision :** `PROJECT_CONTEXT.md`, `AI_CHANGELOG.md` et `DECISIONS.md` sont la mémoire officielle partagée entre les deux agents.

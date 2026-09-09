@@ -2,6 +2,14 @@
 
 > Ajouter une entrée courte après chaque intervention significative. Ne pas y dupliquer la documentation durable de `PROJECT_CONTEXT.md`.
 
+## 2026-09-09 — Codex — Vitrine publique multi-page LETI
+
+- **Architecture :** remplacement de l’accueil one-page par un layout public partagé et quatre routes dédiées : `/fonctionnalites`, `/tarifs`, `/qui-sommes-nous` et `/nos-clients`. Le header relie ces vraies pages et conserve les parcours existants `/login` et `/signup`, sans toucher à l’application privée ni à Supabase.
+- **Accueil :** retour à une composition minimaliste centrée autour du logo officiel, de « Logiciel pour piscinistes », de « Simple mais puissant. » et de la connexion ; seule une section vidéo responsive avec placeholder explicite suit le hero.
+- **Contenus :** fonctions actuelles regroupées sans réintroduire la gestion des piscines ; trois offres horizontales avec uniquement LETI Entretien accessible, LETI Plus, LETI Complet et LETI IA clairement en développement. Les captures, la vidéo, la photo du fondateur, les logos et témoignages restent des emplacements à remplacer par des contenus fournis.
+- **Design :** palette, typographie, espacements, boutons, bordures, ombres, icônes et assets officiels LETI réutilisés ; responsive desktop, tablette et mobile prévu dans les composants partagés.
+- **Vérification :** lint et typecheck valides, build de production réussi, 86 tests actifs validés et 20 tests d’intégration conditionnels ignorés ; les cinq pages publiques compilent et s’affichent sans erreur dans le navigateur local.
+
 ## 2026-09-09 — Codex — Nouvelle vitrine publique LETI
 
 - **Accueil :** transformation de la page publique en présentation complète du logiciel avec header responsive, hero, aperçu fictif fidèle au dashboard, fonctions disponibles, usage terrain, feuille de route, CTA final et footer ; le logo officiel, les tokens, les cartes, les badges et les pictogrammes existants restent les seules fondations visuelles.
