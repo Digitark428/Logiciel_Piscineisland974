@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { LearningField } from "./LearningField";
 import { LEARNING_PHRASES } from "./learningPhrases";
 import styles from "./LetiAiExperience.module.css";
@@ -87,6 +88,9 @@ export function LetiAiExperience() {
             </svg>
             <span>Bientôt disponible</span>
           </div>
+          <Link href="/app/leti-ia/beta" className="btn-primary mt-6 inline-flex min-h-11 items-center gap-2 px-5">
+            Entrer dans la version bêta <span aria-hidden>→</span>
+          </Link>
         </div>
       </div>
 

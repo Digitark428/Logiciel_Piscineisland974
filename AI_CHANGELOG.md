@@ -2,6 +2,12 @@
 
 > Ajouter une entrée courte après chaque intervention significative. Ne pas y dupliquer la documentation durable de `PROJECT_CONTEXT.md`.
 
+## 2026-10-27 — Codex — LETI Intelligence Bêta V1
+
+- **Interface :** bouton d’entrée sur la page IA existante sans modification de son animation ; nouvel espace `/app/leti-ia/beta` avec assistant, briefings, missions, validations, suggestions, connecteurs et historique.
+- **Données et sécurité :** lectures serveur du jour limitées au workspace, à la session et aux permissions existantes ; aucune écriture métier, migration, clé OpenAI ou connexion Gmail. Conversations et propositions conservées dans la session locale, clairement indiquées comme non exécutées.
+- **Vérification :** typecheck, build Next.js et 86 tests actifs validés ; 20 tests d’intégration Supabase ignorés sans configuration de test. Avertissement Webpack préexistant de `@vercel/queue` pendant le build.
+
 ## 2026-09-09 — Codex — Vitrine publique multi-page LETI
 
 - **Architecture :** remplacement de l’accueil one-page par un layout public partagé et quatre routes dédiées : `/fonctionnalites`, `/tarifs`, `/qui-sommes-nous` et `/nos-clients`. Le header relie ces vraies pages et conserve les parcours existants `/login` et `/signup`, sans toucher à l’application privée ni à Supabase.
