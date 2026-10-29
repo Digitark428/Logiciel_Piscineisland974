@@ -10,8 +10,8 @@ describe("personal appearance", () => {
     expect(appearanceSchema.safeParse({ ...defaults, blur: 100 }).success).toBe(false);
     const custom = { ...defaults, opacity: 0, cards: { clients: { color: "#f48b82", opacity: 0 } } };
     const style = themeStyle(appearanceSchema.parse(custom)) as Record<string, string>;
-    expect(style["--glass-opacity"]).toBe("0.86");
-    expect(style["--glass-clients-opacity"]).toBe("0.86");
+    expect(style["--glass-opacity"]).toBe("0.72");
+    expect(style["--glass-clients-opacity"]).toBe("0.72");
     expect(style["--glass-services-color"]).toBeUndefined();
   });
 });

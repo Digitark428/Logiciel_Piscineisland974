@@ -916,3 +916,25 @@ a[data-leti-navigation-pending="true"] {
 @media print { .leti-glass-public { background: white !important; } }
 .leti-preview-services { --section-card-color: var(--glass-services-color, var(--glass-card-color)); --section-card-opacity: var(--glass-services-opacity, var(--glass-opacity)); }
 .leti-preview-clients { --section-card-color: var(--glass-clients-color, var(--glass-card-color)); --section-card-opacity: var(--glass-clients-opacity, var(--glass-opacity)); }
+
+/* Glass needs a softly coloured backdrop, translucent layers and a light-catching edge. */
+.leti-glass-shell, .leti-glass-theme { background-attachment: fixed; }
+.leti-glass-theme .card, .leti-preview .card {
+  border-color: rgba(255, 255, 255, .85);
+  box-shadow: 0 10px 30px rgba(24, 58, 89, .09), 0 2px 8px rgba(24, 58, 89, .04), inset 0 1px 0 rgba(255, 255, 255, .95), inset 0 0 0 1px rgba(95, 198, 227, .10);
+}
+.leti-glass-navigation, .leti-glass-floating {
+  border-color: rgba(255, 255, 255, .75);
+  box-shadow: 0 8px 32px rgba(24, 58, 89, .08), inset 0 1px 0 rgba(255, 255, 255, .95);
+}
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .leti-glass-theme .card, .leti-preview .card {
+    -webkit-backdrop-filter: blur(min(var(--glass-blur), 10px)) saturate(125%);
+    backdrop-filter: blur(min(var(--glass-blur), 10px)) saturate(125%);
+  }
+}
+@media (max-width: 767px) {
+  .leti-glass-theme .card { -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .leti-glass-shell, .leti-glass-theme { background-attachment: scroll; }
+}
+@media print { .leti-glass-theme .card { -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: none; } }

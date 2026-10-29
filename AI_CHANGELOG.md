@@ -349,3 +349,8 @@
 - **Persistance :** migration additive `20261029043003_user_appearance_preferences`, associée à l’utilisateur et protégée par RLS, appliquée au projet Supabase LETI. L’application revient au thème officiel si la lecture échoue.
 - **Vérification :** tests unitaires exécutés ; les tests d’intégration conditionnels à Supabase restent à exécuter. Le contrôle visuel complet, l’isolation RLS en base et la synchronisation multi-appareils restent à vérifier avant publication.
 - **Suite :** surfaces officielles étendues aux pages de connexion, inscription, portail et Super Admin ; aperçu des personnalisations Clients et Entretiens. Migration appliquée ; publication en cours. La vérification navigateur authentifiée et RLS demeure à réaliser avec un environnement Supabase de test ; le serveur local ne dispose pas des variables requises.
+
+## 2026-10-29 — Codex — Renforcement du rendu LETI Glass
+
+- Fond officiel avec halos aqua et corail, surfaces plus translucides, reflets et ombres plus visibles ; flou réduit sur mobile et opacité minimale préservée pour les contenus.
+- Aucune modification de la logique métier ni de la base de données.
