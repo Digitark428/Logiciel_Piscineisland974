@@ -3,7 +3,7 @@ import { Logo } from "@/components/Logo";
 
 export default function PortalInfoPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-graphite-50 px-5">
+    <div className="flex min-h-screen items-center justify-center leti-glass-public px-5">
       <div className="w-full max-w-md text-center">
         <div className="mb-6 flex justify-center"><Logo /></div>
         <div className="card p-8">

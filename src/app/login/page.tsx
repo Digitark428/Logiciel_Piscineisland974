@@ -9,7 +9,7 @@ export default async function LoginPage() {
   if (ctx) redirect("/app");
 
   return (
-    <div className="flex min-h-screen flex-col bg-graphite-50">
+    <div className="flex min-h-screen flex-col leti-glass-public">
       <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-5 py-5">
         <Link href="/"><Logo /></Link>
         <Link href="/signup" className="btn-ghost">Créer un compte</Link>

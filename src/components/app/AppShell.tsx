@@ -300,7 +300,7 @@ function ProfileMenu({
           id="leti-profile-menu"
           aria-label="Menu du profil"
           data-leti-overlay="popover"
-          className="absolute right-0 top-full z-[var(--leti-layer-popover)] mt-2 w-[min(19rem,calc(100vw-2rem))] rounded-2xl border border-graphite-100 bg-white p-2 shadow-float"
+          className="absolute right-0 top-full z-[var(--leti-layer-popover)] mt-2 w-[min(19rem,calc(100vw-2rem))] rounded-2xl border border-graphite-100 leti-glass-floating p-2 shadow-float"
         >
           <div className="mb-2 border-b border-graphite-100 px-3 py-2 sm:hidden">
             <div className="truncate text-sm font-semibold text-graphite-900">{userName}</div>
@@ -616,9 +616,9 @@ export function AppShell({
   }, [routeKey, startNavigation]);
 
   return (
-    <div className="min-h-screen bg-graphite-50" onClickCapture={handleInternalNavigation}>
+    <div className="leti-glass-shell min-h-screen" data-glass-section={pathname.split("/")[2] || "dashboard"} onClickCapture={handleInternalNavigation}>
       {/* Sidebar desktop */}
-      <aside className="fixed inset-y-0 left-0 z-[var(--leti-layer-sidebar)] hidden w-64 flex-col border-r border-graphite-100 bg-white lg:flex">
+      <aside className="fixed inset-y-0 left-0 z-[var(--leti-layer-sidebar)] hidden w-64 flex-col border-r border-graphite-100 leti-glass-navigation lg:flex">
         <div className="flex h-[var(--leti-header-height)] items-center gap-3 px-5">
           <Link
             href="/app"
@@ -654,7 +654,7 @@ export function AppShell({
       {open && (
         <div className="leti-mobile-drawer fixed inset-0 lg:hidden" data-leti-overlay="drawer" data-leti-overlay-side="left">
           <button type="button" className="absolute inset-0 cursor-default bg-graphite-950/25" onClick={closeDrawer} aria-label="Fermer le menu" />
-          <aside ref={mobileDrawerRef} role="dialog" aria-modal="true" aria-label="Navigation principale" className="absolute inset-y-0 left-0 flex w-72 max-w-[85%] flex-col bg-white shadow-float">
+          <aside ref={mobileDrawerRef} role="dialog" aria-modal="true" aria-label="Navigation principale" className="absolute inset-y-0 left-0 flex w-72 max-w-[85%] flex-col leti-glass-navigation shadow-float">
             <div className="flex h-[var(--leti-header-height)] items-center gap-3 px-5">
               <Logo symbolEffect="sidebar" />
               <span className="h-7 w-px shrink-0 bg-graphite-100" aria-hidden />
@@ -680,7 +680,7 @@ export function AppShell({
 
       {/* Contenu */}
       <div className="lg:pl-64">
-        <header className="leti-app-header sticky top-0 flex items-center gap-3 border-b border-graphite-100 bg-white/95 px-4 backdrop-blur sm:px-6">
+        <header className="leti-app-header sticky top-0 flex items-center gap-3 border-b border-graphite-100 leti-glass-navigation px-4 sm:px-6">
           <button ref={mobileMenuButtonRef} onClick={() => setOpen(true)} className="btn-ghost p-2 lg:hidden" aria-label="Menu">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
           </button>

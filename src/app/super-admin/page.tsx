@@ -28,8 +28,8 @@ export default async function SuperAdminDashboard() {
   const active = list.filter((w) => w.status === "active").length;
 
   return (
-    <div className="min-h-screen bg-graphite-50 text-graphite-900">
-      <header className="border-b border-graphite-200 bg-white/90 backdrop-blur">
+    <div className="min-h-screen leti-glass-public text-graphite-900">
+      <header className="border-b border-graphite-200 leti-glass-navigation">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
           <div className="flex items-center gap-3 text-sm font-semibold"><Logo showText={false} /> <span>Administration LETI</span></div>
           <div className="flex items-center gap-3 text-sm text-graphite-500">

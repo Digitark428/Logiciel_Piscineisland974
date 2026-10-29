@@ -342,3 +342,10 @@
 - **Dashboard :** carrousel financier réservé au gérant avec les quatre vues prévues : entretiens, ponctuel mensuel, total et frais « En développement ».
 - **Migrations :** `20260818192021_service_financials`, `20260818193027_service_financials_client_index` et `20260818193724_service_financials_guard_service_kind`, appliquées au projet Supabase de production.
 - **Vérification :** typecheck, lint, build et tests unitaires validés ; transaction RLS annulée validant les droits admin, le refus membre et l'isolation des workspaces.
+
+## 2026-10-29 — Codex — Fondations LETI Glass et préférences personnelles
+
+- **Périmètre :** surfaces partagées de l’application, navigation et éditeur personnel avec aperçu, préréglages, couleurs, fonds et réglages par rubrique.
+- **Persistance :** migration additive `20261029043003_user_appearance_preferences`, associée à l’utilisateur et protégée par RLS, appliquée au projet Supabase LETI. L’application revient au thème officiel si la lecture échoue.
+- **Vérification :** tests unitaires exécutés ; les tests d’intégration conditionnels à Supabase restent à exécuter. Le contrôle visuel complet, l’isolation RLS en base et la synchronisation multi-appareils restent à vérifier avant publication.
+- **Suite :** surfaces officielles étendues aux pages de connexion, inscription, portail et Super Admin ; aperçu des personnalisations Clients et Entretiens. Migration appliquée ; publication en cours. La vérification navigateur authentifiée et RLS demeure à réaliser avec un environnement Supabase de test ; le serveur local ne dispose pas des variables requises.

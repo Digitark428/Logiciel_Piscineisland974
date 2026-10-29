@@ -14,7 +14,7 @@ LETI est le nom du SaaS de gestion destiné aux piscinistes, principalement aux 
 - Toutes les véritables cases à cocher utilisent `src/components/ui/Checkbox.tsx`, source unique du design LETI : menthe pour une action terminée et bleu piscine pour une simple sélection, sans remplacer les interrupteurs métier.
 - Les actions serveur sont organisées par domaine dans `src/lib/actions/` et retournent le format `ActionResult`.
 - Les clients Supabase sont dans `src/lib/supabase/`; `admin.ts` utilise le service role côté serveur uniquement.
-- Les migrations SQL sont numérotées dans `supabase/migrations/` ; les dernières migrations appliquées sont `20260829080314_professional_backups` et `20260829080405_professional_backups_indexes`, alignées avec leurs fichiers locaux.
+- Les migrations SQL sont numérotées dans `supabase/migrations/` ; la migration `20261029043003_user_appearance_preferences` ajoute les préférences visuelles personnelles, isolées par utilisateur avec RLS.
 - Le fuseau IANA de chaque entreprise est conservé dans `workspaces.timezone` (défaut `Indian/Reunion`) et pilote la sauvegarde quotidienne. Les dates métier sans heure (`YYYY-MM-DD`) de la V1 réunionnaise restent calculées via `src/lib/utils/date.ts`, jamais avec `toISOString().slice(0, 10)`.
 
 ## Données, sécurité et autorisations

@@ -53,6 +53,7 @@ export const SETTINGS_ITEM: NavItem = {
 };
 
 export const ACCOUNT_NAV_ITEMS: NavEntry[] = [
+  { href: "/app/appearance", label: "Apparence & personnalisation", icon: "settings" },
   {
     key: "management",
     label: "Gestion",

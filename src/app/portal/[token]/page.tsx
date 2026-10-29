@@ -30,7 +30,7 @@ export default async function PortalPage({ params: paramsPromise }: { params: Pr
   // ---- Écran de saisie du code ----
   if (!authed) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-graphite-50 px-5">
+      <div className="flex min-h-screen items-center justify-center leti-glass-public px-5">
         <div className="w-full max-w-md">
           <div className="mb-6 flex justify-center"><Logo /></div>
           <div className="card p-8">
@@ -112,8 +112,8 @@ export default async function PortalPage({ params: paramsPromise }: { params: Pr
   }));
 
   return (
-    <div className="min-h-screen bg-graphite-50">
-      <header className="border-b border-graphite-200 bg-white">
+    <div className="min-h-screen leti-glass-public">
+      <header className="border-b border-graphite-200 leti-glass-navigation">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-5 py-4">
           <div className="flex items-center gap-3">
             <Logo showText={false} />

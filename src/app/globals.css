@@ -858,3 +858,61 @@ a[data-leti-navigation-pending="true"] {
     display: flex !important;
   }
 }
+
+/* LETI Glass: opaque fallback first; only navigation and floating layers blur. */
+:root {
+  --glass-background: #f7f7f5;
+  --glass-primary: #5fc6e3;
+  --glass-secondary: #f48b82;
+  --glass-surface-color: #fff;
+  --glass-menu-color: #fff;
+  --glass-card-color: #fff;
+  --glass-selection: #e7f8fc;
+  --glass-opacity: .9;
+  --glass-nav-opacity: .9;
+  --glass-blur: 12px;
+  --glass-saturation: 100%;
+  --glass-brightness: 100%;
+}
+.leti-glass-theme, .leti-preview { background: var(--glass-background); color: var(--leti-navy); }
+.leti-glass-shell { background: var(--glass-background); }
+.leti-glass-theme .card, .leti-preview .card, .glass-soft {
+  background: var(--glass-card-color);
+  border-color: rgba(24,58,89,.1);
+  box-shadow: 0 1px 2px rgba(24,58,89,.025), 0 8px 24px rgba(24,58,89,.055), inset 0 1px rgba(255,255,255,.8);
+}
+.leti-glass-navigation, .leti-glass-floating, .glass-standard, .glass-floating {
+  background: var(--glass-menu-color);
+  border-color: rgba(24,58,89,.09);
+  box-shadow: inset 0 1px rgba(255,255,255,.8), 0 8px 28px rgba(24,58,89,.04);
+}
+@supports (background: color-mix(in srgb, white, transparent)) {
+  .leti-glass-theme .card, .leti-preview .card, .glass-soft { background: color-mix(in srgb, var(--section-card-color, var(--glass-card-color)) calc(var(--section-card-opacity, var(--glass-opacity)) * 100%), transparent); }
+  .leti-glass-navigation, .leti-glass-floating, .glass-standard, .glass-floating { background: color-mix(in srgb, var(--glass-menu-color) calc(var(--glass-nav-opacity) * 100%), transparent); }
+}
+@supports (backdrop-filter: blur(1px)) {
+  .leti-glass-navigation, .leti-glass-floating, .glass-floating { backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation)) brightness(var(--glass-brightness)); -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation)) brightness(var(--glass-brightness)); }
+}
+.leti-glass-shell[data-glass-section="clients"] { --section-card-color: var(--glass-clients-color, var(--glass-card-color)); --section-card-opacity: var(--glass-clients-opacity, var(--glass-opacity)); }
+.leti-glass-shell[data-glass-section="services"] { --section-card-color: var(--glass-services-color, var(--glass-card-color)); --section-card-opacity: var(--glass-services-opacity, var(--glass-opacity)); }
+.leti-glass-shell[data-glass-section="planning"] { --section-card-color: var(--glass-planning-color, var(--glass-card-color)); --section-card-opacity: var(--glass-planning-opacity, var(--glass-opacity)); }
+.leti-glass-shell[data-glass-section="tasks"] { --section-card-color: var(--glass-tasks-color, var(--glass-card-color)); --section-card-opacity: var(--glass-tasks-opacity, var(--glass-opacity)); }
+.leti-glass-shell[data-glass-section="documents"] { --section-card-color: var(--glass-documents-color, var(--glass-card-color)); --section-card-opacity: var(--glass-documents-opacity, var(--glass-opacity)); }
+.leti-glass-theme .btn-primary, .leti-preview .btn-primary { border-color: color-mix(in srgb, var(--glass-secondary) 35%, #ddd); background: color-mix(in srgb, var(--glass-secondary) 18%, white); color: #183a59; }
+.leti-glass-theme .btn-primary:not(:disabled):hover, .leti-preview .btn-primary:not(:disabled):hover { background: color-mix(in srgb, var(--glass-secondary) 28%, white); }
+.leti-glass-theme a[aria-current="page"] { background: var(--glass-selection); border-color: var(--glass-primary); }
+.leti-glass-theme .input:focus { border-color: var(--glass-primary); }
+@media (max-width: 767px) { .leti-glass-navigation { backdrop-filter: blur(min(var(--glass-blur), 8px)); -webkit-backdrop-filter: blur(min(var(--glass-blur), 8px)); } }
+@media (prefers-reduced-motion: reduce) { .leti-glass-theme *, .leti-preview * { scroll-behavior: auto; transition-duration: 0ms !important; } }
+@media print { .leti-glass-theme, .leti-glass-shell { background: white !important; } .leti-glass-theme .card { background: white !important; box-shadow: none; } }
+
+/* The public, client portal and platform administration use the official preset. */
+.leti-glass-public { background: linear-gradient(145deg, #f7f7f5 15%, #edf9fb 100%); }
+.leti-glass-public .card {
+  background: rgba(255, 255, 255, .93);
+  border-color: rgba(24, 58, 89, .1);
+  box-shadow: 0 1px 2px rgba(24,58,89,.025), 0 8px 24px rgba(24,58,89,.055), inset 0 1px rgba(255,255,255,.8);
+}
+@media print { .leti-glass-public { background: white !important; } }
+.leti-preview-services { --section-card-color: var(--glass-services-color, var(--glass-card-color)); --section-card-opacity: var(--glass-services-opacity, var(--glass-opacity)); }
+.leti-preview-clients { --section-card-color: var(--glass-clients-color, var(--glass-card-color)); --section-card-opacity: var(--glass-clients-opacity, var(--glass-opacity)); }

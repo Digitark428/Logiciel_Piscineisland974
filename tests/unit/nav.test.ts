@@ -26,7 +26,8 @@ describe("Navigation applicative", () => {
   });
 
   it("place Paramètres après Gestion dans le menu du compte", () => {
-    expect(ACCOUNT_NAV_ITEMS.map((entry) => entry.label)).toEqual(["Gestion", "Paramètres"]);
+    expect(ACCOUNT_NAV_ITEMS.map((entry) => entry.label)).toEqual(["Apparence & personnalisation", "Gestion", "Paramètres"]);
+    expect(filterNavEntries(ACCOUNT_NAV_ITEMS, (item) => !item.perm && !item.adminOnly).map((entry) => entry.label)).toEqual(["Apparence & personnalisation"]);
   });
 
   it("rend uniquement l’entrée existante LETI IA interactive pendant son développement", () => {

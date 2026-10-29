@@ -84,8 +84,8 @@ export default async function PortalServicePage({ params: paramsPromise }: { par
   const taskList = tasks ?? [];
 
   return (
-    <div className="min-h-screen bg-graphite-50">
-      <header className="border-b border-graphite-200 bg-white">
+    <div className="min-h-screen leti-glass-public">
+      <header className="border-b border-graphite-200 leti-glass-navigation">
         <div className="mx-auto flex max-w-2xl items-center justify-between px-5 py-4">
           <div className="flex items-center gap-3">
             <Logo showText={false} />

@@ -9,7 +9,7 @@ export default async function SignUpPage() {
   if (ctx) redirect("/app");
 
   return (
-    <div className="min-h-screen bg-graphite-50">
+    <div className="min-h-screen leti-glass-public">
       <header className="mx-auto flex max-w-5xl items-center justify-between px-5 py-5">
         <Link href="/"><Logo /></Link>
         <Link href="/login" className="btn-ghost">Se connecter</Link>

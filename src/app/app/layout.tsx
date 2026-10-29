@@ -5,6 +5,7 @@ import { AppShell } from "@/components/app/AppShell";
 import { DeferredAppSupportWidget } from "@/components/app/DeferredAppSupportWidget";
 import { ACCOUNT_NAV_ITEMS, filterNavEntries, NAV_ITEMS, type NavItem } from "@/components/app/nav";
 import { memberJobTitle, memberName } from "@/lib/utils/format";
+import { normalizeAppearance, themeStyle } from "@/lib/appearance/theme";
 import { workspaceLogoPath } from "@/lib/workspace-logo";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -30,14 +31,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   // Ces deux lectures ne dépendent pas l'une de l'autre et ne doivent pas
   // retarder mutuellement l'affichage initial de l'application.
-  const [{ count }, avatarUrl, workspaceLogoUrl] = await Promise.all([
+  const [{ count }, avatarUrl, workspaceLogoUrl, appearanceResult] = await Promise.all([
     notifQuery,
     signedUrl("avatars", ctx.membership.photo_path),
     signedUrl("workspace-assets", workspaceLogoPath(ctx.workspace.settings)),
+    supabase.from("user_appearance_preferences").select("preferences").eq("user_id", ctx.userId).maybeSingle(),
   ]);
 
   return (
-    <>
+    <div className="leti-glass-theme" style={themeStyle(normalizeAppearance(appearanceResult.data?.preferences))}>
       <AppShell
         items={items}
         accountItems={accountItems}
@@ -54,6 +56,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         {children}
       </AppShell>
       <DeferredAppSupportWidget />
-    </>
+    </div>
   );
 }
